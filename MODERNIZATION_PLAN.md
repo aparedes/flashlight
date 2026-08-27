@@ -82,6 +82,16 @@ react({ babel: { plugins: [["babel-plugin-react-compiler", {}]] } });
 - Remove: `parcel` (×2), the `process` polyfill dep in web-reporter-ui (Parcel-era artifact; Vite `define` covers any residual `process.env`), `rm -rf .parcel-cache` in the root build script.
 - Compiler guardrail: `react/rules-of-hooks` is already `error` in oxlint, which is the main precondition the compiler cares about. Verify compiler output by checking for `react/compiler-runtime`/memo cache calls in the bundle.
 
+### Why Babel (and not oxc-transform) — and how to keep it disposable
+
+The React Compiler exists only as `babel-plugin-react-compiler`; there is no oxc or SWC implementation (`oxc-transform` does fixed transforms and has no plugin system, so it cannot host the compiler; Next.js's "SWC support" is SWC pre-filtering files and still invoking the Babel plugin). Dropping Babel would mean dropping the compiler.
+
+The footprint is minimal by construction:
+
+- CLI/node packages never touch Babel — they compile with `tsc`.
+- Inside Vite 8 (rolldown-based), oxc handles TS/JSX/minification; Babel is a thin per-file pass running only the compiler plugin, scoped via the plugin's include filter to JSX under `web-reporter-ui` and the two webapps.
+- Keep it deliberately disposable: no `.babelrc`, no presets, no other Babel plugins — config lives only in the two `vite.config.ts` files, so a future native React Compiler implementation (oxc or SWC) is a one-line swap.
+
 ## Phase 4 — React 19 + UI ecosystem
 
 - `react`/`react-dom` → **19.2.x**, add explicit `@types/react`/`@types/react-dom` 19 (currently only transitive).
