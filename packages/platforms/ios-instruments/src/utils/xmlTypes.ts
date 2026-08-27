@@ -65,7 +65,7 @@ interface TextAddresses {
   value: string[];
 }
 
-export {
+export type {
   Result,
   Row,
   refField,
@@ -75,5 +75,5 @@ export {
   NumberField,
   Backtrace,
   TextAddresses,
-  isRefField,
 };
+export { isRefField };

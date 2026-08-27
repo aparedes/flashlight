@@ -1,6 +1,8 @@
 import EventEmitter from "events";
+import * as childProcess from "child_process";
 import { ChildProcess } from "child_process";
 import fs from "fs";
+import { expect, jest, spyOn } from "bun:test";
 
 const mockSpawn = (): ChildProcess => {
   const mockProcess = new EventEmitter();
@@ -20,19 +22,18 @@ const mockSpawn = (): ChildProcess => {
 export const aTraceMock = mockSpawn();
 export const perfProfilerMock = mockSpawn();
 
-jest
-  .spyOn(require("child_process"), "spawn")
-  .mockImplementationOnce((...args) => {
-    expect(args).toEqual(["adb", ["shell", "atrace", "-c", "view", "-t", "999"]]);
+spyOn(require("child_process") as typeof childProcess, "spawn")
+  .mockImplementationOnce(((command: string, args: readonly string[]) => {
+    expect([command, args]).toEqual(["adb", ["shell", "atrace", "-c", "view", "-t", "999"]]);
     return aTraceMock;
-  })
-  .mockImplementationOnce((...args) => {
-    expect(args).toEqual([
+  }) as unknown as typeof childProcess.spawn)
+  .mockImplementationOnce(((command: string, args: readonly string[]) => {
+    expect([command, args]).toEqual([
       "adb",
       ["shell", "/data/local/tmp/BAMPerfProfiler", "pollPerformanceMeasures", "com.example", "500"],
     ]);
     return perfProfilerMock;
-  });
+  }) as unknown as typeof childProcess.spawn);
 
 export const emitMeasure = (measureIndex: number) => {
   const cpuOutput: string = fs.readFileSync(

@@ -1,12 +1,8 @@
 import { testRepository } from "../../repositories";
 import { checkResults } from "../checkResults";
 import fs from "fs";
-import axios from "axios";
-
-// Need to mock axios because of https://github.com/axios/axios/issues/5026
-jest.mock("axios", () => ({
-  get: jest.fn(),
-}));
+import type axios from "axios";
+import { describe, it, expect, beforeEach, afterEach, afterAll, spyOn, mock } from "bun:test";
 
 describe("checkResults", () => {
   const FOLDER_WITH_SPACES = `${__dirname}/My folder with spaces`;
@@ -18,9 +14,12 @@ describe("checkResults", () => {
   });
 
   it("writes results to a folder with spaces", async () => {
-    jest.spyOn(testRepository, "waitForCompletion").mockResolvedValueOnce();
-    jest.spyOn(testRepository, "getArtifactUrl").mockResolvedValueOnce("https://url.com");
-    jest.spyOn(axios, "get").mockResolvedValueOnce({
+    spyOn(testRepository, "waitForCompletion").mockResolvedValueOnce();
+    spyOn(testRepository, "getArtifactUrl").mockResolvedValueOnce("https://url.com");
+    // `downloadFile` lives in @perf-profiler/shell's compiled CJS `dist`, so it holds a
+    // reference to the CommonJS axios module object, which is not the same object as the
+    // ESM `import axios from "axios"` binding.
+    spyOn(require("axios") as typeof axios, "get").mockResolvedValueOnce({
       data: fs.readFileSync(`${__dirname}/results.json.zip`),
     });
     await checkResults({
@@ -45,3 +44,5 @@ describe("checkResults", () => {
     fs.rmSync(FOLDER_WITH_SPACES, { recursive: true, force: true });
   });
 });
+
+afterAll(() => mock.restore());

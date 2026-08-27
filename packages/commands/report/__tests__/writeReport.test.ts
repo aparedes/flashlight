@@ -1,3 +1,4 @@
+import { describe, it, expect } from "bun:test";
 import { Measure, TestCaseIterationResult, TestCaseResult } from "@perf-profiler/types";
 import { getMeasuresForTimeInterval } from "../writeReport";
 

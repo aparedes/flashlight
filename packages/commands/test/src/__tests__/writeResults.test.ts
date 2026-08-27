@@ -1,34 +1,38 @@
 import { measurePerformance } from "..";
 import fs from "fs";
+import {
+  describe,
+  it,
+  expect,
+  jest,
+  spyOn,
+  mock,
+  beforeAll,
+  afterAll,
+  afterEach,
+  setSystemTime,
+} from "bun:test";
 import * as PerformanceTester from "../PerformanceTester";
 import * as writeReport from "../writeReport";
 import { Logger, LogLevel } from "@perf-profiler/logger";
+import { profiler } from "@perf-profiler/profiler";
 
-jest.mock("@perf-profiler/profiler", () => ({
-  ...jest.requireActual("@perf-profiler/profiler"),
-  profiler: {
-    ...jest.requireActual("@perf-profiler/profiler").profiler,
-    installProfilerOnDevice: jest.fn(),
-  },
-}));
+spyOn(profiler, "installProfilerOnDevice").mockImplementation(() => undefined);
 
 Logger.setLogLevel(LogLevel.SILENT);
 
 const mockDate = () => {
-  const MOCK_DATE = new Date(1686650793058);
-  jest.spyOn(global, "Date").mockImplementation(() => MOCK_DATE);
+  setSystemTime(new Date(1686650793058));
 };
 
 const mockPerformanceTester = () => {
-  const actualPerformanceTester = jest.requireActual("../PerformanceTester").PerformanceTester;
-  jest.spyOn(PerformanceTester, "PerformanceTester").mockImplementation((...args) => {
-    const tester = new actualPerformanceTester(...args);
-
-    jest.spyOn(tester, "iterate").mockResolvedValue(undefined);
-
-    return tester;
-  });
+  spyOn(PerformanceTester.PerformanceTester.prototype, "iterate").mockResolvedValue(undefined);
 };
+
+afterAll(() => {
+  setSystemTime();
+  mock.restore();
+});
 
 const runTest = jest.fn();
 
@@ -51,7 +55,7 @@ describe("writeResults", () => {
     mockPerformanceTester();
   });
 
-  const writeReportSpy = jest.spyOn(writeReport, "writeReport");
+  const writeReportSpy = spyOn(writeReport, "writeReport");
 
   afterEach(() => {
     writeReportSpy.mockClear();

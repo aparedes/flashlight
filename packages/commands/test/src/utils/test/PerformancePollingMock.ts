@@ -1,11 +1,14 @@
-export class PerformancePollingMock {
-  private cb?: (measure: unknown) => void;
+import { mock } from "bun:test";
+import { Measure } from "@perf-profiler/types";
 
-  emit(measure: unknown) {
-    this.cb?.(measure);
+export class PerformancePollingMock {
+  private cb?: (measure: Measure) => void;
+
+  emit(measure: Partial<Measure>) {
+    this.cb?.(measure as Measure);
   }
 
-  setCallback = jest.fn((cb: (measure: unknown) => void) => {
+  setCallback = mock((cb: (measure: Measure) => void) => {
     this.cb = cb;
   });
 

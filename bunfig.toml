@@ -1,0 +1,9 @@
+[test]
+coverageSkipTestFiles = true
+coveragePathIgnorePatterns = [
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/cpp-profiler/**",
+  "**/__tests__/**",
+  "test-setup/**",
+]

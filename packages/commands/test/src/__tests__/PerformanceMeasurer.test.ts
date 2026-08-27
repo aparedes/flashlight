@@ -1,12 +1,13 @@
 import "../utils/test/mockChildProcess";
+import { describe, it, expect, spyOn } from "bun:test";
 import { LogLevel, Logger } from "@perf-profiler/logger";
 import { PerformanceMeasurer } from "../PerformanceMeasurer";
 import { emitMeasure, perfProfilerMock } from "../utils/test/mockEmitMeasures";
 
 Logger.setLogLevel(LogLevel.SILENT);
 
-const loggerDebug = jest.spyOn(Logger, "debug");
-const loggerError = jest.spyOn(Logger, "error");
+const loggerDebug = spyOn(Logger, "debug");
+const loggerError = spyOn(Logger, "error");
 
 describe("PerformanceMeasurer", () => {
   it("handles c++ errors correctly", async () => {

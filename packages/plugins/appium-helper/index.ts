@@ -1,2 +1,2 @@
 export { AppiumDriver } from "./AppiumDriver";
-export { RemoteServerOptions } from "./AppiumDriver";
+export type { RemoteServerOptions } from "./AppiumDriver";

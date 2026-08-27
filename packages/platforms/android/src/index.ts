@@ -1,5 +1,5 @@
-export { Measure } from "@perf-profiler/types";
-export { Measure as GfxInfoMeasure } from "./commands/gfxInfo/parseGfxInfo";
+export type { Measure } from "@perf-profiler/types";
+export type { Measure as GfxInfoMeasure } from "./commands/gfxInfo/parseGfxInfo";
 export { waitFor } from "./utils/waitFor";
 export { refreshRateManager } from "./commands/detectCurrentDeviceRefreshRate";
 export { executeAsync, executeCommand } from "./commands/shell";

@@ -1,3 +1,4 @@
+import { it, expect } from "bun:test";
 import { averageHighCpuUsage, averageIterations } from "../averageIterations";
 import { TestCaseIterationResult } from "@perf-profiler/types";
 

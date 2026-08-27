@@ -1,8 +1,11 @@
+import fs from "fs";
+import { test, expect, afterAll, spyOn, mock } from "bun:test";
 import { parseGfxInfo } from "../parseGfxInfo";
+import * as shell from "../../shell";
 
-jest
-  .spyOn(require("../../shell"), "executeCommand")
-  .mockImplementation(() => require("fs").readFileSync(`${__dirname}/GfxInfoSample.txt`, "utf8"));
+spyOn(shell, "executeCommand").mockImplementation(() =>
+  fs.readFileSync(`${__dirname}/GfxInfoSample.txt`, "utf8")
+);
 
 const bundleId = "mockPackage";
 test("GfxInfoParser", () => {
@@ -18,3 +21,5 @@ test("GfxInfoParser", () => {
     },
   });
 });
+
+afterAll(() => mock.restore());

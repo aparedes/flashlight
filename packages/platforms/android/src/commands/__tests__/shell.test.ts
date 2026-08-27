@@ -1,4 +1,6 @@
 import { EventEmitter } from "events";
+import * as childProcess from "child_process";
+import { test, expect, afterAll, jest, spyOn, mock } from "bun:test";
 import { executeLongRunningProcess } from "../shell";
 
 const mockSpawn = (): { stdout: EventEmitter } => {
@@ -6,13 +8,16 @@ const mockSpawn = (): { stdout: EventEmitter } => {
   // @ts-expect-error
   mockProcess.stdout = new EventEmitter();
 
-  jest.spyOn(require("child_process"), "spawn").mockImplementationOnce((...args) => {
-    expect(args).toEqual([
+  spyOn(childProcess, "spawn").mockImplementationOnce(((
+    command: string,
+    args: readonly string[]
+  ) => {
+    expect([command, args]).toEqual([
       "adb",
       ["shell", "/data/local/tmp/BAMPerfProfiler", "pollPerformanceMeasures", "PID_ID"],
     ]);
     return mockProcess;
-  });
+  }) as unknown as typeof childProcess.spawn);
 
   // @ts-expect-error
   return mockProcess;
@@ -108,3 +113,5 @@ DELIMITER`;
   expect(onData).toHaveBeenCalledWith(`=START MEASURE=
 hello`);
 });
+
+afterAll(() => mock.restore());
