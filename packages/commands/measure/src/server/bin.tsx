@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { program } from "commander";
 import { DEFAULT_PORT } from "./constants";

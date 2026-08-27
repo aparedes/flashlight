@@ -26,8 +26,8 @@ Start by building the whole project:
 At the root of the repo:
 
 ```
-yarn
-yarn watch
+bun install
+bun run watch
 ```
 
 Keep this open in one terminal.
@@ -37,13 +37,13 @@ Keep this open in one terminal.
 Start the webapp with
 
 ```bash
-yarn workspace @perf-profiler/measure start
+bun run --filter @perf-profiler/measure start
 ```
 
 Then run the `measure` commmand with:
 
 ```bash
-DEVELOPMENT_MODE=true node packages/commands/measure/dist/server/bin.js measure
+DEVELOPMENT_MODE=true bun packages/commands/measure/dist/server/bin.js measure
 ```
 
 ### `test` command
@@ -51,7 +51,7 @@ DEVELOPMENT_MODE=true node packages/commands/measure/dist/server/bin.js measure
 To run the command locally:
 
 ```
-node packages/commands/test/dist/bin.js test
+bun packages/commands/test/dist/bin.js test
 ```
 
 This command is the equivalent of
@@ -65,7 +65,7 @@ flashlight test
 To run the command locally:
 
 ```
-node packages/commands/tools/dist/bin.js tools
+bun packages/commands/tools/dist/bin.js tools
 ```
 
 This command is the equivalent of
@@ -79,7 +79,7 @@ flashlight tools
 Run in another terminal:
 
 ```
-yarn workspace @perf-profiler/web-reporter start
+bun run --filter @perf-profiler/web-reporter start
 ```
 
 Then in `packages/commands/report/src/App.tsx`, uncomment the lines to add your own measures:
@@ -92,8 +92,4 @@ testCaseResults = [require("../measures.json")];
 
 You should now be able to open [the local server](http://localhost:1234/)
 
-Run `yarn jest Plugin -u` after modifications.
-
-### Running the docs website locally
-
-[See details here](./website/README.md)
+Run `bunx jest Plugin -u` after modifications.

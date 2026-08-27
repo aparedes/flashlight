@@ -23,7 +23,7 @@
     "react-dom": "18.3.1"
   },
   "scripts": {
-    "start": "yarn parcel src/index.html",
-    "build": "yarn parcel build src/index.html"
+    "start": "bunx parcel src/index.html",
+    "build": "bunx parcel build src/index.html"
   }
 }

@@ -8,7 +8,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "tsc && yarn test:e2e"
+    "test": "tsc && bun run test:e2e"
   },
   "dependencies": {
     "@bam.tech/appium-helper": "^0.5.5",

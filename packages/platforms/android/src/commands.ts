@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { Logger } from "@perf-profiler/logger";
 import { Measure } from "@perf-profiler/types";

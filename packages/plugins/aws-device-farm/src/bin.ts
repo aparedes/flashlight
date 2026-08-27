@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { Option, program } from "commander";
 import { DEFAULT_RUN_TEST_OPTIONS, runTest } from "./commands/runTest";

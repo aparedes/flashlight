@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // TODO: refactor so that these functions are not in android
 // eslint-disable-next-line import/no-extraneous-dependencies

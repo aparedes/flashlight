@@ -24,7 +24,7 @@ However, since it supports many languages and platforms, the docs can be difficu
 
 ### Getting started
 
-1. Install the helper `yarn add @bam.tech/appium-helper`
+1. Install the helper `bun add @bam.tech/appium-helper`
 
 2. Write your test script
 
@@ -45,7 +45,7 @@ test("e2e", async () => {
 ```
 
 3. Run the appium server `npx appium` in a terminal. If you just installed Appium, you may need to install a driver, e.g., by running `npx appium driver install uiautomator2`.
-4. Run your test file in a separate terminal `yarn jest appium.test.ts`
+4. Run your test file in a separate terminal `bun test appium.test.ts`
 
 ### API
 
