@@ -240,14 +240,14 @@ medium — small edits in 17 files, with two exact-placement rules (comment posi
 #### 1. Dependencies
 **File**: `package.json` (root)
 **Changes**:
-- [ ] `bun remove @typescript-eslint/eslint-plugin @typescript-eslint/parser @typescript-eslint/utils eslint eslint-config-prettier eslint-plugin-import eslint-plugin-prettier eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-testing-library prettier`
+- [x] `bun remove @typescript-eslint/eslint-plugin @typescript-eslint/parser @typescript-eslint/utils eslint eslint-config-prettier eslint-plugin-import eslint-plugin-prettier eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-testing-library prettier`
   > Reconciled: Phase 1 added `@typescript-eslint/parser` as an explicit root devDependency (it was only a peerDependency of `@typescript-eslint/eslint-plugin`, needed for the `bun install` migration to resolve correctly — see Phase 1's item 1 deviation note). It must be included in this removal command alongside the other ESLint packages.
-- [ ] `bun add -d oxlint oxfmt` (expected ≥ `oxlint@1.80.0`, `oxfmt@0.65.0`).
+- [x] `bun add -d oxlint oxfmt` (expected ≥ `oxlint@1.80.0`, `oxfmt@0.65.0`).
 
 #### 2. oxlint config
 **File**: `.oxlintrc.json` (new, root)
 **Changes**:
-- [ ] Create with exactly this content (no comments — the file is formatted by oxfmt as JSON):
+- [x] Create with exactly this content (no comments — the file is formatted by oxfmt as JSON):
   ```json
   {
     "$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -281,7 +281,7 @@ medium — small edits in 17 files, with two exact-placement rules (comment posi
 #### 3. oxfmt config
 **Files**: `.oxfmtrc.json` (new), `.prettierrc.json` (delete), `.prettierignore` (delete)
 **Changes**:
-- [ ] Create `.oxfmtrc.json`:
+- [x] Create `.oxfmtrc.json`:
   ```json
   {
     "$schema": "./node_modules/oxfmt/configuration_schema.json",
@@ -296,23 +296,25 @@ medium — small edits in 17 files, with two exact-placement rules (comment posi
       "build",
       "report.js",
       "report.html",
-      "results*.json"
+      "results*.json",
+      "tasks"
     ]
   }
   ```
-- [ ] `git rm .prettierrc.json .prettierignore`.
+  > Reconciled: `tasks` added to `ignorePatterns` — Phase 1 added it to `.prettierignore` (which this file replaces) to exclude the untracked orchestration-session scratch directory `tasks/2026-08-27-modernize-tooling/` from formatting checks; carry that forward or `oxfmt --check` (and `bun run test`) will fail on it exactly like `prettier --check .` originally did.
+- [x] `git rm .prettierrc.json .prettierignore`.
 
 #### 4. ESLint config and cache
 **Files**: `.eslintrc.js` (delete), `.gitignore`
 **Changes**:
-- [ ] `git rm .eslintrc.js`.
-- [ ] `.gitignore`: remove line 7 `.eslintcache`; add a line `/build/` (used by Phase 5's standalone output; harmless now).
+- [x] `git rm .eslintrc.js`.
+- [x] `.gitignore`: remove line 7 `.eslintcache`; add a line `/build/` (used by Phase 5's standalone output; harmless now).
 
 #### 5. Scripts and lint-staged
 **File**: `package.json` (root)
 **Changes**:
-- [ ] In `scripts`: replace `"test"` with `"test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && jest"`; delete `"test:lint"`; add `"lint": "oxlint --max-warnings 0"`, `"lint:fix": "oxlint --fix"`, `"format": "oxfmt"`, `"format:check": "oxfmt --check"`.
-- [ ] Replace the `lint-staged` block with:
+- [x] In `scripts`: replace `"test"` with `"test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && jest"`; delete `"test:lint"`; add `"lint": "oxlint --max-warnings 0"`, `"lint:fix": "oxlint --fix"`, `"format": "oxfmt"`, `"format:check": "oxfmt --check"`.
+- [x] Replace the `lint-staged` block with:
   ```json
   "lint-staged": {
     "*.{js,ts,tsx}": "oxlint --fix",
@@ -322,13 +324,13 @@ medium — small edits in 17 files, with two exact-placement rules (comment posi
 
 #### 6. Code fixes for the 15 oxlint findings
 **Changes** (each anchored to a symbol; line numbers are today's):
-- [ ] `packages/core/reporter/src/reporting/fps.ts` — both `iterations.forEach` callbacks (lines 17 and 26): `value && averageFpsUsages.push(value);` → `if (value) averageFpsUsages.push(value);` (`no-unused-expressions`).
-- [ ] `packages/core/reporter/src/reporting/ram.ts` line 16: `averageRamUsage && values.push(averageRamUsage);` → `if (averageRamUsage) values.push(averageRamUsage);`.
-- [ ] `packages/commands/measure/src/server/ServerApp.tsx` in `createExpressApp()`'s `app.get("/")` handler (line 29): `} catch (err) {` → `} catch {` (`no-unused-vars` on caught errors; optional catch binding is valid TS for target ES6).
-- [ ] `packages/core/web-reporter-ui/src/components/Charts/Chart.tsx` lines 20 and 27 (the `hideSeries`/`showSeries` try/catch): `} catch (e) {` → `} catch {`.
-- [ ] `packages/platforms/android/src/commands/getPidId.ts` line 9: `} catch (error) {` → `} catch {`.
-- [ ] `packages/platforms/android/src/commands/ScreenRecorder.ts` line 12: `} catch (error) {` → `} catch {`.
-- [ ] `packages/plugins/appium-helper/AppiumDriver.ts` `takeScreenshotOnFailure()` (lines 138-146): delete the two `eslint-disable-next-line` lines (138 and 140), add `// oxlint-disable-next-line no-unused-vars` directly above `async takeScreenshotOnFailure(`, and add `// oxlint-disable-next-line no-useless-catch` as the **last line inside the `try` block** (immediately above `} catch (error) {`). oxlint reports `no-useless-catch` on the `catch` line, not on `try`, and a trailing same-line comment would be moved by oxfmt. Result:
+- [x] `packages/core/reporter/src/reporting/fps.ts` — both `iterations.forEach` callbacks (lines 17 and 26): `value && averageFpsUsages.push(value);` → `if (value) averageFpsUsages.push(value);` (`no-unused-expressions`).
+- [x] `packages/core/reporter/src/reporting/ram.ts` line 16: `averageRamUsage && values.push(averageRamUsage);` → `if (averageRamUsage) values.push(averageRamUsage);`.
+- [x] `packages/commands/measure/src/server/ServerApp.tsx` in `createExpressApp()`'s `app.get("/")` handler (line 29): `} catch (err) {` → `} catch {` (`no-unused-vars` on caught errors; optional catch binding is valid TS for target ES6).
+- [x] `packages/core/web-reporter-ui/src/components/Charts/Chart.tsx` lines 20 and 27 (the `hideSeries`/`showSeries` try/catch): `} catch (e) {` → `} catch {`.
+- [x] `packages/platforms/android/src/commands/getPidId.ts` line 9: `} catch (error) {` → `} catch {`.
+- [x] `packages/platforms/android/src/commands/ScreenRecorder.ts` line 12: `} catch (error) {` → `} catch {`.
+- [x] `packages/plugins/appium-helper/AppiumDriver.ts` `takeScreenshotOnFailure()` (lines 138-146): delete the two `eslint-disable-next-line` lines (138 and 140), add `// oxlint-disable-next-line no-unused-vars` directly above `async takeScreenshotOnFailure(`, and add `// oxlint-disable-next-line no-useless-catch` as the **last line inside the `try` block** (immediately above `} catch (error) {`). oxlint reports `no-useless-catch` on the `catch` line, not on `try`, and a trailing same-line comment would be moved by oxfmt. Result:
   ```ts
   // oxlint-disable-next-line no-unused-vars
   async takeScreenshotOnFailure(command: () => Promise<void>, errorScreenshotName: string) {
@@ -345,32 +347,32 @@ medium — small edits in 17 files, with two exact-placement rules (comment posi
 
 #### 7. Replace the remaining `eslint-disable` comments
 **Changes**:
-- [ ] Delete these lines outright (the rule is either not active in oxlint or the code no longer triggers it — verified): `jest-setup.ts:1` (`/* eslint-disable import/no-extraneous-dependencies */`) and `:13`; `packages/platforms/ios-instruments/src/launchIOS.ts:4`; `packages/platforms/android/src/commands/__tests__/shell.test.ts:6,18`; `packages/core/web-reporter-ui/tailwind.config.js:1`; `packages/core/web-reporter-ui/src/sections/VideoSection.tsx:37`; `packages/core/web-reporter-ui/src/components/ThreadTable.tsx:68,81`; `packages/plugins/appium-helper/AppiumDriver.ts:30`; `packages/commands/test/src/utils/test/mockEmitMeasures.ts:7,11,15,19,28`; `packages/commands/measure/tailwind.config.js:1`; `packages/commands/measure/src/webapp/index.js:6,8`; `packages/commands/report/tailwind.config.js:1`; `packages/commands/report/src/index.js:6,8`; `packages/commands/report/src/App.tsx:9`. Keep every `// @ts-expect-error` line that followed them.
-- [ ] `packages/commands/measure/src/__tests__/utils/removeCLIColors.ts`: replace line 4's comment with `// oxlint-disable-next-line no-control-regex` (it must stay immediately above the `str?.replace(/\x1B…/g, "")` line).
-- [ ] `packages/commands/report/src/App.tsx`: the block must read `// @ts-expect-error` / `// oxlint-disable-next-line prefer-const` / `let testCaseResults: TestCaseResult[] =` (i.e. line 11 `// eslint-disable-next-line prefer-const` → `// oxlint-disable-next-line prefer-const`, line 9 deleted, `@ts-expect-error` kept directly above the disable line — TS still applies it to the `let`).
-- [ ] `packages/platforms/android/src/commands/platforms/UnixProfiler.ts` lines 236 and 242: `// eslint-disable-next-line @typescript-eslint/no-unused-vars` → `// oxlint-disable-next-line no-unused-vars` (above `public getScreenRecorder(` and `public async stopApp(`).
-- [ ] `AppiumDriver.ts` lines 138/140: done in step 6.
+- [x] Delete these lines outright (the rule is either not active in oxlint or the code no longer triggers it — verified): `jest-setup.ts:1` (`/* eslint-disable import/no-extraneous-dependencies */`) and `:13`; `packages/platforms/ios-instruments/src/launchIOS.ts:4`; `packages/platforms/android/src/commands/__tests__/shell.test.ts:6,18`; `packages/core/web-reporter-ui/tailwind.config.js:1`; `packages/core/web-reporter-ui/src/sections/VideoSection.tsx:37`; `packages/core/web-reporter-ui/src/components/ThreadTable.tsx:68,81`; `packages/plugins/appium-helper/AppiumDriver.ts:30`; `packages/commands/test/src/utils/test/mockEmitMeasures.ts:7,11,15,19,28`; `packages/commands/measure/tailwind.config.js:1`; `packages/commands/measure/src/webapp/index.js:6,8`; `packages/commands/report/tailwind.config.js:1`; `packages/commands/report/src/index.js:6,8`; `packages/commands/report/src/App.tsx:9`. Keep every `// @ts-expect-error` line that followed them.
+- [x] `packages/commands/measure/src/__tests__/utils/removeCLIColors.ts`: replace line 4's comment with `// oxlint-disable-next-line no-control-regex` (it must stay immediately above the `str?.replace(/\x1B…/g, "")` line).
+- [x] `packages/commands/report/src/App.tsx`: the block must read `// @ts-expect-error` / `// oxlint-disable-next-line prefer-const` / `let testCaseResults: TestCaseResult[] =` (i.e. line 11 `// eslint-disable-next-line prefer-const` → `// oxlint-disable-next-line prefer-const`, line 9 deleted, `@ts-expect-error` kept directly above the disable line — TS still applies it to the `let`).
+- [x] `packages/platforms/android/src/commands/platforms/UnixProfiler.ts` lines 236 and 242: `// eslint-disable-next-line @typescript-eslint/no-unused-vars` → `// oxlint-disable-next-line no-unused-vars` (above `public getScreenRecorder(` and `public async stopApp(`).
+- [x] `AppiumDriver.ts` lines 138/140: done in step 6.
 
 #### 8. Editor settings and contributor docs
 **Files**: `.vscode/settings.json`, `.vscode/extensions.json` (new), `CONTRIBUTING.md`
 **Changes**:
-- [ ] `.vscode/settings.json`: add `"editor.defaultFormatter": "oxc.oxc-vscode"` and `"editor.formatOnSave": true` next to the existing `files.associations`.
-- [ ] Create `.vscode/extensions.json`: `{ "recommendations": ["oxc.oxc-vscode"] }`.
-- [ ] `CONTRIBUTING.md` line 89 (inside the web-reporter code sample): delete `// eslint-disable-next-line @typescript-eslint/no-var-requires` so the sample is just the `// Uncomment with when locally testing` comment and the `testCaseResults = [require("../measures.json")];` line.
-- [ ] `CONTRIBUTING.md`: after the "Commit naming" section add a `## Linting and formatting` section: `bun run lint` / `bun run lint:fix` (oxlint, `correctness` category + the rules in `.oxlintrc.json`), `bun run format` / `bun run format:check` (oxfmt, Prettier-compatible output), `oxlint-disable-next-line <rule>` for one-off exceptions, and one sentence that `react/refs` and `react/set-state-in-effect` are intentionally off.
+- [x] `.vscode/settings.json`: add `"editor.defaultFormatter": "oxc.oxc-vscode"` and `"editor.formatOnSave": true` next to the existing `files.associations`.
+- [x] Create `.vscode/extensions.json`: `{ "recommendations": ["oxc.oxc-vscode"] }`.
+- [x] `CONTRIBUTING.md` line 89 (inside the web-reporter code sample): delete `// eslint-disable-next-line @typescript-eslint/no-var-requires` so the sample is just the `// Uncomment with when locally testing` comment and the `testCaseResults = [require("../measures.json")];` line.
+- [x] `CONTRIBUTING.md`: after the "Commit naming" section add a `## Linting and formatting` section: `bun run lint` / `bun run lint:fix` (oxlint, `correctness` category + the rules in `.oxlintrc.json`), `bun run format` / `bun run format:check` (oxfmt, Prettier-compatible output), `oxlint-disable-next-line <rule>` for one-off exceptions, and one sentence that `react/refs` and `react/set-state-in-effect` are intentionally off.
 
 #### 9. Format
-- [ ] Run `bun run format` (oxfmt over the repo) — expected to touch only the files edited in this phase.
+- [x] Run `bun run format` (oxfmt over the repo) — expected to touch only the files edited in this phase.
 
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `bun run lint` exits 0 with no diagnostics printed.
-- [ ] `bun run format:check` exits 0 (`All matched files use the correct format.`).
-- [ ] `bun run test` exits 0 (oxfmt check, full build, oxlint, complete Jest suite).
-- [ ] `grep -rn 'eslint-disable\|prettier-ignore' --exclude-dir=node_modules --exclude-dir=.git . | wc -l` → `0`; `grep -rn 'oxlint-disable' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.git . | wc -l` → `6`.
-- [ ] `git ls-files .eslintrc.js .prettierrc.json .prettierignore | wc -l` → `0`; `grep -c 'eslint\|prettier' package.json` → `0`.
-- [ ] `bunx lint-staged --help` exits 0 (lint-staged still resolves under bun).
+- [x] `bun run lint` exits 0 with no diagnostics printed.
+- [x] `bun run format:check` exits 0 (`All matched files use the correct format.`).
+- [x] `bun run test` exits 0 (oxfmt check, full build, oxlint, complete Jest suite).
+- [x] `grep -rn 'eslint-disable\|prettier-ignore' --exclude-dir=node_modules --exclude-dir=.git . | wc -l` → `0`; `grep -rn 'oxlint-disable' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.git . | wc -l` → `6`.
+- [x] `git ls-files .eslintrc.js .prettierrc.json .prettierignore | wc -l` → `0`; `grep -c 'eslint\|prettier' package.json` → `0`.
+- [x] `bunx lint-staged --help` exits 0 (lint-staged still resolves under bun).
 
 #### Manual Verification:
 - [ ] Stage a `.ts` file with a formatting error and run `git commit`; the husky hook formats it via oxfmt.
