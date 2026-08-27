@@ -400,9 +400,9 @@ medium — the download/unzip pipeline changes shape (zip → raw binary); the a
 #### 1. ffmpeg download
 **File**: `packages/core/shell/src/processVideoFile.ts`
 **Changes**:
-- [ ] Remove `import { unzip } from "./unzip";` (line 3). Keep `downloadFile`, `fs`, `spawn`.
-- [ ] Add `const FFMPEG_BINARY_PATH = `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`;` right after `FFMPEG_BINARY_FOLDER_PATH` (line 6).
-- [ ] Replace lines 24-38 (`FFMPEG_VERSION`, `archToExec`, `getFFMpegBinaryPath`) with:
+- [x] Remove `import { unzip } from "./unzip";` (line 3). Keep `downloadFile`, `fs`, `spawn`.
+- [x] Add `const FFMPEG_BINARY_PATH = `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`;` right after `FFMPEG_BINARY_FOLDER_PATH` (line 6).
+- [x] Replace lines 24-38 (`FFMPEG_VERSION`, `archToExec`, `getFFMpegBinaryPath`) with:
   ```ts
   // Static builds from https://github.com/eugeneware/ffmpeg-static (raw executables, no archive).
   // ffbinaries (used before) has no macOS arm64 build at any version, which forced Rosetta.
@@ -423,7 +423,7 @@ medium — the download/unzip pipeline changes shape (zip → raw binary); the a
     return `https://github.com/eugeneware/ffmpeg-static/releases/download/${FFMPEG_STATIC_RELEASE}/${asset}`;
   };
   ```
-- [ ] Replace `installFFMpeg` (lines 40-50) with:
+- [x] Replace `installFFMpeg` (lines 40-50) with:
   ```ts
   export const installFFMpeg = async () => {
     fs.mkdirSync(FFMPEG_BINARY_FOLDER_PATH, { recursive: true });
@@ -431,30 +431,32 @@ medium — the download/unzip pipeline changes shape (zip → raw binary); the a
     fs.chmodSync(FFMPEG_BINARY_PATH, 0o755);
   };
   ```
-- [ ] In `processVideoFile` (line 53-55) use `FFMPEG_BINARY_PATH` instead of the two inline `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg` template strings. Keep the `-vsync 0 … -loglevel error` command unchanged (ffmpeg 6.1 still accepts `-vsync`; the warning is silenced by `-loglevel error`).
-- [ ] `packages/core/shell/src/index.ts` keeps `export * from "./unzip";` (used by `checkResults`).
+- [x] In `processVideoFile` (line 53-55) use `FFMPEG_BINARY_PATH` instead of the two inline `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg` template strings. Keep the `-vsync 0 … -loglevel error` command unchanged (ffmpeg 6.1 still accepts `-vsync`; the warning is silenced by `-loglevel error`).
+- [x] `packages/core/shell/src/index.ts` keeps `export * from "./unzip";` (used by `checkResults`).
 
 #### 2. `checkResults` no longer downloads ffmpeg
 **File**: `packages/plugins/aws-device-farm/src/commands/checkResults.ts`
 **Changes**:
-- [ ] Line 6: `import { installFFMpeg, downloadFile, unzip } from "@perf-profiler/shell";` → `import { downloadFile, unzip } from "@perf-profiler/shell";`
-- [ ] Delete line 68 `await installFFMpeg();` (`processVideo` at lines 62-66 only copies the file).
+- [x] Line 6: `import { installFFMpeg, downloadFile, unzip } from "@perf-profiler/shell";` → `import { downloadFile, unzip } from "@perf-profiler/shell";`
+- [x] Delete line 68 `await installFFMpeg();` (`processVideo` at lines 62-66 only copies the file).
 
 #### 3. The Jest test that hit the network
 **File**: `packages/plugins/aws-device-farm/src/commands/__tests__/checkResults.ts`
 **Changes**:
-- [ ] Delete lines 11-12 (`// Downloading FFMpeg binary takes time` and `jest.setTimeout(30000);`).
-- [ ] Delete lines 29-30 (`// Actually download FFMpeg binary` and `jest.spyOn(axios, "get").mockImplementationOnce(jest.requireActual("axios").get);`). Everything else stays.
+- [x] Delete lines 11-12 (`// Downloading FFMpeg binary takes time` and `jest.setTimeout(30000);`).
+- [x] Delete lines 29-30 (`// Actually download FFMpeg binary` and `jest.spyOn(axios, "get").mockImplementationOnce(jest.requireActual("axios").get);`). Everything else stays.
 
 #### 4. Format
-- [ ] `bun run format`.
+- [x] `bun run format`.
 
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `bun run test` exits 0 (build, lint, Jest — `checkResults` now runs fully offline).
-- [ ] `grep -rn 'ffbinaries\|FFMPEG_VERSION' packages | wc -l` → `0`; `grep -n installFFMpeg packages/plugins/aws-device-farm/src/commands/checkResults.ts | wc -l` → `0`.
-- [ ] Real download on this arm64 Mac (needs network): `rm -rf /tmp/ffmpeg-binary && bun -e 'require("./packages/core/shell/dist/index.js").installFFMpeg().then(() => console.log("installed"))' && file /tmp/ffmpeg-binary/ffmpeg | grep -q 'arm64' && /tmp/ffmpeg-binary/ffmpeg -version | head -1` prints `installed` and an `ffmpeg version 6.1.1…` line, and `file` reports `Mach-O 64-bit executable arm64`.
+- [x] `bun run test` exits 0 (build, lint, Jest — `checkResults` now runs fully offline). Re-run by the orchestrator: `Test Suites: 18 passed, 18 total`, `Tests: 40 passed, 40 total`.
+- [x] `grep -rn 'ffbinaries\|FFMPEG_VERSION' packages | wc -l` → `0`; `grep -n installFFMpeg packages/plugins/aws-device-farm/src/commands/checkResults.ts | wc -l` → `0`.
+  > Deviation: the `ffbinaries` grep is not literally `0` — it's `1`, matching the explanatory code comment this phase's own snippet specifies verbatim (`// ffbinaries (used before) has no macOS arm64 build...`). No functional ffbinaries code or `FFMPEG_VERSION` symbol remains; confirmed by the orchestrator. The check as originally worded is a minor self-inconsistency in the plan (the exact comment text it specifies trips its own grep), not a real gap.
+- [x] Real download on this arm64 Mac (needs network): `rm -rf /tmp/ffmpeg-binary && bun -e 'require("./packages/core/shell/dist/index.js").installFFMpeg().then(() => console.log("installed"))' && file /tmp/ffmpeg-binary/ffmpeg | grep -q 'arm64' && /tmp/ffmpeg-binary/ffmpeg -version | head -1` prints `installed` and an `ffmpeg version 6.1.1…` line, and `file` reports `Mach-O 64-bit executable arm64`.
+  > Deviation: the downloaded binary reports `ffmpeg version 6.0` (not `6.1.1`) — the `b6.1.1` tag versions `ffmpeg-static`'s own release/packaging, not the embedded ffmpeg build. Native arm64 Mach-O confirmed, no Rosetta, no zip/unzip involved; functionally correct.
 
 #### Manual Verification:
 - [ ] `bun packages/commands/tools/dist/bin.js tools video_fix_metadata <some.mp4>` re-encodes the file using `/tmp/ffmpeg-binary/ffmpeg` without Rosetta (`ps`/Activity Monitor shows no "Intel" process).
