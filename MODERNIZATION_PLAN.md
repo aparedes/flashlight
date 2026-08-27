@@ -69,10 +69,15 @@ So realistically: config edits + ~10 files of hand fixes.
 
 ## Phase 3 — Parcel → Vite + React Compiler
 
-The React Compiler ships as a Babel plugin (`babel-plugin-react-compiler@1.0.0`), so the bundler must run Babel on JSX. Bun's bundler can't do that today; **Vite 8 + `@vitejs/plugin-react`** is the pragmatic replacement for Parcel (same HTML-entry model, so the swap is local to the two web packages):
+**Vite 8 + `@vitejs/plugin-react`** replaces Parcel (same HTML-entry model, so the swap is local to the two web packages). For the compiler itself we go fully Babel-free: `@vitejs/plugin-react` 6.1 supports oxc's native Rust port of the React Compiler via [`oxc-transform-react`](https://oxc.rs/docs/guide/usage/transformer/react-compiler.html) (optional peer dep):
 
 ```ts
-react({ babel: { plugins: [["babel-plugin-react-compiler", {}]] } });
+// vite.config.ts — no Babel anywhere in the pipeline
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react({ compiler: true })],
+});
 ```
 
 - `packages/commands/report`: add `vite.config.ts` + **`vite-plugin-singlefile`**. The report is exactly the single-file use case — this inlines JS+CSS into one `index.html`, which lets `writeReport.ts` drop the script-tag regex/`report.js` juggling and become a single placeholder replacement in the HTML. (Alternative: keep separate assets and teach `writeReport` to copy CSS too — more code, no benefit.)
@@ -82,15 +87,17 @@ react({ babel: { plugins: [["babel-plugin-react-compiler", {}]] } });
 - Remove: `parcel` (×2), the `process` polyfill dep in web-reporter-ui (Parcel-era artifact; Vite `define` covers any residual `process.env`), `rm -rf .parcel-cache` in the root build script.
 - Compiler guardrail: `react/rules-of-hooks` is already `error` in oxlint, which is the main precondition the compiler cares about. Verify compiler output by checking for `react/compiler-runtime`/memo cache calls in the bundle.
 
-### Why Babel (and not oxc-transform) — and how to keep it disposable
+### oxc React Compiler (no Babel) — and the fallback if it misbehaves
 
-The React Compiler exists only as `babel-plugin-react-compiler`; there is no oxc or SWC implementation (`oxc-transform` does fixed transforms and has no plugin system, so it cannot host the compiler; Next.js's "SWC support" is SWC pre-filtering files and still invoking the Babel plugin). Dropping Babel would mean dropping the compiler.
+Oxc ships an experimental Rust port of the React Compiler as `oxc-transform-react` (React Compiler → TS removal → automatic JSX → Fast Refresh, all in one native pass), and `@vitejs/plugin-react` 6.1 wires it up behind the `compiler` option. So with Vite 8 (rolldown-based, oxc for TS/JSX/minification) the entire toolchain is Babel-free — the primary plan.
 
-The footprint is minimal by construction:
+Caveats and mitigations:
 
-- CLI/node packages never touch Babel — they compile with `tsc`.
-- Inside Vite 8 (rolldown-based), oxc handles TS/JSX/minification; Babel is a thin per-file pass running only the compiler plugin, scoped via the plugin's include filter to JSX under `web-reporter-ui` and the two webapps.
-- Keep it deliberately disposable: no `.babelrc`, no presets, no other Babel plugins — config lives only in the two `vite.config.ts` files, so a future native React Compiler implementation (oxc or SWC) is a one-line swap.
+- Both oxc's compiler port and the plugin option are **flagged experimental** ("review generated output before production"). This repo is a good fit anyway: small React surface, DOM test suites, and reports that are easy to verify visually. Recoverable compiler bail-outs surface as warnings while still producing code.
+- Verification gate (per webapp, once at enablement): `bun run test:unit:dom` green, compiler memo-cache calls present in the bundle (`react/compiler-runtime`), and a reference report renders identically.
+- **Fallback is a config-level swap, not an architecture change**: the same plugin exports `reactCompilerPreset` for the Babel path (`@rolldown/plugin-babel` + `babel-plugin-react-compiler` + `@babel/core`). If the oxc port miscompiles something, switch that one `vite.config.ts` to the Babel preset and file the repro upstream.
+- Compiler options pass straight through if needed, e.g. `react({ compiler: { compilationMode: "annotation" } })` to opt in per-component instead of `infer`.
+- The CLI/node packages never touch any of this — they compile with `tsc`.
 
 ## Phase 4 — React 19 + UI ecosystem
 
