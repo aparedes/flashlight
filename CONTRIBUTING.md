@@ -156,3 +156,46 @@ testCaseResults = [require("../measures.json")];
 You should now be able to open [the local server](http://localhost:1234/)
 
 Run `bun run test:unit:dom --update-snapshots` after modifications.
+
+## Building the standalone macOS binary
+
+`bun run build:standalone` builds a self-contained `flashlight` executable for arm64 (Apple
+Silicon) into `build/standalone/flashlight-macos-arm64`. The binary is ad-hoc signed, which is
+fine for local use but will not pass Gatekeeper on another machine.
+
+```
+bun run build:standalone
+```
+
+To produce a distributable, properly signed binary, pass your signing identity (the
+`FLASHLIGHT_CODESIGN_IDENTITY` env var works as a fallback):
+
+```
+bun run build:standalone --sign "Developer ID Application: Your Name (TEAMID)"
+```
+
+To cross-compile for Intel Macs:
+
+```
+bun run build:standalone --target bun-darwin-x64
+```
+
+The resulting `build/standalone/flashlight-macos-x64` binary cannot be run on an arm64 Mac —
+that is expected.
+
+Other flags: `--skip-build` reuses the existing `dist/` output instead of re-running
+`bun run build`, and `--outfile <path>` overrides the output location.
+
+The executable embeds the 4 `cpp-profiler` binaries (one per Android ABI) and both web apps (the
+`report` web reporter and the `measure` live webapp). On the first run of a given version, they
+are extracted to `$TMPDIR/flashlight-<version>-assets` so that the regular folder-based lookups
+(and `adb push`) see real file paths.
+
+### Iterating without a full compile
+
+Compiling takes a while. To run the aggregated CLI straight from the workspace `dist/` output
+after a `bun run build`:
+
+```
+bun run flashlight -- <command>
+```

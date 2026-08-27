@@ -32,6 +32,20 @@
         "@perf-profiler/e2e": "^0.11.4",
       },
     },
+    "packages/commands/flashlight": {
+      "name": "@perf-profiler/flashlight",
+      "version": "0.18.0",
+      "bin": {
+        "flashlight": "dist/bin.js",
+      },
+      "dependencies": {
+        "@perf-profiler/e2e": "^0.11.4",
+        "@perf-profiler/measure": "^0.5.0",
+        "@perf-profiler/tools": "^0.2.4",
+        "@perf-profiler/web-reporter": "^0.11.3",
+        "commander": "^12.0.0",
+      },
+    },
     "packages/commands/measure": {
       "name": "@perf-profiler/measure",
       "version": "0.5.0",
@@ -647,6 +661,8 @@
     "@perf-profiler/aws-device-farm": ["@perf-profiler/aws-device-farm@workspace:packages/plugins/aws-device-farm"],
 
     "@perf-profiler/e2e": ["@perf-profiler/e2e@workspace:packages/commands/test"],
+
+    "@perf-profiler/flashlight": ["@perf-profiler/flashlight@workspace:packages/commands/flashlight"],
 
     "@perf-profiler/ios": ["@perf-profiler/ios@workspace:packages/platforms/ios"],
 

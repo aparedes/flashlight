@@ -13,7 +13,8 @@ import { ServerSocketConnectionApp } from "./ServerSocketConnectionApp";
 import { render, useInput } from "ink";
 import { profiler } from "@perf-profiler/profiler";
 
-const pathToDist = path.join(__dirname, "../../dist");
+const getPathToDist = () =>
+  process.env.FLASHLIGHT_WEBAPP_PATH || path.join(__dirname, "../../dist");
 
 export const createExpressApp = ({ port }: { port: number }) => {
   const app = express();
@@ -21,7 +22,7 @@ export const createExpressApp = ({ port }: { port: number }) => {
 
   app.get("/", async (_, res) => {
     try {
-      const indexHtml = path.join(pathToDist, "index.html");
+      const indexHtml = path.join(getPathToDist(), "index.html");
       let data = await fs.readFile(indexHtml, "utf8");
       data = data.replace("localhost:3000", `localhost:${port}`);
 
@@ -32,7 +33,7 @@ export const createExpressApp = ({ port }: { port: number }) => {
   });
 
   // Serve the webapp folder built by parcel
-  app.use(express.static(pathToDist));
+  app.use(express.static(getPathToDist()));
   return app;
 };
 

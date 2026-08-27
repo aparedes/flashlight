@@ -28,5 +28,13 @@
       }
     }
   ],
-  "ignorePatterns": ["dist", "node_modules", "cpp-profiler", "report.js", "coverage", "build"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "cpp-profiler",
+    "report.js",
+    "coverage",
+    "build",
+    "**/embedded.generated.ts"
+  ]
 }

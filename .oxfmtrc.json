@@ -12,6 +12,7 @@
     "report.js",
     "report.html",
     "results*.json",
-    "tasks"
+    "tasks",
+    "**/embedded.generated.ts"
   ]
 }

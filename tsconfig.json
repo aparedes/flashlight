@@ -28,6 +28,7 @@
     { "path": "./packages/plugins/appium-test-cases" },
     { "path": "./packages/plugins/aws-device-farm" },
     { "path": "./packages/commands/measure" },
+    { "path": "./packages/commands/flashlight" },
     { "path": "./examples/cli" },
     { "path": "./examples/e2e" }
   ],

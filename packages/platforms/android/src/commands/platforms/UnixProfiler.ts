@@ -24,7 +24,7 @@ export const CppProfilerName = `BAMPerfProfiler`;
 
 const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ? "/.." : ""}/cpp-profiler/bin`;
 // Allow overriding the binary folder with an environment variable
-const binaryFolder = process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;
+const getBinaryFolder = () => process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;
 
 export abstract class UnixProfiler implements Profiler {
   stop(): void {
@@ -88,11 +88,11 @@ export abstract class UnixProfiler implements Profiler {
     const abi = this.getAbi();
     Logger.info(`Installing C++ profiler for ${abi} architecture`);
 
-    const binaryPath = `${binaryFolder}/${CppProfilerName}-${abi}`;
+    const binaryPath = `${getBinaryFolder()}/${CppProfilerName}-${abi}`;
     const binaryTmpPath = `${os.tmpdir()}/flashlight-${CppProfilerName}-${abi}`;
 
-    // When running from standalone executable, we need to copy the binary to an actual file
-    fs.copyFileSync(binaryPath, binaryTmpPath);
+    // Copy to a real file first: when running from the standalone executable the source may be an embedded (virtual) path
+    fs.writeFileSync(binaryTmpPath, fs.readFileSync(binaryPath));
 
     this.pushExecutable(binaryTmpPath);
     Logger.success(`C++ Profiler installed in ${this.getDeviceProfilerPath()}`);

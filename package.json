@@ -27,6 +27,8 @@
     "test:unit:dom": "bun test --preload ./test-setup/dom.tsx packages/commands/measure/src/__tests__/webapp && bun test --preload ./test-setup/dom.tsx packages/core/web-reporter-ui/__tests__ packages/commands/measure/src/__tests__/measure.test.tsx packages/commands/measure/src/__tests__/server",
     "test:coverage": "bun run test:unit:node --coverage && bun run test:unit:dom --coverage",
     "run-cli-example": "bun examples/cli/index.ts",
+    "flashlight": "bun packages/commands/flashlight/dist/bin.js",
+    "build:standalone": "bun scripts/build-standalone.ts",
     "build": "rm -rf .parcel-cache && bun run clean-dist && tsc --build && bun run --filter @perf-profiler/web-reporter build && bun run --filter @perf-profiler/measure build",
     "test:e2e": "mkdir -p report && bun packages/plugins/aws-device-farm/dist/bin.js runTest --apkPath .github/workflows/example.apk --projectName 'Flashlight-Serverless' --reportDestinationPath report --testCommand 'npx ts-node examples/e2e/appium-ci.test.ts' --testFolder .",
     "prepare": "husky",

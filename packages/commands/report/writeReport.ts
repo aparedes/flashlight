@@ -68,6 +68,8 @@ export const getResultsFromPaths = (jsonPaths: string[]): TestCaseResult[] => {
   return getJsonPaths().map((path) => JSON.parse(fs.readFileSync(path, "utf8")));
 };
 
+const getAssetsDir = () => process.env.FLASHLIGHT_REPORT_ASSETS_PATH || __dirname;
+
 export const writeReport = ({
   jsonPaths,
   outputDir,
@@ -81,11 +83,11 @@ export const writeReport = ({
 }) => {
   const newJsFile = "report.js";
 
-  const oldHtmlContent = fs.readFileSync(`${__dirname}/index.html`, "utf8");
+  const oldHtmlContent = fs.readFileSync(`${getAssetsDir()}/index.html`, "utf8");
   const scriptName = oldHtmlContent.match(/src="(.*?)"/)?.[1];
 
   const newHtmlContent = fs
-    .readFileSync(`${__dirname}/index.html`, "utf8")
+    .readFileSync(`${getAssetsDir()}/index.html`, "utf8")
     .replace(`src="${scriptName}"`, `src="${newJsFile}"`)
     .replace('type="module"', "");
 
@@ -94,7 +96,7 @@ export const writeReport = ({
 
   const report = JSON.stringify(getMeasuresForTimeInterval({ results, skip, duration }));
 
-  const jsFileContent = fs.readFileSync(`${__dirname}/${scriptName}`, "utf8").replace(
+  const jsFileContent = fs.readFileSync(`${getAssetsDir()}/${scriptName}`, "utf8").replace(
     // See App.tsx for the reason why we do this
     '"THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT"',
     report
