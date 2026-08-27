@@ -9,14 +9,14 @@ import { render as cliRender } from "ink-testing-library";
 import React from "react";
 import { ServerApp } from "../server/ServerApp";
 import { open } from "@perf-profiler/shell";
+import * as shell from "@perf-profiler/shell";
 import { matchSnapshot } from "@perf-profiler/web-reporter-ui/utils/testUtils";
 import { removeCLIColors } from "./utils/removeCLIColors";
 import { LogLevel, Logger } from "@perf-profiler/logger";
 import { DEFAULT_PORT } from "../server/constants";
+import { describe, test, expect, beforeAll, afterAll, spyOn } from "bun:test";
 
-jest.mock("@perf-profiler/shell", () => ({
-  open: jest.fn(),
-}));
+spyOn(shell, "open").mockImplementation(() => undefined);
 
 Math.random = () => 0.5;
 

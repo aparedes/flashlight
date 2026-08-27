@@ -12,7 +12,7 @@
     "perf-profiler-commands": "./dist/src/commands.js"
   },
   "scripts": {
-    "test": "tsc && jest"
+    "test": "tsc"
   },
   "author": {
     "name": "Almouro",

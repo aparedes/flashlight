@@ -1,28 +1,26 @@
 import supertest from "supertest";
 import express from "express";
 import fs from "fs";
+import { describe, it, test, expect, beforeAll, beforeEach, afterAll, spyOn, mock } from "bun:test";
 
 import { createExpressApp } from "../../server/ServerApp";
-
-jest.mock("fs", () => ({
-  promises: {
-    readFile: jest.fn(),
-  },
-}));
 
 describe("ServerApp", () => {
   let app: express.Express;
 
   beforeAll(() => {
-    jest.spyOn(express, "static").mockImplementation(() => (req, res, next) => next());
+    spyOn(express, "static").mockImplementation(
+      (() => (_req: unknown, _res: unknown, next: () => void) =>
+        next()) as unknown as typeof express.static
+    );
   });
 
   const FLASHLIGHT_DATA_PLACEHOLDER =
     'window.__FLASHLIGHT_DATA__ = { socketServerUrl: "http://localhost:3000" };';
 
   beforeEach(() => {
-    (fs.promises.readFile as jest.Mock).mockResolvedValue(
-      `<html><script>${FLASHLIGHT_DATA_PLACEHOLDER}</script></html>`
+    spyOn(fs.promises, "readFile").mockResolvedValue(
+      `<html><script>${FLASHLIGHT_DATA_PLACEHOLDER}</script></html>` as never
     );
 
     app = createExpressApp({
@@ -42,8 +40,9 @@ describe("ServerApp", () => {
   });
 
   test("index.html contains the FlashlightData placeholder", async () => {
-    const fsPromises = jest.requireActual("fs").promises;
-    const fileContent = await fsPromises.readFile(`${__dirname}/../../webapp/index.html`, "utf8");
+    const fileContent = fs.readFileSync(`${__dirname}/../../webapp/index.html`, "utf8");
     expect(fileContent).toContain(FLASHLIGHT_DATA_PLACEHOLDER);
   });
 });
+
+afterAll(() => mock.restore());

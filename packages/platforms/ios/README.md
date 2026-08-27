@@ -15,4 +15,4 @@ brew install idb-companion
 ```
 
 You can get the real time measure by running:
-`PLATFORM=ios node packages/commands/measure/dist/server/bin.js measure`
+`PLATFORM=ios bun packages/commands/measure/dist/server/bin.js measure`

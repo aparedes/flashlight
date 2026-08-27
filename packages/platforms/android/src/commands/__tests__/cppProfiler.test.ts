@@ -1,3 +1,4 @@
+import { test, expect } from "bun:test";
 import { parseCppMeasure } from "../cppProfiler";
 
 test("parseCppMeasure", () => {

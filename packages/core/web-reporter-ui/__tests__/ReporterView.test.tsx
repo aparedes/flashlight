@@ -1,4 +1,5 @@
 import React from "react";
+import { describe, it, expect } from "bun:test";
 import { render, fireEvent, screen } from "@testing-library/react";
 import { IterationsReporterView } from "../ReporterView";
 import { TestCaseResult } from "@perf-profiler/types";
@@ -11,15 +12,13 @@ describe("<ReporterView />", () => {
       require("../../../commands/report/src/example-reports/results2.json"),
     ];
 
-    const { asFragment, baseElement } = render(
-      <IterationsReporterView results={testCaseResults} />
-    );
+    const { baseElement } = render(<IterationsReporterView results={testCaseResults} />);
     expect(screen.getAllByLabelText("Score")[0].textContent).toEqual("69");
 
     fireEvent.click(screen.getByText("Other threads"));
 
     expect(getText(baseElement)).toMatchSnapshot();
-    expect(asFragment()).toMatchSnapshot();
+    expect(baseElement.innerHTML).toMatchSnapshot();
 
     /**
      * TESTING iteration selection
@@ -36,7 +35,7 @@ describe("<ReporterView />", () => {
     expect(screen.getAllByLabelText("Score")[0].textContent).toEqual("65");
 
     expect(getText(baseElement)).toMatchSnapshot();
-    expect(asFragment()).toMatchSnapshot();
+    expect(baseElement.innerHTML).toMatchSnapshot();
     /**
      * =========================
      */
@@ -48,12 +47,10 @@ describe("<ReporterView />", () => {
       require("../../../commands/report/src/example-reports/video/results_c7d5d17d-42ed-4354-8b43-bb26e2d6feee.json"),
     ];
 
-    const { asFragment, baseElement } = render(
-      <IterationsReporterView results={testCaseResults} />
-    );
+    const { baseElement } = render(<IterationsReporterView results={testCaseResults} />);
     expect(screen.getAllByLabelText("Score")[0].textContent).toEqual("51");
 
     expect(getText(baseElement)).toMatchSnapshot();
-    expect(asFragment()).toMatchSnapshot();
+    expect(baseElement.innerHTML).toMatchSnapshot();
   });
 });

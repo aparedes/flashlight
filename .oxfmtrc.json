@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "trailingComma": "es5",
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "cpp-profiler",
+    "coverage",
+    "build",
+    "report.js",
+    "report.html",
+    "results*.json",
+    "tasks",
+    "**/embedded.generated.ts"
+  ]
+}

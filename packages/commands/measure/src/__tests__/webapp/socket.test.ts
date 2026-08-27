@@ -1,16 +1,8 @@
-import { io } from "socket.io-client";
+import * as actualSocketIoClient from "socket.io-client";
+import { describe, it, expect, beforeAll, afterAll, jest, mock } from "bun:test";
 
-jest.mock("socket.io-client", () => {
-  return {
-    ...jest.requireActual("socket.io-client"),
-    io: jest.fn().mockImplementation(() => {
-      return {
-        on: jest.fn(),
-        close: jest.fn(),
-      };
-    }),
-  };
-});
+const ioMock = jest.fn(() => ({ on: jest.fn(), close: jest.fn() }));
+mock.module("socket.io-client", () => ({ ...actualSocketIoClient, io: ioMock }));
 
 let originalWindow: Window & typeof globalThis;
 
@@ -28,10 +20,11 @@ describe("socket", () => {
   afterAll(() => {
     // Restore the original window object
     global.window = originalWindow;
+    mock.module("socket.io-client", () => actualSocketIoClient);
   });
 
   it("sets the expected socket server URL", async () => {
     await import("../../webapp/socket");
-    expect(io).toHaveBeenCalledWith("http://localhost:9999");
+    expect(ioMock).toHaveBeenCalledWith("http://localhost:9999");
   });
 });

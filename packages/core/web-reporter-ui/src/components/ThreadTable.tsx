@@ -65,7 +65,6 @@ export const ComparativeThreadTable = ({
       disablePadding: true,
       label: "Thread",
     },
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     ...results.map((result, i) => ({
       id: `${result.name}-${i}`,
@@ -78,7 +77,6 @@ export const ComparativeThreadTable = ({
   return (
     <Table
       headCells={headCells}
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       rows={rows}
       selected={selectedThreads}

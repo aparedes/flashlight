@@ -5,5 +5,7 @@
     ".env.staging": "ini",
     "index": "plaintext",
     "chrono": "cpp"
-  }
+  },
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true
 }

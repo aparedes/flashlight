@@ -14,12 +14,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - name: Use Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18.x"
+          bun-version-file: ".bun-version"
       - name: Install dependencies
-        run: yarn
+        run: bun install --frozen-lockfile
       - name: Run tests
         env:
           NETLIFY_DEPLOY_TOKEN: ${{ secrets.NETLIFY_DEPLOY_TOKEN }}
@@ -27,7 +27,7 @@ jobs:
         run: |
           ./.github/workflows/build-and-link.sh
           ./.github/workflows/ios_e2e.sh
-          npx @perf-profiler/web-reporter report report -o report
+          bun packages/commands/report/dist/openReport.js report report -o report
           ./.github/workflows/netlify-report.sh
       - name: Add PR Comment
         uses: marocchino/sticky-pull-request-comment@v2

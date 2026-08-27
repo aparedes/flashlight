@@ -1,43 +1,35 @@
 import os from "os";
 import fs from "fs";
+import * as perfHooks from "perf_hooks";
+import { describe, it, expect, jest, spyOn, mock, afterAll, setDefaultTimeout } from "bun:test";
 import { measurePerformance } from "..";
 import { PerformancePollingMock } from "../utils/test/PerformancePollingMock";
 import { Logger, LogLevel } from "@perf-profiler/logger";
+import { profiler } from "@perf-profiler/profiler";
 
 const mockPerformancePolling = new PerformancePollingMock();
 
-jest.mock("@perf-profiler/profiler", () => {
-  const mockedProfiler = jest.requireActual("@perf-profiler/profiler").profiler;
-
-  mockedProfiler.installProfilerOnDevice = jest.fn();
-  mockedProfiler.getPidId = jest.fn(() => 123);
-  mockedProfiler.pollPerformanceMeasures = jest.fn((pid, { onMeasure, onStartMeasuring }) => {
+spyOn(profiler, "installProfilerOnDevice").mockImplementation(() => undefined);
+spyOn(profiler, "pollPerformanceMeasures").mockImplementation(
+  (pid, { onMeasure, onStartMeasuring }) => {
     mockPerformancePolling.setCallback(onMeasure);
-    onStartMeasuring();
-  });
-
-  return {
-    ...jest.requireActual("@perf-profiler/profiler"),
-    profiler: mockedProfiler,
-  };
-});
+    onStartMeasuring?.();
+    return { stop: () => undefined };
+  }
+);
 
 Logger.setLogLevel(LogLevel.SILENT);
-
-jest.setTimeout(10000);
+setDefaultTimeout(10000);
 
 // Mock test time to be always 1000ms
-jest.mock("perf_hooks", () => {
-  let isStart = false;
-  return {
-    performance: {
-      now: () => {
-        isStart = !isStart;
-        return isStart ? 0 : 1000;
-      },
-    },
-  };
+let isStart = false;
+spyOn(perfHooks.performance, "now").mockImplementation(() => {
+  isStart = !isStart;
+  return isStart ? 0 : 1000;
 });
+
+afterAll(() => mock.restore());
+
 const runTest = jest.fn();
 
 describe("measurePerformance", () => {

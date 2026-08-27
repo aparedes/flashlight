@@ -4,4 +4,5 @@ node_modules
 .parcel-cache
 *.tsbuildinfo
 .cache
-.eslintcache
+/build/
+packages/commands/flashlight/src/embedded.generated.ts

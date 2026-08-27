@@ -1,7 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // TODO: refactor so that these functions are not in android
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { executeAsync, executeCommand } from "@perf-profiler/android/dist/src/commands/shell";
 import fs from "fs";
 import { writeReport } from "./writeReport";

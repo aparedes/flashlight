@@ -1,3 +1,4 @@
+import { test } from "bun:test";
 import { AppiumDriver } from "@bam.tech/appium-helper";
 import { TestCase, measurePerformance } from "@perf-profiler/e2e";
 

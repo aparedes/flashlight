@@ -1,5 +1,7 @@
 import { detectCurrentAppBundleId } from "../detectCurrentAppBundleId";
 import fs from "fs";
+import { describe, it, expect, afterAll, spyOn, mock } from "bun:test";
+import * as shell from "../shell";
 
 const sampleOutput = fs.readFileSync(`${__dirname}/dumpsys-window.txt`, "utf-8");
 
@@ -7,7 +9,7 @@ const sampleOutputWithoutDollars = `
 mSurface=Surface(name=com.example.staging/com.example.MainActivity)/@0x993d3ae
 mSurface=Surface(name=com.sec.android.app.launcher/com.sec.android.app.launcher.activities.LauncherActivity)/@0x469a915`;
 
-const executeCommandSpy = jest.spyOn(require("../shell"), "executeCommand");
+const executeCommandSpy = spyOn(shell, "executeCommand");
 
 describe("detectCurrentAppBundleId", () => {
   it("retrieves correctly bundle id and app activity when result match 'name=appId/appActivity$'", () => {
@@ -41,3 +43,5 @@ describe("detectCurrentAppBundleId", () => {
     expect(detectCurrentAppBundleId).toThrowError();
   });
 });
+
+afterAll(() => mock.restore());

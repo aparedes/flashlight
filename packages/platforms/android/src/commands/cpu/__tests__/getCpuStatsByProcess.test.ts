@@ -1,3 +1,4 @@
+import { describe, it, expect } from "bun:test";
 import { processOutput } from "../getCpuStatsByProcess";
 
 const SAMPLE_STATS = `27986 (OkHttp TaskRunn) S 480 480 0 0 -1 1077952576 6 0 0 0 50 20 40 0 20 0 53 0 233304293 1726836736 45377 18446744073709551615 1 1 0 0 0 0 4612 1 1073775864 0 0 0 -1 5 0 0 0 0 0 0 0 0 0 0 0 0 0

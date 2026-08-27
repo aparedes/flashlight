@@ -1,7 +1,7 @@
 import { PerformanceTester, PerformanceTesterOptions } from "./PerformanceTester";
 import { TestCase } from "./SingleIterationTester";
 
-export { TestCase };
+export type { TestCase };
 
 export const measurePerformance = async (
   bundleId: string,
