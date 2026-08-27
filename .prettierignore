@@ -1,8 +1,0 @@
-dist
-node_modules
-cpp-profiler
-coverage
-report.js
-report.html
-results*.json
-tasks

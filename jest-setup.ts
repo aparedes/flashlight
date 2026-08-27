@@ -1,4 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import { TextEncoder, TextDecoder } from "util";
 import "@perf-profiler/web-reporter-ui/mockApexChart";
 
@@ -10,6 +9,5 @@ Math.random = jest.fn(() => 0.5);
 // Needed to be able to test socket.io v>=4.7.0 in a jsdom environment
 // We use jsdom since we snapshot the webapp in the measure command while running the socket
 global.TextEncoder = TextEncoder;
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 global.TextDecoder = TextDecoder;

@@ -19,6 +19,17 @@ It should be like:
 
 Here are some examples https://www.conventionalcommits.org/en/v1.0.0-beta.4/#examples
 
+## Linting and formatting
+
+We use [oxlint](https://oxc.rs/docs/guide/usage/linter.html) for linting and [oxfmt](https://oxc.rs/docs/guide/usage/formatter.html) for formatting.
+
+- `bun run lint` / `bun run lint:fix` — run oxlint (the `correctness` category plus the extra rules configured in `.oxlintrc.json`), optionally auto-fixing what it can.
+- `bun run format` / `bun run format:check` — run oxfmt, which produces Prettier-compatible output, either rewriting files in place or just checking them.
+
+For a one-off exception, disable the specific rule on the next line with `// oxlint-disable-next-line <rule>` rather than disabling a whole file.
+
+Note that `react/refs` and `react/set-state-in-effect` are intentionally disabled in `.oxlintrc.json` — they are React-Compiler-era rules that ESLint never enforced in this codebase.
+
 ## Running `flashlight` commands locally
 
 Start by building the whole project:
@@ -86,7 +97,6 @@ Then in `packages/commands/report/src/App.tsx`, uncomment the lines to add your 
 
 ```ts
 // Uncomment with when locally testing
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 testCaseResults = [require("../measures.json")];
 ```
 

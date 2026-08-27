@@ -6,9 +6,8 @@ import {
   setThemeAtRandom,
 } from "@perf-profiler/web-reporter-ui";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-// eslint-disable-next-line prefer-const
+// oxlint-disable-next-line prefer-const
 let testCaseResults: TestCaseResult[] =
   // Use very long string so that Parcel won't use it more than once, would be nice to find a better solution
   "THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT";

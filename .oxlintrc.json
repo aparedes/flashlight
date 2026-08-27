@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "react", "import"],
+  "categories": { "correctness": "error" },
+  "env": { "node": true, "es2022": true },
+  "rules": {
+    "react/self-closing-comp": ["error", { "component": true, "html": true }],
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/refs": "off",
+    "react/set-state-in-effect": "off",
+    "no-unused-vars": "error",
+    "prefer-const": "error",
+    "typescript/no-explicit-any": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/__tests__/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/utils/test/**",
+        "test-setup/**"
+      ],
+      "rules": {
+        "typescript/no-require-imports": "off",
+        "typescript/no-var-requires": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["dist", "node_modules", "cpp-profiler", "report.js", "coverage", "build"]
+}

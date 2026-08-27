@@ -34,7 +34,6 @@ type VideoHandle = {
 };
 
 // TODO: fix the eslint error
-// eslint-disable-next-line react/display-name
 const Video = forwardRef<
   VideoHandle,
   {

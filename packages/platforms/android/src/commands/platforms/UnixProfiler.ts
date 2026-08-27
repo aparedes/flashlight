@@ -233,13 +233,13 @@ export abstract class UnixProfiler implements Profiler {
   };
 
   // Disabling the warning because the method isn't implemented
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // oxlint-disable-next-line no-unused-vars
   public getScreenRecorder(videoPath: string): ScreenRecorder | undefined {
     return undefined;
   }
 
   // Disabling the warning because the method isn't implemented
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // oxlint-disable-next-line no-unused-vars
   public async stopApp(bundleId: string) {
     throw new Error("Method not implemented.");
   }

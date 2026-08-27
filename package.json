@@ -21,39 +21,33 @@
   "scripts": {
     "clean-dist": "rm -rf packages/*/*/dist && rm -rf packages/*/*/tsconfig.tsbuildinfo",
     "watch": "tsc --build --watch",
-    "test": "prettier --check . && bun run build && eslint . --max-warnings 0 && jest",
+    "test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && jest",
     "test:coverage": "bun run clean-dist && jest --coverage",
-    "test:lint": "eslint . --ext .js,.ts,.tsx --cache",
     "run-cli-example": "bun examples/cli/index.ts",
     "build": "rm -rf .parcel-cache && bun run clean-dist && tsc --build && bun run --filter @perf-profiler/web-reporter build && bun run --filter @perf-profiler/measure build",
     "test:e2e": "mkdir -p report && bun packages/plugins/aws-device-farm/dist/bin.js runTest --apkPath .github/workflows/example.apk --projectName 'Flashlight-Serverless' --reportDestinationPath report --testCommand 'npx ts-node examples/e2e/appium-ci.test.ts' --testFolder .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint": "oxlint --max-warnings 0",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check"
   },
   "homepage": "https://github.com/bamlab/flashlight#readme",
   "devDependencies": {
     "@types/jest": "^29.2.3",
     "@types/lodash": "^4.17.0",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
-    "@typescript-eslint/parser": "^7.2.0",
-    "@typescript-eslint/utils": "^7.2.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "eslint-plugin-react": "^7.34.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-testing-library": "^6.2.0",
     "husky": "^9.0.11",
     "jest": "^29.3.1",
     "jest-environment-jsdom": "^29.3.1",
     "lint-staged": "15.2.10",
-    "prettier": "^3.2.5",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.80.0",
     "ts-jest": "^29.0.3",
     "typescript": "^5.4.2"
   },
   "lint-staged": {
-    "*.{ts,tsx}": "eslint --cache --fix",
-    "*.{ts,tsx,md,json}": "prettier --write"
+    "*.{js,ts,tsx}": "oxlint --fix",
+    "*": "oxfmt --no-error-on-unmatched-pattern"
   },
   "dependencies": {}
 }

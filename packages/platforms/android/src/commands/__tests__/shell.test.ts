@@ -3,7 +3,6 @@ import { executeLongRunningProcess } from "../shell";
 
 const mockSpawn = (): { stdout: EventEmitter } => {
   const mockProcess = new EventEmitter();
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
   mockProcess.stdout = new EventEmitter();
 
@@ -15,7 +14,6 @@ const mockSpawn = (): { stdout: EventEmitter } => {
     return mockProcess;
   });
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
   return mockProcess;
 };

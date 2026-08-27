@@ -27,7 +27,6 @@ const TEN_MINUTES = 600000;
 // Allow tests to take as much time as needed, in any case Bitrise will kill the test if it hangs
 const A_LOT_OF_TIME = 10 * TEN_MINUTES;
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 if (global.test) {
   jest.setTimeout(A_LOT_OF_TIME);
@@ -135,11 +134,11 @@ export class AppiumDriver {
     await element.waitForExist({ timeout: this.timeout, interval: 100 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // oxlint-disable-next-line no-unused-vars
   async takeScreenshotOnFailure(command: () => Promise<void>, errorScreenshotName: string) {
-    // eslint-disable-next-line no-useless-catch
     try {
       await command();
+      // oxlint-disable-next-line no-useless-catch
     } catch (error) {
       // await this.takeScreenShot(`ERROR_${errorScreenshotName}`);
       throw error;
