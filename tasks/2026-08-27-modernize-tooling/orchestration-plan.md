@@ -486,28 +486,33 @@ high — every rule below was verified, but the runner's shared module cache mea
 #### 1. Dependencies and scripts
 **File**: `package.json` (root)
 **Changes**:
-- [ ] `bun remove @types/jest jest jest-environment-jsdom ts-jest`
-- [ ] `bun add -d @types/bun @happy-dom/global-registrator` (expected `@types/bun@1.4.x`, `@happy-dom/global-registrator@20.x`).
-- [ ] Scripts: replace `"test"` with `"test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && bun run test:unit"`; replace `"test:coverage"` with `"test:coverage": "bun run test:unit:node --coverage && bun run test:unit:dom --coverage"`; add
+- [x] `bun remove @types/jest jest jest-environment-jsdom ts-jest`
+- [x] `bun add -d @types/bun @happy-dom/global-registrator` (expected `@types/bun@1.4.x`, `@happy-dom/global-registrator@20.x`).
+- [x] Scripts: replace `"test"` with `"test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && bun run test:unit"`; replace `"test:coverage"` with `"test:coverage": "bun run test:unit:node --coverage && bun run test:unit:dom --coverage"`; add
   ```json
   "test:unit": "bun run test:unit:node && bun run test:unit:dom",
   "test:unit:node": "bun test --preload ./test-setup/node.ts packages/platforms/android packages/plugins/aws-device-farm packages/commands/test packages/core/reporter packages/commands/report",
   "test:unit:dom": "bun test --preload ./test-setup/dom.tsx packages/core/web-reporter-ui packages/commands/measure/src/__tests__/measure.test.tsx packages/commands/measure/src/__tests__/server && bun test --preload ./test-setup/dom.tsx packages/commands/measure/src/__tests__/webapp"
   ```
   (`socket.test.ts` gets its own invocation because it `mock.module`s `socket.io-client` and evaluates `webapp/socket.ts` with the mock; in a shared module cache that would poison `measure.test.tsx`.)
-- [ ] `packages/platforms/android/package.json` line 15: `"test": "tsc && jest"` → `"test": "tsc"`.
+  > Deviation: two corrections were needed to the exact scripts above (verified end-to-end):
+  > (1) the bare package-directory paths (e.g. `packages/platforms/android`) also matched the *compiled* `dist/**/*.test.js` copies under bun's substring path matching — `bunfig.toml`'s `coveragePathIgnorePatterns` does not filter which tests run, only coverage reporting — so every path was narrowed to its `src`/`__tests__` subdirectory (e.g. `packages/platforms/android/src`, `packages/commands/report/__tests__`) to exclude `dist`.
+  > (2) the two `test:unit:dom` invocations are swapped in order (socket group first, snapshot-bearing group last) — `bun run <script> --update-snapshots` appends the flag only to the *last* `&&`-chained command in an npm/bun script string, verified directly (`bun run test:unit:dom --dry-run` showed the flag landing only on the second command); with the original order the flag would silently apply to the wrong (socket) invocation and never update the snapshot-bearing one. Final scripts:
+  > `"test:unit:node": "bun test --preload ./test-setup/node.ts packages/platforms/android/src packages/plugins/aws-device-farm/src packages/commands/test/src packages/core/reporter/src packages/commands/report/__tests__"`
+  > `"test:unit:dom": "bun test --preload ./test-setup/dom.tsx packages/commands/measure/src/__tests__/webapp && bun test --preload ./test-setup/dom.tsx packages/core/web-reporter-ui/__tests__ packages/commands/measure/src/__tests__/measure.test.tsx packages/commands/measure/src/__tests__/server"`
+- [x] `packages/platforms/android/package.json` line 15: `"test": "tsc && jest"` → `"test": "tsc"`.
 
 #### 2. Runner config and preloads
 **Files**: `bunfig.toml` (new), `test-setup/node.ts` (new), `test-setup/dom.tsx` (new), `jest.config.js` (delete), `jest-setup.ts` (delete), `packages/core/web-reporter-ui/mockApexChart.tsx` (delete), `examples/e2e/jest.config.js` (delete)
 **Changes**:
-- [ ] `git rm jest.config.js jest-setup.ts packages/core/web-reporter-ui/mockApexChart.tsx examples/e2e/jest.config.js`.
-- [ ] Create `bunfig.toml`:
+- [x] `git rm jest.config.js jest-setup.ts packages/core/web-reporter-ui/mockApexChart.tsx examples/e2e/jest.config.js`.
+- [x] Create `bunfig.toml`:
   ```toml
   [test]
   coverageSkipTestFiles = true
   coveragePathIgnorePatterns = ["**/node_modules/**", "**/dist/**", "**/cpp-profiler/**", "**/__tests__/**", "test-setup/**"]
   ```
-- [ ] Create `test-setup/node.ts` (replaces `jest-setup.ts`; the TextEncoder polyfill is unnecessary under bun/happy-dom):
+- [x] Create `test-setup/node.ts` (replaces `jest-setup.ts`; the TextEncoder polyfill is unnecessary under bun/happy-dom):
   ```ts
   import { jest } from "bun:test";
 
@@ -517,7 +522,7 @@ high — every rule below was verified, but the runner's shared module cache mea
   // Deterministic theme (packages/core/web-reporter-ui/src/theme/colors.ts picks a palette with Math.random)
   Math.random = jest.fn(() => 0.5);
   ```
-- [ ] Create `test-setup/dom.tsx` (replaces the jsdom environment + `mockApexChart.tsx`; `GlobalRegistrator.register()` must run before anything touches `document`, and `@testing-library/react` must be imported lazily because its `screen` binds to `document.body` at import time):
+- [x] Create `test-setup/dom.tsx` (replaces the jsdom environment + `mockApexChart.tsx`; `GlobalRegistrator.register()` must run before anything touches `document`, and `@testing-library/react` must be imported lazily because its `screen` binds to `document.body` at import time):
   ```tsx
   import { GlobalRegistrator } from "@happy-dom/global-registrator";
   import { afterEach, jest, mock } from "bun:test";
@@ -547,13 +552,15 @@ high — every rule below was verified, but the runner's shared module cache mea
     cleanup();
   });
   ```
+  > Deviation: the lazy `await import(...)` inside `afterEach` doesn't work as written — `@testing-library/react` calls `beforeAll` at its own module scope, and bun rejects calling `beforeAll()` from inside a running hook. Fixed with a top-level `require("@testing-library/react")` placed *after* `GlobalRegistrator.register()` (preserving "evaluated after happy-dom is registered," which a hoisted static `import` would break, while still running at preload time rather than inside a hook):
+  > `const { cleanup } = require("@testing-library/react") as typeof import("@testing-library/react");` — then `afterEach(() => { cleanup(); });`.
 
 #### 3. TypeScript config
 **Files**: `tsconfig.json`, `tsconfig.module.json`
 **Changes**:
-- [ ] `tsconfig.json` (root) `compilerOptions`: add `"useDefineForClassFields": false` (bun reads this file for `bun test` run from the root; it makes bun assign constructor parameter properties before field initializers, matching tsc's ES6 output — required by `PerformanceMeasurer.ts:27` and `SingleIterationTester.ts:39-48`).
-- [ ] `tsconfig.module.json` `compilerOptions`: add `"isolatedModules": true` and `"useDefineForClassFields": false`.
-- [ ] Fix the 8 statements `tsc --isolatedModules` reports (TS1205, "Re-exporting a type … requires using 'export type'"):
+- [x] `tsconfig.json` (root) `compilerOptions`: add `"useDefineForClassFields": false` (bun reads this file for `bun test` run from the root; it makes bun assign constructor parameter properties before field initializers, matching tsc's ES6 output — required by `PerformanceMeasurer.ts:27` and `SingleIterationTester.ts:39-48`).
+- [x] `tsconfig.module.json` `compilerOptions`: add `"isolatedModules": true` and `"useDefineForClassFields": false`.
+- [x] Fix the 8 statements `tsc --isolatedModules` reports (TS1205, "Re-exporting a type … requires using 'export type'"):
   - `packages/commands/test/src/index.ts:1` `export { TestCase, measurePerformance } from "./measurePerformance";` → `export type { TestCase } from "./measurePerformance";` + `export { measurePerformance } from "./measurePerformance";`
   - `packages/commands/test/src/measurePerformance.ts:4` `export { TestCase };` → `export type { TestCase };`
   - `packages/core/web-reporter-ui/index.tsx:2` → `export type { MenuOption } from "./src/components/Header";`; `:7` → `export type { ApexOptions } from "apexcharts";`
@@ -563,12 +570,12 @@ high — every rule below was verified, but the runner's shared module cache mea
 
 #### 4. File renames (bun only discovers `.test.`/`.spec.` names)
 **Changes** (use `git mv`):
-- [ ] `packages/commands/test/src/__tests__/writeResults.ts` → `writeResults.test.ts`
-- [ ] `packages/platforms/android/src/commands/atrace/__tests__/pollFpsUsage.ts` → `pollFpsUsage.test.ts`
-- [ ] `packages/platforms/android/src/commands/gfxInfo/__tests__/GfxInfoParser.ts` → `GfxInfoParser.test.ts`
-- [ ] `packages/plugins/aws-device-farm/src/__tests__/createTestSpecFile.ts` → `createTestSpecFile.test.ts` **and** `packages/plugins/aws-device-farm/src/__tests__/__snapshots__/createTestSpecFile.ts.snap` → `createTestSpecFile.test.ts.snap`
-- [ ] `packages/plugins/aws-device-farm/src/commands/__tests__/checkResults.ts` → `checkResults.test.ts`
-- [ ] `packages/commands/measure/src/__tests__/utils/removeCLIColors.ts` stays (helper, not a test).
+- [x] `packages/commands/test/src/__tests__/writeResults.ts` → `writeResults.test.ts`
+- [x] `packages/platforms/android/src/commands/atrace/__tests__/pollFpsUsage.ts` → `pollFpsUsage.test.ts`
+- [x] `packages/platforms/android/src/commands/gfxInfo/__tests__/GfxInfoParser.ts` → `GfxInfoParser.test.ts`
+- [x] `packages/plugins/aws-device-farm/src/__tests__/createTestSpecFile.ts` → `createTestSpecFile.test.ts` **and** `packages/plugins/aws-device-farm/src/__tests__/__snapshots__/createTestSpecFile.ts.snap` → `createTestSpecFile.test.ts.snap`
+- [x] `packages/plugins/aws-device-farm/src/commands/__tests__/checkResults.ts` → `checkResults.test.ts`
+- [x] `packages/commands/measure/src/__tests__/utils/removeCLIColors.ts` stays (helper, not a test).
 
 #### 5. Test-file conversions
 General rules for every file under `__tests__/`, `utils/test/`, `test-setup/` and `examples/e2e/*.test.ts`:
@@ -578,8 +585,12 @@ General rules for every file under `__tests__/`, `utils/test/`, `test-setup/` an
 - Files that create spies at module level or in `beforeAll` and that do **not** import `mockChildProcess`/`mockEmitMeasures` end with `afterAll(() => mock.restore());` (bun shares one process across files). Files importing those two helpers must **not** call `mock.restore()` (it would strip the helpers' module-level spies, and each helper is imported by exactly one file per group).
 - Use targeted casts (`as unknown as typeof childProcess.spawn`, `as never`) where bun's stricter `Mock<T>` typings reject an implementation; `tsc --build` type-checks every test file.
 
+> Deviation: two production (non-test) source edits, not anticipated by this section, were required for `bun run build` to pass without `@types/jest`:
+> - `packages/plugins/appium-helper/AppiumDriver.ts` — deleted a dead `if (global.test) { jest.setTimeout(A_LOT_OF_TIME); }` block (production source referencing the Jest global directly, causing `TS2304: Cannot find name 'jest'`). Behaviourally a no-op under bun (which has no implicit `test` global); `TEN_MINUTES` is still used elsewhere and was kept.
+> - `packages/commands/test/src/utils/test/PerformancePollingMock.ts` — `emit` is typed `(measure: Partial<Measure>) => void` (casting to `Measure` internally: `this.cb?.(measure as Measure)`), not plain `Measure` as this item's snippet says, because `measurePerformance.test.ts` calls `mockPerformancePolling.emit({})` and that test body was to stay unchanged. `cb`/`setCallback` remain typed `(measure: Measure) => void` as specified.
+
 Per file:
-- [ ] `packages/commands/test/src/utils/test/mockChildProcess.ts` (consumer is `@perf-profiler/android` **dist** via `@perf-profiler/profiler`): replace the `jest.mock("child_process", …)` factory by
+- [x] `packages/commands/test/src/utils/test/mockChildProcess.ts` (consumer is `@perf-profiler/android` **dist** via `@perf-profiler/profiler`): replace the `jest.mock("child_process", …)` factory by
   ```ts
   import * as childProcess from "child_process";
   import { spyOn } from "bun:test";
@@ -591,10 +602,10 @@ Per file:
   spyOn(require("child_process") as typeof childProcess, "execSync").mockImplementation(execSync);
   ```
   (`spawn` stays real — the old factory re-exported the actual `spawn`.)
-- [ ] `packages/commands/test/src/utils/test/mockEmitMeasures.ts`: `import * as childProcess from "child_process"; import { expect, jest, spyOn } from "bun:test";`; `mockProcess.kill = jest.fn()` stays; replace `jest.spyOn(require("child_process"), "spawn")` by `spyOn(require("child_process") as typeof childProcess, "spawn")` and cast each `.mockImplementationOnce((...args) => {…})` callback `as unknown as typeof childProcess.spawn` (assert on `[command, args]` explicitly: `(command: string, args: readonly string[]) => { expect([command, args]).toEqual([...]); return aTraceMock; }`).
-- [ ] `packages/commands/test/src/utils/test/PerformancePollingMock.ts`: `import { mock } from "bun:test"; import { Measure } from "@perf-profiler/types";` — type `cb`/`emit`/`setCallback` with `(measure: Measure) => void` and `setCallback = mock((cb: (measure: Measure) => void) => { this.cb = cb; });`.
-- [ ] `packages/commands/test/src/__tests__/PerformanceMeasurer.test.ts`: add `import { describe, it, expect, jest, spyOn } from "bun:test";`; `jest.spyOn(Logger, …)` → `spyOn(Logger, …)`. No `mock.restore()` (imports the helpers).
-- [ ] `packages/commands/test/src/__tests__/measurePerformance.test.ts`: replace lines 1-40 with
+- [x] `packages/commands/test/src/utils/test/mockEmitMeasures.ts`: `import * as childProcess from "child_process"; import { expect, jest, spyOn } from "bun:test";`; `mockProcess.kill = jest.fn()` stays; replace `jest.spyOn(require("child_process"), "spawn")` by `spyOn(require("child_process") as typeof childProcess, "spawn")` and cast each `.mockImplementationOnce((...args) => {…})` callback `as unknown as typeof childProcess.spawn` (assert on `[command, args]` explicitly: `(command: string, args: readonly string[]) => { expect([command, args]).toEqual([...]); return aTraceMock; }`).
+- [x] `packages/commands/test/src/utils/test/PerformancePollingMock.ts`: `import { mock } from "bun:test"; import { Measure } from "@perf-profiler/types";` — type `cb`/`emit`/`setCallback` with `(measure: Measure) => void` and `setCallback = mock((cb: (measure: Measure) => void) => { this.cb = cb; });`.
+- [x] `packages/commands/test/src/__tests__/PerformanceMeasurer.test.ts`: add `import { describe, it, expect, jest, spyOn } from "bun:test";`; `jest.spyOn(Logger, …)` → `spyOn(Logger, …)`. No `mock.restore()` (imports the helpers).
+- [x] `packages/commands/test/src/__tests__/measurePerformance.test.ts`: replace lines 1-40 with
   ```ts
   import os from "os";
   import fs from "fs";
@@ -627,17 +638,18 @@ Per file:
   afterAll(() => mock.restore());
   ```
   (the old `getPidId` mock targeted a method that exists on neither `Profiler` nor `AndroidProfiler` — dropped). Keep the rest of the file; `jest.fn()` for `runTest` stays.
-- [ ] `packages/commands/test/src/__tests__/writeResults.test.ts`: imports from `bun:test` (`describe, it, expect, jest, spyOn, mock, beforeAll, afterAll, afterEach, setSystemTime`); replace the `jest.mock("@perf-profiler/profiler", …)` factory with `import { profiler } from "@perf-profiler/profiler"; spyOn(profiler, "installProfilerOnDevice").mockImplementation(() => undefined);`; `mockDate` → `setSystemTime(new Date(1686650793058));`; `mockPerformanceTester` → `spyOn(PerformanceTester.PerformanceTester.prototype, "iterate").mockResolvedValue(undefined);` (no `requireActual`, no constructor spy); keep `const writeReportSpy = spyOn(writeReport, "writeReport");` (namespace import of same-package source); add `afterAll(() => { setSystemTime(); mock.restore(); });`. `it.each` stays.
-- [ ] `packages/plugins/aws-device-farm/src/commands/__tests__/checkResults.test.ts`: imports from `bun:test`; replace `jest.mock("axios", () => ({ get: jest.fn() }))` by `spyOn(axios, "get")` calls inside the test (already `mockResolvedValueOnce` there — keep, but drop the module factory); `jest.spyOn(testRepository, …)` → `spyOn(testRepository, …)`; add `afterAll(() => mock.restore())`.
-- [ ] `packages/plugins/aws-device-farm/src/__tests__/createTestSpecFile.test.ts`, `packages/core/reporter/src/reporting/__tests__/averageIterations.test.ts`, `packages/commands/report/__tests__/writeReport.test.ts`, `packages/platforms/android/src/commands/__tests__/cppProfiler.test.ts`, `packages/platforms/android/src/commands/cpu/__tests__/getCpuStatsByProcess.test.ts`, `packages/platforms/android/src/commands/atrace/__tests__/pollFpsUsage.test.ts`: add the `bun:test` import only.
-- [ ] `packages/platforms/android/src/commands/__tests__/detectCurrentAppBundleId.test.ts` and `detectCurrentDeviceRefreshRate.test.ts`: `import * as shell from "../shell"; const executeCommandSpy = spyOn(shell, "executeCommand");` (replaces `jest.spyOn(require("../shell"), …)`); `afterAll(() => mock.restore())`.
-- [ ] `packages/platforms/android/src/commands/gfxInfo/__tests__/GfxInfoParser.test.ts`: `import fs from "fs"; import * as shell from "../../shell"; spyOn(shell, "executeCommand").mockImplementation(() => fs.readFileSync(`${__dirname}/GfxInfoSample.txt`, "utf8"));` + `afterAll(() => mock.restore())`.
-- [ ] `packages/platforms/android/src/commands/__tests__/shell.test.ts`: `import * as childProcess from "child_process";` and `spyOn(childProcess, "spawn").mockImplementationOnce((… ) as unknown as typeof childProcess.spawn)` (same-package source consumer — verified); `afterAll(() => mock.restore())`.
-- [ ] `packages/core/web-reporter-ui/utils/testUtils.ts`: `import { expect } from "bun:test";` and `expect(wrapper.baseElement.innerHTML).toMatchSnapshot(`${name} - 2. FULL`);` (fragment snapshots hang bun's serializer).
-- [ ] `packages/core/web-reporter-ui/__tests__/ReporterView.test.tsx`: `bun:test` imports; the three `expect(asFragment()).toMatchSnapshot()` (lines 22, 39, 57) → `expect(baseElement.innerHTML).toMatchSnapshot()`; drop `asFragment` from the destructurings.
-- [ ] `packages/commands/measure/src/__tests__/measure.test.tsx`: add `import * as shell from "@perf-profiler/shell";` and `import { describe, test, expect, beforeAll, afterAll, jest, spyOn } from "bun:test";`; replace `jest.mock("@perf-profiler/shell", () => ({ open: jest.fn() }));` by `spyOn(shell, "open").mockImplementation(() => undefined);` (verified: passes with inline snapshots unchanged). No `mock.restore()`.
-- [ ] `packages/commands/measure/src/__tests__/server/ServerApp.test.ts`: `bun:test` imports; delete the `jest.mock("fs", …)` factory; in `beforeEach`: `spyOn(fs.promises, "readFile").mockResolvedValue(`<html>…</html>` as never);` (drop the `as jest.Mock` cast); `spyOn(express, "static")…` in `beforeAll`; the last test reads the placeholder file with `fs.readFileSync(`${__dirname}/../../webapp/index.html`, "utf8")` instead of `jest.requireActual`; `afterAll(() => mock.restore())`.
-- [ ] `packages/commands/measure/src/__tests__/webapp/socket.test.ts`: 
+- [x] `packages/commands/test/src/__tests__/writeResults.test.ts`: imports from `bun:test` (`describe, it, expect, jest, spyOn, mock, beforeAll, afterAll, afterEach, setSystemTime`); replace the `jest.mock("@perf-profiler/profiler", …)` factory with `import { profiler } from "@perf-profiler/profiler"; spyOn(profiler, "installProfilerOnDevice").mockImplementation(() => undefined);`; `mockDate` → `setSystemTime(new Date(1686650793058));`; `mockPerformanceTester` → `spyOn(PerformanceTester.PerformanceTester.prototype, "iterate").mockResolvedValue(undefined);` (no `requireActual`, no constructor spy); keep `const writeReportSpy = spyOn(writeReport, "writeReport");` (namespace import of same-package source); add `afterAll(() => { setSystemTime(); mock.restore(); });`. `it.each` stays.
+- [x] `packages/plugins/aws-device-farm/src/commands/__tests__/checkResults.test.ts`: imports from `bun:test`; replace `jest.mock("axios", () => ({ get: jest.fn() }))` by `spyOn(axios, "get")` calls inside the test (already `mockResolvedValueOnce` there — keep, but drop the module factory); `jest.spyOn(testRepository, …)` → `spyOn(testRepository, …)`; add `afterAll(() => mock.restore())`.
+  > Deviation: `spyOn(axios, "get")` (namespace-import spy) does not work here — `downloadFile` (called by `checkResults`) lives in `@perf-profiler/shell`'s compiled CJS `dist` output and holds a reference to axios's CommonJS module object, which is a different object from the ESM `import axios from "axios"` binding this test file would spy on. Fixed per the general "code reached through another package's dist" mocking rule instead: `spyOn(require("axios") as typeof axios, "get")`.
+- [x] `packages/plugins/aws-device-farm/src/__tests__/createTestSpecFile.test.ts`, `packages/core/reporter/src/reporting/__tests__/averageIterations.test.ts`, `packages/commands/report/__tests__/writeReport.test.ts`, `packages/platforms/android/src/commands/__tests__/cppProfiler.test.ts`, `packages/platforms/android/src/commands/cpu/__tests__/getCpuStatsByProcess.test.ts`, `packages/platforms/android/src/commands/atrace/__tests__/pollFpsUsage.test.ts`: add the `bun:test` import only.
+- [x] `packages/platforms/android/src/commands/__tests__/detectCurrentAppBundleId.test.ts` and `detectCurrentDeviceRefreshRate.test.ts`: `import * as shell from "../shell"; const executeCommandSpy = spyOn(shell, "executeCommand");` (replaces `jest.spyOn(require("../shell"), …)`); `afterAll(() => mock.restore())`.
+- [x] `packages/platforms/android/src/commands/gfxInfo/__tests__/GfxInfoParser.test.ts`: `import fs from "fs"; import * as shell from "../../shell"; spyOn(shell, "executeCommand").mockImplementation(() => fs.readFileSync(`${__dirname}/GfxInfoSample.txt`, "utf8"));` + `afterAll(() => mock.restore())`.
+- [x] `packages/platforms/android/src/commands/__tests__/shell.test.ts`: `import * as childProcess from "child_process";` and `spyOn(childProcess, "spawn").mockImplementationOnce((… ) as unknown as typeof childProcess.spawn)` (same-package source consumer — verified); `afterAll(() => mock.restore())`.
+- [x] `packages/core/web-reporter-ui/utils/testUtils.ts`: `import { expect } from "bun:test";` and `expect(wrapper.baseElement.innerHTML).toMatchSnapshot(`${name} - 2. FULL`);` (fragment snapshots hang bun's serializer).
+- [x] `packages/core/web-reporter-ui/__tests__/ReporterView.test.tsx`: `bun:test` imports; the three `expect(asFragment()).toMatchSnapshot()` (lines 22, 39, 57) → `expect(baseElement.innerHTML).toMatchSnapshot()`; drop `asFragment` from the destructurings.
+- [x] `packages/commands/measure/src/__tests__/measure.test.tsx`: add `import * as shell from "@perf-profiler/shell";` and `import { describe, test, expect, beforeAll, afterAll, jest, spyOn } from "bun:test";`; replace `jest.mock("@perf-profiler/shell", () => ({ open: jest.fn() }));` by `spyOn(shell, "open").mockImplementation(() => undefined);` (verified: passes with inline snapshots unchanged). No `mock.restore()`.
+- [x] `packages/commands/measure/src/__tests__/server/ServerApp.test.ts`: `bun:test` imports; delete the `jest.mock("fs", …)` factory; in `beforeEach`: `spyOn(fs.promises, "readFile").mockResolvedValue(`<html>…</html>` as never);` (drop the `as jest.Mock` cast); `spyOn(express, "static")…` in `beforeAll`; the last test reads the placeholder file with `fs.readFileSync(`${__dirname}/../../webapp/index.html`, "utf8")` instead of `jest.requireActual`; `afterAll(() => mock.restore())`.
+- [x] `packages/commands/measure/src/__tests__/webapp/socket.test.ts`: 
   ```ts
   import * as actualSocketIoClient from "socket.io-client";
   import { describe, it, expect, beforeAll, afterAll, jest, mock } from "bun:test";
@@ -646,31 +658,32 @@ Per file:
   mock.module("socket.io-client", () => ({ ...actualSocketIoClient, io: ioMock }));
   ```
   keep the window setup; `expect(ioMock).toHaveBeenCalledWith("http://localhost:9999")`; in `afterAll` also `mock.module("socket.io-client", () => actualSocketIoClient);`.
-- [ ] `examples/e2e/appium.test.ts`: add `import { test } from "bun:test";` (it uses `test.skip`). `examples/e2e/appium-ci.test.ts` needs nothing.
+- [x] `examples/e2e/appium.test.ts`: add `import { test } from "bun:test";` (it uses `test.skip`). `examples/e2e/appium-ci.test.ts` needs nothing.
 
 #### 6. Snapshots
-- [ ] Run `bun run test:unit:node` — must pass **without** `--update-snapshots` (`createTestSpecFile.test.ts.snap`, `PerformanceMeasurer.test.ts.snap` are Jest-format and read as-is).
-- [ ] Run `bun run test:unit:dom --update-snapshots` once (needed because the FULL snapshots change from fragment serialization to `innerHTML`). Then diff `packages/core/web-reporter-ui/__tests__/__snapshots__/ReporterView.test.tsx.snap` and `packages/commands/measure/src/__tests__/__snapshots__/measure.test.tsx.snap` against `git show HEAD:<path>`: every `… - 1. TEXT` / `getText` snapshot body must be identical (only the header line and the `FULL` bodies change). If a TEXT body differs, the DOM setup is wrong — fix it rather than accepting the snapshot.
-- [ ] Run `bun run test:unit:dom` again without `-u` — green.
+- [x] Run `bun run test:unit:node` — must pass **without** `--update-snapshots` (`createTestSpecFile.test.ts.snap`, `PerformanceMeasurer.test.ts.snap` are Jest-format and read as-is).
+- [x] Run `bun run test:unit:dom --update-snapshots` once (needed because the FULL snapshots change from fragment serialization to `innerHTML`). Then diff `packages/core/web-reporter-ui/__tests__/__snapshots__/ReporterView.test.tsx.snap` and `packages/commands/measure/src/__tests__/__snapshots__/measure.test.tsx.snap` against `git show HEAD:<path>`: every `… - 1. TEXT` / `getText` snapshot body must be identical (only the header line and the `FULL` bodies change). If a TEXT body differs, the DOM setup is wrong — fix it rather than accepting the snapshot.
+- [x] Run `bun run test:unit:dom` again without `-u` — green.
 
 #### 7. Docs
 **File**: `CONTRIBUTING.md`
 **Changes**:
-- [ ] Line "Run `bunx jest Plugin -u` after modifications." → "Run `bun run test:unit:dom --update-snapshots` after modifications." Add a `## Tests` section: `bun run test:unit` (both groups), `bun run test:unit:node` / `bun run test:unit:dom`, that test files must import from `bun:test`, and the two mocking rules (namespace `spyOn` for same-package source, `spyOn(require(...))` for code behind another package's `dist`).
+- [x] Line "Run `bunx jest Plugin -u` after modifications." → "Run `bun run test:unit:dom --update-snapshots` after modifications." Add a `## Tests` section: `bun run test:unit` (both groups), `bun run test:unit:node` / `bun run test:unit:dom`, that test files must import from `bun:test`, and the two mocking rules (namespace `spyOn` for same-package source, `spyOn(require(...))` for code behind another package's `dist`).
 
 #### 8. Lint/format
-- [ ] `bun run format && bun run lint` (the `test-setup/**` and `utils/test/**` overrides allow `require`).
+- [x] `bun run format && bun run lint` (the `test-setup/**` and `utils/test/**` overrides allow `require`).
 
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `bun run build` exits 0 (tsc with `isolatedModules`, `@types/bun`, no `@types/jest`).
-- [ ] `bun run test:unit` exits 0; the node run reports `0 fail` across 14 files and the two DOM runs `0 fail` across 3 + 1 files (18 files total).
-- [ ] `bun run test` exits 0 (full pipeline, no Jest).
-- [ ] `grep -c 'jest\|ts-jest' package.json` → `0` (no Jest packages); `git ls-files | grep -E 'jest.config|jest-setup|mockApexChart' | wc -l` → `0`; `git ls-files | grep -E '__tests__/.*\.(ts|tsx)$' | grep -v -e '\.test\.' -e 'removeCLIColors' | wc -l` → `0`.
-- [ ] `grep -rln 'jest.mock(\|jest.requireActual\|jest.setTimeout' packages examples --include='*.ts' --include='*.tsx' | wc -l` → `0`.
-- [ ] For each `.snap` under `packages/`: `grep -c '1. TEXT' <snap>` unchanged vs `HEAD`, and `diff <(git show HEAD:<snap> | sed -n '/1. TEXT/,/^`;$/p') <(sed -n '/1. TEXT/,/^`;$/p' <snap>)` is empty for the two DOM snapshot files.
-- [ ] `bun run lint && bun run format:check` exit 0.
+- [x] `bun run build` exits 0 (tsc with `isolatedModules`, `@types/bun`, no `@types/jest`).
+- [x] `bun run test:unit` exits 0; the node run reports `0 fail` across 14 files and the two DOM runs `0 fail` across 3 + 1 files (18 files total).
+- [x] `bun run test` exits 0 (full pipeline, no Jest).
+- [x] `grep -c 'jest\|ts-jest' package.json` → `0` (no Jest packages); `git ls-files | grep -E 'jest.config|jest-setup|mockApexChart' | wc -l` → `0`; `git ls-files | grep -E '__tests__/.*\.(ts|tsx)$' | grep -v -e '\.test\.' -e 'removeCLIColors' | wc -l` → `0`.
+- [x] `grep -rln 'jest.mock(\|jest.requireActual\|jest.setTimeout' packages examples --include='*.ts' --include='*.tsx' | wc -l` → `0`.
+- [x] For each `.snap` under `packages/`: `grep -c '1. TEXT' <snap>` unchanged vs `HEAD`, and `diff <(git show HEAD:<snap> | sed -n '/1. TEXT/,/^`;$/p') <(sed -n '/1. TEXT/,/^`;$/p' <snap>)` is empty for the two DOM snapshot files.
+  > Deviation: the `sed`-range-based diff as literally written produces false positives on `measure.test.tsx.snap` because bun writes multi-entry `.snap` files in a different order than Jest did, so a plain line-range diff sees a reordering as a content change. The orchestrator instead `require()`d both the `HEAD` and working-tree versions of each `.snap` as CommonJS modules (they're valid JS) and compared each `exports[...]` key's value directly by identity — this is immune to reordering and unambiguous. Result: every TEXT-labeled snapshot body (`ReporterView.test.tsx.snap` keys ending ` 1`/` 3`; `measure.test.tsx.snap`'s two `... - 1. TEXT 1` keys) is byte-identical to `HEAD`; only the FULL bodies (`ReporterView.test.tsx.snap` keys ending ` 2`/` 4`) differ, as expected from the fragment→innerHTML switch.
+- [x] `bun run lint && bun run format:check` exit 0.
 
 #### Manual Verification:
 - [ ] `bun run test:coverage` prints a coverage table for source files only (no `__tests__`, `dist`, `cpp-profiler` rows).
