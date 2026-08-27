@@ -8,9 +8,6 @@ jest.mock("axios", () => ({
   get: jest.fn(),
 }));
 
-// Downloading FFMpeg binary takes time
-jest.setTimeout(30000);
-
 describe("checkResults", () => {
   const FOLDER_WITH_SPACES = `${__dirname}/My folder with spaces`;
 
@@ -26,9 +23,6 @@ describe("checkResults", () => {
     jest.spyOn(axios, "get").mockResolvedValueOnce({
       data: fs.readFileSync(`${__dirname}/results.json.zip`),
     });
-    // Actually download FFMpeg binary
-    jest.spyOn(axios, "get").mockImplementationOnce(jest.requireActual("axios").get);
-
     await checkResults({
       testRunArn: "testRunArn",
       reportDestinationPath: FOLDER_WITH_SPACES,

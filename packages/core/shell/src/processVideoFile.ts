@@ -1,9 +1,9 @@
 import { spawn } from "child_process";
 import { downloadFile } from "./downloadFile";
-import { unzip } from "./unzip";
 import fs from "fs";
 
 const FFMPEG_BINARY_FOLDER_PATH = "/tmp/ffmpeg-binary";
+const FFMPEG_BINARY_PATH = `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`;
 
 const execAsync = (command: string) =>
   new Promise<void>((resolve, reject) => {
@@ -21,38 +21,33 @@ const execAsync = (command: string) =>
     proc.on("error", reject);
   });
 
-const FFMPEG_VERSION = "4.4.1";
-const archToExec: Partial<Record<`${NodeJS.Platform}-${NodeJS.Architecture}`, string>> = {
-  "darwin-arm64": "osx-64",
-  "darwin-x64": "osx-64",
-  "linux-x64": "linux-64",
+// Static builds from https://github.com/eugeneware/ffmpeg-static (raw executables, no archive).
+// ffbinaries (used before) has no macOS arm64 build at any version, which forced Rosetta.
+const FFMPEG_STATIC_RELEASE = "b6.1.1";
+const platformToAsset: Partial<Record<`${NodeJS.Platform}-${NodeJS.Architecture}`, string>> = {
+  "darwin-arm64": "ffmpeg-darwin-arm64",
+  "darwin-x64": "ffmpeg-darwin-x64",
+  "linux-x64": "ffmpeg-linux-x64",
+  "linux-arm64": "ffmpeg-linux-arm64",
 };
 
-const getFFMpegBinaryPath = () => {
-  const archKey = `${process.platform}-${process.arch}` as const;
-
-  if (archKey in archToExec)
-    return `https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v${FFMPEG_VERSION}/ffmpeg-${FFMPEG_VERSION}-${archToExec[archKey]}.zip`;
-
-  throw new Error(`Unsupported os ${process.platform}-${process.arch} to install FFMpeg`);
+const getFFMpegDownloadUrl = () => {
+  const key = `${process.platform}-${process.arch}` as const;
+  const asset = platformToAsset[key];
+  if (!asset) {
+    throw new Error(`Unsupported os ${process.platform}-${process.arch} to install FFMpeg`);
+  }
+  return `https://github.com/eugeneware/ffmpeg-static/releases/download/${FFMPEG_STATIC_RELEASE}/${asset}`;
 };
 
 export const installFFMpeg = async () => {
-  await execAsync(`mkdir -p ${FFMPEG_BINARY_FOLDER_PATH}`);
-
-  // Download ffmpeg binary
-  await downloadFile(getFFMpegBinaryPath(), `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg.zip`);
-
-  unzip(FFMPEG_BINARY_FOLDER_PATH + "/ffmpeg.zip", FFMPEG_BINARY_FOLDER_PATH);
-
-  // Make the binary executable
-  await execAsync(`chmod +rwx ${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`);
+  fs.mkdirSync(FFMPEG_BINARY_FOLDER_PATH, { recursive: true });
+  await downloadFile(getFFMpegDownloadUrl(), FFMPEG_BINARY_PATH);
+  fs.chmodSync(FFMPEG_BINARY_PATH, 0o755);
 };
 
 export const processVideoFile = async (filePath: string, destinationPath: string) => {
-  const ffmpegExecutable = fs.existsSync(`${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`)
-    ? `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`
-    : "ffmpeg";
+  const ffmpegExecutable = fs.existsSync(FFMPEG_BINARY_PATH) ? FFMPEG_BINARY_PATH : "ffmpeg";
 
   // When coming from AWS Device Farm or certain devices, it seems the video is not encoded properly
   // VSync 0 is important since we have variable frame rate from adb shell screenrecord
