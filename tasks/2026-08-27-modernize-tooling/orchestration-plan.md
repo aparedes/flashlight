@@ -714,8 +714,8 @@ high — the verification is a real compiled binary that must run `--help` and `
 #### 1. Command registrars (one per command package)
 **Files**: `packages/commands/measure/src/server/command.ts` (new), `packages/commands/measure/src/server/bin.tsx`; `packages/commands/test/src/command.ts` (new), `packages/commands/test/src/bin.ts`, `packages/commands/test/src/index.ts`; `packages/commands/tools/src/command.ts` (new), `packages/commands/tools/src/bin.ts`; `packages/commands/report/command.ts` (new), `packages/commands/report/openReport.ts`
 **Changes**:
-- [ ] `measure/src/server/command.ts`: `import { Command } from "commander"; import { DEFAULT_PORT } from "./constants"; export const registerMeasureCommand = (program: Command) => { program.command("measure") … .action(async (options) => { … }); };` — body moved verbatim from `bin.tsx` lines 6-21 (keep the lazy `await import("./ServerApp")`).
-- [ ] `measure/src/server/bin.tsx` becomes:
+- [x] `measure/src/server/command.ts`: `import { Command } from "commander"; import { DEFAULT_PORT } from "./constants"; export const registerMeasureCommand = (program: Command) => { program.command("measure") … .action(async (options) => { … }); };` — body moved verbatim from `bin.tsx` lines 6-21 (keep the lazy `await import("./ServerApp")`).
+- [x] `measure/src/server/bin.tsx` becomes:
   ```ts
   #!/usr/bin/env bun
 
@@ -725,22 +725,23 @@ high — the verification is a real compiled binary that must run `--help` and `
   registerMeasureCommand(program);
   program.parse();
   ```
-- [ ] `test/src/command.ts`: move `bin.ts` lines 3-162 (imports, the `program.command("test")…` chain wrapped as `export const registerTestCommand = (program: Command) => { program.command("test") … .action(async (options) => { await runTest(options); }); };`, and the module-level `const runTest = async (…) => {…}` unchanged). `bin.ts` becomes the 6-line wrapper above with `registerTestCommand`. Add `export { registerTestCommand } from "./command";` to `test/src/index.ts`.
-- [ ] `tools/src/command.ts`: `export const registerToolsCommand = (program: Command) => { const toolsCommand = program.command("tools")…; toolsCommand.command("android_get_bundle_id")…; toolsCommand.command("video_fix_metadata <videoFilePath>")…; };` (moved from `bin.ts` lines 8-26); `bin.ts` → wrapper.
-- [ ] `report/command.ts` (package root, picked up by the report tsconfig `"*.ts"` include): `export const registerReportCommand = (program: Command) => { program.command("report") … };` moved from `openReport.ts` lines 9-43 (imports `os`, `Logger`, `open`, `writeReport`); `openReport.ts` → wrapper with `registerReportCommand`.
-- [ ] Every registrar takes `program: Command` (type from `commander`) — never the `program` singleton — so the aggregator owns the single program instance.
+- [x] `test/src/command.ts`: move `bin.ts` lines 3-162 (imports, the `program.command("test")…` chain wrapped as `export const registerTestCommand = (program: Command) => { program.command("test") … .action(async (options) => { await runTest(options); }); };`, and the module-level `const runTest = async (…) => {…}` unchanged). `bin.ts` becomes the 6-line wrapper above with `registerTestCommand`. Add `export { registerTestCommand } from "./command";` to `test/src/index.ts`.
+  > Deviation: `command.ts` imports `TestCase` directly from `./measurePerformance` (`import type { TestCase } from "./measurePerformance";`) rather than from `.` (i.e. `./index`) as the old `bin.ts` did — importing from `.` would create an import cycle now that `index.ts` re-exports `./command`. Type-only import, so no runtime behavior difference; verified `tsc --build` passes clean.
+- [x] `tools/src/command.ts`: `export const registerToolsCommand = (program: Command) => { const toolsCommand = program.command("tools")…; toolsCommand.command("android_get_bundle_id")…; toolsCommand.command("video_fix_metadata <videoFilePath>")…; };` (moved from `bin.ts` lines 8-26); `bin.ts` → wrapper.
+- [x] `report/command.ts` (package root, picked up by the report tsconfig `"*.ts"` include): `export const registerReportCommand = (program: Command) => { program.command("report") … };` moved from `openReport.ts` lines 9-43 (imports `os`, `Logger`, `open`, `writeReport`); `openReport.ts` → wrapper with `registerReportCommand`.
+- [x] Every registrar takes `program: Command` (type from `commander`) — never the `program` singleton — so the aggregator owns the single program instance.
 
 #### 2. Env-overridable, lazily evaluated asset lookups
 **Files**: `packages/platforms/android/src/commands/platforms/UnixProfiler.ts`, `packages/commands/measure/src/server/ServerApp.tsx`, `packages/commands/report/writeReport.ts`
 **Changes**:
-- [ ] `UnixProfiler.ts` lines 25-27: keep `defaultBinaryFolder`; replace `const binaryFolder = process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;` with `const getBinaryFolder = () => process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;` and in `installCppProfilerOnDevice()` (line 91) use `${getBinaryFolder()}/${CppProfilerName}-${abi}`. Line 94-95: replace `fs.copyFileSync(binaryPath, binaryTmpPath);` with `fs.writeFileSync(binaryTmpPath, fs.readFileSync(binaryPath));` and update the comment to `// Copy to a real file first: when running from the standalone executable the source may be an embedded (virtual) path`.
-- [ ] `ServerApp.tsx` line 16: `const pathToDist = path.join(__dirname, "../../dist");` → `const getPathToDist = () => process.env.FLASHLIGHT_WEBAPP_PATH || path.join(__dirname, "../../dist");` and use `getPathToDist()` at lines 24 (`path.join(getPathToDist(), "index.html")`) and 35 (`express.static(getPathToDist())`).
-- [ ] `writeReport.ts`: add `const getAssetsDir = () => process.env.FLASHLIGHT_REPORT_ASSETS_PATH || __dirname;` above `writeReport` and use `${getAssetsDir()}/index.html` (lines 84, 88) and `${getAssetsDir()}/${scriptName}` (line 97).
+- [x] `UnixProfiler.ts` lines 25-27: keep `defaultBinaryFolder`; replace `const binaryFolder = process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;` with `const getBinaryFolder = () => process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;` and in `installCppProfilerOnDevice()` (line 91) use `${getBinaryFolder()}/${CppProfilerName}-${abi}`. Line 94-95: replace `fs.copyFileSync(binaryPath, binaryTmpPath);` with `fs.writeFileSync(binaryTmpPath, fs.readFileSync(binaryPath));` and update the comment to `// Copy to a real file first: when running from the standalone executable the source may be an embedded (virtual) path`.
+- [x] `ServerApp.tsx` line 16: `const pathToDist = path.join(__dirname, "../../dist");` → `const getPathToDist = () => process.env.FLASHLIGHT_WEBAPP_PATH || path.join(__dirname, "../../dist");` and use `getPathToDist()` at lines 24 (`path.join(getPathToDist(), "index.html")`) and 35 (`express.static(getPathToDist())`).
+- [x] `writeReport.ts`: add `const getAssetsDir = () => process.env.FLASHLIGHT_REPORT_ASSETS_PATH || __dirname;` above `writeReport` and use `${getAssetsDir()}/index.html` (lines 84, 88) and `${getAssetsDir()}/${scriptName}` (line 97).
 
 #### 3. The aggregator workspace
 **Files**: `packages/commands/flashlight/package.json`, `packages/commands/flashlight/tsconfig.json`, `packages/commands/flashlight/src/cli.ts`, `packages/commands/flashlight/src/bin.ts`, `packages/commands/flashlight/src/standalone.ts` (all new); `tsconfig.json` (root); `.gitignore`
 **Changes**:
-- [ ] `package.json`:
+- [x] `package.json`:
   ```json
   {
     "name": "@perf-profiler/flashlight",
@@ -758,9 +759,9 @@ high — the verification is a real compiled binary that must run `--help` and `
   }
   ```
   then `bun install` (updates `bun.lock`; the workspace links resolve locally).
-- [ ] `tsconfig.json`: extends `../../../tsconfig.module.json`, `rootDir: "src"`, `outDir: "./dist"`, `include: ["src"]`, `exclude: ["src/standalone.ts", "src/embedded.generated.ts"]` (those two use `import … with { type: "file" }`, which tsc rejects under `module: CommonJS`; bun bundles them directly).
-- [ ] Root `tsconfig.json` `references`: add `{ "path": "./packages/commands/flashlight" }` after the `measure` entry.
-- [ ] `src/cli.ts`:
+- [x] `tsconfig.json`: extends `../../../tsconfig.module.json`, `rootDir: "src"`, `outDir: "./dist"`, `include: ["src"]`, `exclude: ["src/standalone.ts", "src/embedded.generated.ts"]` (those two use `import … with { type: "file" }`, which tsc rejects under `module: CommonJS`; bun bundles them directly).
+- [x] Root `tsconfig.json` `references`: add `{ "path": "./packages/commands/flashlight" }` after the `measure` entry.
+- [x] `src/cli.ts`:
   ```ts
   import { Command } from "commander";
   import { registerMeasureCommand } from "@perf-profiler/measure/dist/server/command";
@@ -778,8 +779,8 @@ high — the verification is a real compiled binary that must run `--help` and `
     return program;
   };
   ```
-- [ ] `src/bin.ts` (dev entry, runs from the repo with the default `__dirname` lookups): `#!/usr/bin/env bun` + `import { createProgram } from "./cli"; createProgram().parse();`
-- [ ] `src/standalone.ts` (compile entry; no top-level `await` — the bundle is CJS):
+- [x] `src/bin.ts` (dev entry, runs from the repo with the default `__dirname` lookups): `#!/usr/bin/env bun` + `import { createProgram } from "./cli"; createProgram().parse();`
+- [x] `src/standalone.ts` (compile entry; no top-level `await` — the bundle is CJS):
   ```ts
   import fs from "fs";
   import os from "os";
@@ -806,15 +807,16 @@ high — the verification is a real compiled binary that must run `--help` and `
 
   createProgram().parse();
   ```
-- [ ] `.gitignore`: add `packages/commands/flashlight/src/embedded.generated.ts`. Add the same path to `ignorePatterns` in `.oxlintrc.json` and `.oxfmtrc.json` (as `**/embedded.generated.ts`).
-- [ ] Root `package.json` scripts: add `"flashlight": "bun packages/commands/flashlight/dist/bin.js"` and `"build:standalone": "bun scripts/build-standalone.ts"`.
+- [x] `.gitignore`: add `packages/commands/flashlight/src/embedded.generated.ts`. Add the same path to `ignorePatterns` in `.oxlintrc.json` and `.oxfmtrc.json` (as `**/embedded.generated.ts`).
+- [x] Root `package.json` scripts: add `"flashlight": "bun packages/commands/flashlight/dist/bin.js"` and `"build:standalone": "bun scripts/build-standalone.ts"`.
 
 #### 4. The build script
 **File**: `scripts/build-standalone.ts` (new)
 **Changes**:
-- [ ] Implement with `Bun.spawnSync`/`Bun.$` (no extra dependencies). CLI: `--target <bun-darwin-arm64|bun-darwin-x64>` (default `bun-darwin-arm64`), `--sign <identity>` (default `-`, i.e. ad-hoc; env `FLASHLIGHT_CODESIGN_IDENTITY` also honoured), `--skip-build`, `--outfile <path>` (default `build/standalone/flashlight-macos-<arm64|x64>`). Steps:
+- [x] Implement with `Bun.spawnSync`/`Bun.$` (no extra dependencies). CLI: `--target <bun-darwin-arm64|bun-darwin-x64>` (default `bun-darwin-arm64`), `--sign <identity>` (default `-`, i.e. ad-hoc; env `FLASHLIGHT_CODESIGN_IDENTITY` also honoured), `--skip-build`, `--outfile <path>` (default `build/standalone/flashlight-macos-<arm64|x64>`). Steps:
   1. Unless `--skip-build`: run `bun run build` at the repo root and fail on non-zero exit.
   2. Collect assets → `{ group, name, sourcePath }`: `group: "cpp-profiler"` = every file in `packages/platforms/android/cpp-profiler/bin/` (expect 4 `BAMPerfProfiler-*`); `group: "report"` = files directly in `packages/commands/report/dist/` (top level only, no recursion into `src/`) whose name ends in `.html`, `.js` or `.css` — never `.map`, `.d.ts`, `.tsbuildinfo` or the tsc outputs `openReport.js`/`writeReport.js` (exclude by name); `group: "webapp"` = same for `packages/commands/measure/dist/` (its top level holds only Parcel output today). The glob is deliberately bundler-agnostic so a later Parcel → `bun build` swap (which may add a `.css` file) needs no change here. Fail if any group is empty or if `report`/`webapp` lack an `index.html`.
+  > Deviation: the name-exclusion list needed a third entry, `command.js` — this phase itself adds `packages/commands/report/command.ts`, whose `tsc` output lands in `report/dist/` right alongside `openReport.js`/`writeReport.js`, and the plan's original two-name list would have embedded it as a web asset. Also added a general defensive filter (exclude any `.js` file that has a sibling `.d.ts` — true for every tsc-emitted module, never true for Parcel's bundled output) so this doesn't need updating again if another command file is added later. Verified: the collected `report` group is exactly `index.html` + `index.<hash>.js`.
   3. Write `packages/commands/flashlight/src/embedded.generated.ts`: a header comment `// GENERATED by scripts/build-standalone.ts — do not edit or commit`, one `import assetN from "<path relative to packages/commands/flashlight/src>" with { type: "file" };` per file, and `export const EMBEDDED_ASSETS: { group: "cpp-profiler" | "report" | "webapp"; name: string; path: string }[] = [ … ];` with `name` = basename.
   4. Run `bun build --compile --format=cjs --target=<target> --asset-naming="[dir]/[name].[ext]" packages/commands/flashlight/src/standalone.ts --outfile <outfile>` (`--format=cjs` is mandatory: the ESM bundle of ink's `yoga-layout-prebuilt` throws `ReferenceError: _a is not defined` at startup; `[dir]` naming prevents the two `index.html` from colliding).
   5. Run `codesign --sign <identity> --force <outfile>` then `codesign --verify --verbose <outfile>`; fail if either fails (bun 1.4.0 writes an invalid ad-hoc signature that macOS SIGKILLs).
@@ -823,21 +825,22 @@ high — the verification is a real compiled binary that must run `--help` and `
 #### 5. Docs
 **File**: `CONTRIBUTING.md`
 **Changes**:
-- [ ] Add `## Building the standalone macOS binary`: `bun run build:standalone` (arm64, ad-hoc signed — fine for local use), `bun run build:standalone --sign "Developer ID Application: …"` for distribution, `--target bun-darwin-x64` for Intel (cross-compiled; cannot run on this Mac), output in `build/standalone/`; note that the binary embeds the cpp-profiler binaries and both web apps and extracts them to `$TMPDIR/flashlight-<version>-assets` on first run; note the dev alternative `bun run flashlight -- <command>`.
+- [x] Add `## Building the standalone macOS binary`: `bun run build:standalone` (arm64, ad-hoc signed — fine for local use), `bun run build:standalone --sign "Developer ID Application: …"` for distribution, `--target bun-darwin-x64` for Intel (cross-compiled; cannot run on this Mac), output in `build/standalone/`; note that the binary embeds the cpp-profiler binaries and both web apps and extracts them to `$TMPDIR/flashlight-<version>-assets` on first run; note the dev alternative `bun run flashlight -- <command>`.
 
 #### 6. Lint/format
-- [ ] `bun run format && bun run lint`.
+- [x] `bun run format && bun run lint`.
 
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `bun run test` exits 0 (build incl. the new workspace, lint, format, unit tests).
-- [ ] `bun run flashlight -- --help` lists `measure`, `test`, `tools`, `report`; `bun run flashlight -- --version` prints `0.18.0`; `bun packages/commands/measure/dist/server/bin.js --help` and `bun packages/commands/report/dist/openReport.js --help` still work (thin bins).
-- [ ] `bun run build:standalone` exits 0; `file build/standalone/flashlight-macos-arm64` contains `Mach-O 64-bit executable arm64`; `codesign --verify --verbose build/standalone/flashlight-macos-arm64` reports `valid on disk`; size is between 60 and 120 MB.
-- [ ] `./build/standalone/flashlight-macos-arm64 --help` lists the four commands and exits 0; `./build/standalone/flashlight-macos-arm64 --version` prints `0.18.0`.
-- [ ] `rm -rf /tmp/flashlight-report-smoke && ./build/standalone/flashlight-macos-arm64 report packages/commands/report/src/example-reports/results1.json -o /tmp/flashlight-report-smoke` exits 0 (it opens the report in the browser), and `ls /tmp/flashlight-report-smoke` shows `report.html` and `report.js`; `ls "$TMPDIR/flashlight-0.18.0-assets/cpp-profiler"` lists the 4 `BAMPerfProfiler-*` files with sizes equal to those in `packages/platforms/android/cpp-profiler/bin/`.
-- [ ] `git status --porcelain | grep -E 'embedded.generated|build/' | wc -l` → `0` (generated artefacts are ignored).
-- [ ] `git ls-files | grep -c '#!/usr/bin/env node'` → `0` and `grep -L '#!/usr/bin/env bun' packages/commands/*/src/bin.ts packages/commands/measure/src/server/bin.tsx packages/commands/report/openReport.ts packages/commands/flashlight/src/bin.ts` prints nothing.
+- [x] `bun run test` exits 0 (build incl. the new workspace, lint, format, unit tests).
+- [x] `bun run flashlight -- --help` lists `measure`, `test`, `tools`, `report`; `bun run flashlight -- --version` prints `0.18.0`; `bun packages/commands/measure/dist/server/bin.js --help` and `bun packages/commands/report/dist/openReport.js --help` still work (thin bins).
+- [x] `bun run build:standalone` exits 0; `file build/standalone/flashlight-macos-arm64` contains `Mach-O 64-bit executable arm64`; `codesign --verify --verbose build/standalone/flashlight-macos-arm64` reports `valid on disk`; size is between 60 and 120 MB.
+- [x] `./build/standalone/flashlight-macos-arm64 --help` lists the four commands and exits 0; `./build/standalone/flashlight-macos-arm64 --version` prints `0.18.0`.
+- [x] `rm -rf /tmp/flashlight-report-smoke && ./build/standalone/flashlight-macos-arm64 report packages/commands/report/src/example-reports/results1.json -o /tmp/flashlight-report-smoke` exits 0 (it opens the report in the browser), and `ls /tmp/flashlight-report-smoke` shows `report.html` and `report.js`; `ls "$TMPDIR/flashlight-0.18.0-assets/cpp-profiler"` lists the 4 `BAMPerfProfiler-*` files with sizes equal to those in `packages/platforms/android/cpp-profiler/bin/`.
+  > Deviation: as literally written (`rm -rf` then run against a non-existent dir) this exits 1 — `writeReport` has never created `outputDir` if missing (`fs.writeFileSync(`${outputDir}/report.js`, ...)` throws `ENOENT`). Confirmed pre-existing on `main`, not a Phase 5 regression: `bun packages/commands/report/dist/openReport.js report … -o /tmp/some-fresh-dir` fails identically before this phase. The orchestrator independently reproduced this and then re-ran against a pre-`mkdir -p`'d directory, confirming exit 0, correct `report.html`/`report.js` output, and `report`/`webapp` each embedding a distinct `index.<hash>.js` (no `--asset-naming` collision) and the cpp-profiler binaries extracting with byte-identical sizes. Not fixed — out of this phase's scope (a `writeReport` behavior change, not a standalone-executable concern) — worth a follow-up ticket.
+- [x] `git status --porcelain | grep -E 'embedded.generated|build/' | wc -l` → `0` (generated artefacts are ignored).
+- [x] `git ls-files | grep -c '#!/usr/bin/env node'` → `0` and `grep -L '#!/usr/bin/env bun' packages/commands/*/src/bin.ts packages/commands/measure/src/server/bin.tsx packages/commands/report/openReport.ts packages/commands/flashlight/src/bin.ts` prints nothing.
 
 #### Manual Verification:
 - [ ] With an Android device connected: `./build/standalone/flashlight-macos-arm64 measure` starts the ink UI, opens the web app on port 3000 served from `$TMPDIR/flashlight-0.18.0-assets/webapp`, "Auto-Detect" finds the foreground app and measures stream (this exercises the embedded cpp-profiler push).
