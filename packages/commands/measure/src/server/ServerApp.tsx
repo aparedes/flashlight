@@ -32,7 +32,7 @@ export const createExpressApp = ({ port }: { port: number }) => {
     }
   });
 
-  // Serve the webapp folder built by parcel
+  // Serve the webapp folder built by Vite (index.html + assets/)
   app.use(express.static(getPathToDist()));
   return app;
 };

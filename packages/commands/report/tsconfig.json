@@ -10,5 +10,5 @@
     { "path": "../../core/web-reporter-ui" }
   ],
   "include": ["./src/**/*.ts*", "*.ts"],
-  "exclude": ["./dist/**/*"]
+  "exclude": ["./dist/**/*", "./src/index.tsx", "./vite.config.ts"]
 }

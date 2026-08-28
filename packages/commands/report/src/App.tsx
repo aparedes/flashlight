@@ -9,7 +9,8 @@ import {
 // @ts-expect-error
 // oxlint-disable-next-line prefer-const
 let testCaseResults: TestCaseResult[] =
-  // Use very long string so that Parcel won't use it more than once, would be nice to find a better solution
+  // Placeholder replaced by `writeReport.ts` with the actual results. The string is long enough
+  // that the bundler keeps it as a single literal instead of inlining it at every usage.
   "THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT";
 
 // Uncomment with when locally testing

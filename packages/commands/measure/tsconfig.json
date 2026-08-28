@@ -12,5 +12,6 @@
     { "path": "../../core/types" },
     { "path": "../../core/web-reporter-ui" }
   ],
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/webapp/index.tsx"]
 }

@@ -9,9 +9,9 @@ import { createProgram } from "./cli";
 // existing folder-based lookups (and `adb push`) see real paths.
 const assetsRoot = path.join(os.tmpdir(), `flashlight-${version}-assets`);
 for (const asset of EMBEDDED_ASSETS) {
-  const dir = path.join(assetsRoot, asset.group);
-  fs.mkdirSync(dir, { recursive: true });
-  const destination = path.join(dir, asset.name);
+  // `asset.name` can be nested (Vite emits the webapp chunks into `assets/`).
+  const destination = path.join(assetsRoot, asset.group, asset.name);
+  fs.mkdirSync(path.dirname(destination), { recursive: true });
   const source = fs.statSync(asset.path);
   if (!fs.existsSync(destination) || fs.statSync(destination).size !== source.size) {
     fs.writeFileSync(destination, fs.readFileSync(asset.path)); // copyFileSync cannot read /$bunfs paths

@@ -108,6 +108,11 @@ const WEB_ASSET_EXTENSIONS = [".html", ".js", ".css"];
 const EXCLUDED_EXTENSIONS = [".map", ".d.ts", ".tsbuildinfo"];
 /** `tsc` emits these next to the bundler output — they are Node modules, not web assets. */
 const EXCLUDED_NAMES = ["openReport.js", "writeReport.js", "command.js"];
+/**
+ * Vite emits hashed chunks into `assets/` for the measure webapp (the report is a single
+ * self-contained `index.html`). Everything else in these dist folders is `tsc` output.
+ */
+const NESTED_ASSET_DIRS = ["assets"];
 
 const listFilesIn = (dir: string) => {
   if (!fs.existsSync(dir)) fail(`Expected directory does not exist: ${dir}`);
@@ -119,16 +124,32 @@ const listFilesIn = (dir: string) => {
 };
 
 const collectWebAssets = (group: AssetGroup, dir: string): Asset[] => {
-  const names = listFilesIn(dir);
-  return (
-    names
-      .filter((name) => WEB_ASSET_EXTENSIONS.some((ext) => name.endsWith(ext)))
-      .filter((name) => !EXCLUDED_EXTENSIONS.some((ext) => name.endsWith(ext)))
-      .filter((name) => !EXCLUDED_NAMES.includes(name))
-      // Anything `tsc` emitted has a sibling declaration file — those are never web assets.
-      .filter((name) => !fs.existsSync(path.join(dir, `${name.replace(/\.js$/, "")}.d.ts`)))
-      .map((name) => ({ group, name, sourcePath: path.join(dir, name) }))
+  const isWebAsset = (baseDir: string, name: string) =>
+    WEB_ASSET_EXTENSIONS.some((ext) => name.endsWith(ext)) &&
+    !EXCLUDED_EXTENSIONS.some((ext) => name.endsWith(ext)) &&
+    !EXCLUDED_NAMES.includes(name) &&
+    // Anything `tsc` emitted has a sibling declaration file — those are never web assets.
+    !fs.existsSync(path.join(baseDir, `${name.replace(/\.js$/, "")}.d.ts`));
+
+  const topLevel = listFilesIn(dir)
+    .filter((name) => isWebAsset(dir, name))
+    .map((name) => ({ group, name, sourcePath: path.join(dir, name) }));
+
+  const nested = NESTED_ASSET_DIRS.filter((subDir) =>
+    fs.existsSync(path.join(dir, subDir))
+  ).flatMap((subDir) =>
+    listFilesIn(path.join(dir, subDir))
+      .filter((name) => isWebAsset(path.join(dir, subDir), name))
+      // The name doubles as the path the standalone binary materializes the asset at, so keep
+      // the `assets/` prefix — `index.html` references chunks as `./assets/<name>`.
+      .map((name) => ({
+        group,
+        name: `${subDir}/${name}`,
+        sourcePath: path.join(dir, subDir, name),
+      }))
   );
+
+  return [...topLevel, ...nested];
 };
 
 const cppProfilerDir = path.join(REPO_ROOT, "packages/platforms/android/cpp-profiler/bin");
@@ -155,7 +176,7 @@ for (const group of ["cpp-profiler", "report", "webapp"] as const) {
 
 for (const group of ["report", "webapp"] as const) {
   if (!assetsIn(group).some((asset) => asset.name === "index.html")) {
-    fail(`Group "${group}" is missing an index.html. Did the parcel build run?`);
+    fail(`Group "${group}" is missing an index.html. Did the Vite build run?`);
   }
 }
 
