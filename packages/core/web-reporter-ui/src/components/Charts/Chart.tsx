@@ -4,7 +4,7 @@ import ReactApexChart, { Props as ApexChartProps } from "react-apexcharts";
 // from the package (merged into the `ApexCharts` class namespace) and must be imported.
 import ApexCharts, { type ApexAxisChartSeries, type ApexOptions } from "apexcharts";
 import { POLLING_INTERVAL } from "@perf-profiler/types";
-import { merge, partition } from "lodash";
+import { merge, partition } from "es-toolkit";
 
 function toggleSeriesVisibility(
   chart: ApexCharts,

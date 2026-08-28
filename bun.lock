@@ -7,7 +7,6 @@
       "devDependencies": {
         "@happy-dom/global-registrator": "^20.11.12",
         "@types/bun": "^1.4.0",
-        "@types/lodash": "^4.17.0",
         "lefthook": "^2.0.0",
         "oxfmt": "^0.65.0",
         "oxlint": "^1.80.0",
@@ -159,7 +158,7 @@
       "version": "0.10.0",
       "dependencies": {
         "@perf-profiler/types": "^0.9.0",
-        "lodash": "^4.17.21",
+        "es-toolkit": "^1.51.0",
       },
     },
     "packages/core/shell": {
@@ -187,9 +186,9 @@
         "@perf-profiler/reporter": "^0.10.0",
         "@perf-profiler/types": "^0.9.0",
         "apexcharts": "^7.0.0",
+        "es-toolkit": "^1.51.0",
         "file-saver": "^2.0.5",
         "jszip": "^3.10.1",
-        "lodash": "^4.17.21",
         "react": "^19.2.0",
         "react-apexcharts": "^2.1.1",
         "tiny-emitter": "^2.1.0",
@@ -215,7 +214,6 @@
         "@perf-profiler/profiler": "^0.10.12",
         "@perf-profiler/types": "^0.9.0",
         "commander": "^12.0.0",
-        "lodash": "^4.17.21",
       },
     },
     "packages/platforms/ios": {
@@ -755,8 +753,6 @@
     "@types/js-yaml": ["@types/js-yaml@4.0.9", "", {}, "sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg=="],
 
     "@types/keyv": ["@types/keyv@3.1.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg=="],
-
-    "@types/lodash": ["@types/lodash@4.17.13", "", {}, "sha512-lfx+dftrEZcdBPczf9d0Qv0x+j/rfNCMuC6OcfXmO8gkfeNAY88PgKUbvG56whcN23gc27yenwF6oJZXGFpYxg=="],
 
     "@types/luxon": ["@types/luxon@3.4.2", "", {}, "sha512-TifLZlFudklWlMBfhubvgqTXRzLDI5pCbGa4P8a3wPyUQSW+1xQ5eDsreP9DWHX3tjq1ke96uYG/nwundroWcA=="],
 
@@ -1319,8 +1315,6 @@
     "lines-and-columns": ["lines-and-columns@1.2.4", "", {}, "sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg=="],
 
     "locate-path": ["locate-path@5.0.0", "", { "dependencies": { "p-locate": "^4.1.0" } }, "sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g=="],
-
-    "lodash": ["lodash@4.17.21", "", {}, "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg=="],
 
     "lodash.clonedeep": ["lodash.clonedeep@4.5.0", "", {}, "sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ=="],
 

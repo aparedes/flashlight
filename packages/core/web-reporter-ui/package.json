@@ -11,9 +11,9 @@
     "@perf-profiler/reporter": "^0.10.0",
     "@perf-profiler/types": "^0.9.0",
     "apexcharts": "^7.0.0",
+    "es-toolkit": "^1.51.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
-    "lodash": "^4.17.21",
     "react": "^19.2.0",
     "react-apexcharts": "^2.1.1",
     "tiny-emitter": "^2.1.0"

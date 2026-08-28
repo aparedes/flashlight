@@ -1,5 +1,5 @@
 import { AveragedTestCaseResult, POLLING_INTERVAL } from "@perf-profiler/types";
-import { round } from "lodash";
+import { roundToDecimal } from "../utils/round";
 import { average } from "./averageIterations";
 import { getAverageCpuUsage } from "./cpu";
 import { getAverageFPSUsage } from "./fps";
@@ -35,5 +35,5 @@ export const getScore = (result: AveragedTestCaseResult) => {
     ? totalTimeThreadlocked / totalMeasureTime
     : 0;
 
-  return round(Math.max(0, average(scores) * (1 - timePercentageThreadlocked)), 0);
+  return roundToDecimal(Math.max(0, average(scores) * (1 - timePercentageThreadlocked)), 0);
 };

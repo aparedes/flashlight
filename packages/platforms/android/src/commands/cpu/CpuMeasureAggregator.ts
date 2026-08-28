@@ -1,4 +1,3 @@
-import { mapValues } from "lodash";
 import { CpuMeasure as Measure } from "@perf-profiler/types";
 import { ProcessStat } from "./getCpuStatsByProcess";
 
@@ -18,21 +17,22 @@ export class CpuMeasureAggregator {
 
     const toPercentage = (value: number) => Math.min((value * 100) / TICKS_FOR_TIME_INTERVAL, 100);
 
-    return mapValues(
-      stats.reduce<{ [by: string]: number }>((aggr, stat) => {
-        const cpuTimeDiff =
-          stat.totalCpuTime - (this.previousTotalCpuTimePerProcessId[stat.processId] || 0);
+    const totalCpuTimeByGroup = stats.reduce<{ [by: string]: number }>((aggr, stat) => {
+      const cpuTimeDiff =
+        stat.totalCpuTime - (this.previousTotalCpuTimePerProcessId[stat.processId] || 0);
 
-        return {
-          ...aggr,
-          [groupByIteratee(stat)]:
-            (aggr[groupByIteratee(stat)] || 0) +
-            // if the diff is < 0, likely the process was restarted
-            // so we count the new cpu time
-            (cpuTimeDiff >= 0 ? cpuTimeDiff : stat.totalCpuTime),
-        };
-      }, {}),
-      toPercentage
+      return {
+        ...aggr,
+        [groupByIteratee(stat)]:
+          (aggr[groupByIteratee(stat)] || 0) +
+          // if the diff is < 0, likely the process was restarted
+          // so we count the new cpu time
+          (cpuTimeDiff >= 0 ? cpuTimeDiff : stat.totalCpuTime),
+      };
+    }, {});
+
+    return Object.fromEntries(
+      Object.entries(totalCpuTimeByGroup).map(([by, value]) => [by, toPercentage(value)])
     );
   }
 

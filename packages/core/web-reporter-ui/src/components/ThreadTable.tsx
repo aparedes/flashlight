@@ -1,7 +1,9 @@
 import { AveragedTestCaseResult, Measure } from "@perf-profiler/types";
 import { getAverageCpuUsagePerProcess } from "@perf-profiler/reporter";
-import { keyBy, uniq } from "lodash";
 import Table, { HeadCell } from "./Table";
+
+const keyBy = <T,>(items: T[], key: (item: T) => string): { [key: string]: T } =>
+  Object.fromEntries(items.map((item) => [key(item), item]));
 
 const reportHeadCells: HeadCell[] = [
   {
@@ -39,12 +41,14 @@ export const ComparativeThreadTable = ({
     return keyBy(getAverageCpuUsagePerProcess(measures), (measure) => measure.processName);
   });
 
-  const allThreadNames = uniq(
-    allMeasures.reduce<string[]>(
-      (threadNames, measures) => [...threadNames, ...Object.keys(measures)],
-      []
-    )
-  );
+  const allThreadNames = [
+    ...new Set(
+      allMeasures.reduce<string[]>(
+        (threadNames, measures) => [...threadNames, ...Object.keys(measures)],
+        []
+      )
+    ),
+  ];
 
   const rows = allThreadNames.map((threadName) => ({
     name: threadName,

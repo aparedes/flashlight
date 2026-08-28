@@ -1,4 +1,7 @@
-import orderBy from "lodash/orderBy";
+// es-toolkit's main-entry `orderBy` requires `T extends object`, but here we sort an
+// array of `string` (thread names) by a derived value, so use the compat build whose
+// signature (lodash-compatible: single iteratee/order, no array wrapping needed) covers it.
+import { orderBy } from "es-toolkit/compat";
 import { roundToDecimal, sanitizeProcessName } from "@perf-profiler/reporter";
 import { AveragedTestCaseResult } from "@perf-profiler/types";
 
