@@ -4,6 +4,20 @@ Goal: React 19 + React Compiler, TypeScript 7.0.2 (native compiler), drop Parcel
 
 Everything below was scoped against the actual repo state. TypeScript 7.0.2 was run against the codebase to measure the real migration surface (numbers in Phase 2).
 
+## Execution log — ALL PHASES COMPLETE
+
+| Phase                  | Commit                | Outcome                                                                                                                                                                                                                                                                    |
+| ---------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 lefthook             | `9d5a7eb`             | husky + lint-staged removed; lefthook 2.1.10 pre-commit (oxlint --fix, oxfmt, `stage_fixed`)                                                                                                                                                                               |
+| 2 TypeScript 7.0.2     | `3110959`             | nodenext/es2022/react-jsx; per-package `references` added (TS7's scheduler needs them — flat root list made clean builds non-deterministic); `typecheck` script                                                                                                            |
+| 3 Vite 8               | `a7588b2`             | Parcel dropped; single-file report via vite-plugin-singlefile; `writeReport` placeholder injection (+5 tests); standalone embed updated                                                                                                                                    |
+| 4a React 19 + Compiler | `a529823`             | React 19.2, Ink 7 (async-ESM shim — `require(esm)` cannot load top-level-await modules), RTL 16, `compiler: true` (oxc); pre-existing flaky `measure.test.tsx` root-caused (socket reconnect race) and fixed — suite fully green since                                     |
+| 4b UI majors           | `e32422d`             | MUI 9 (one code change), Tailwind 4 CSS-first (`@theme inline` needed for runtime per-card theming), apexcharts 7 (no fallback; `chartRef` migration), compiler coverage for web-reporter-ui via source alias (sentinels 2→55 / 10→62; bundles −70%)                       |
+| 5 lodash               | `9ee9dcb`             | Native + es-toolkit (`groupBy`/`orderBy`/`merge`/`partition`); `@types/lodash` gone; scores byte-identical                                                                                                                                                                 |
+| 6 final                | `db66083`, fix `HEAD` | express 5, commander 15, supertest 7, patch/minor sweep, tiny-emitter → EventTarget, Bun-native `scripts/clean.ts`, `vite.config.mts`, CI split into 4 ubuntu jobs (lint / typecheck-build / test / audit); standalone `--format=cjs` workaround removed (ink 7 needs ESM) |
+
+Deliberately left outstanding (majors needing their own validation): adm-zip 0.6, fast-xml-parser 5, webdriverio 9, js-yaml 5. Known cosmetic issues: 8 residual `act(...)` warnings in `measure.test.tsx` (MUI internals under React 19); `bg-dark-charcoal` on the measure AppBar has always been overridden by MUI's emotion styles (pre-existing).
+
 ## Current state (relevant bits)
 
 - Bun workspace monorepo, 18 packages + 2 examples. All packages emit CommonJS via `tsc --build` (composite project references), `target: es6`, `moduleResolution: node`, `jsx: react` (classic runtime).
