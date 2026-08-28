@@ -1,6 +1,79 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source(none);
+
+/*
+  This stylesheet is the single Tailwind entry point for the whole UI: both web apps
+  (`commands/report` and `commands/measure`) import it, and the classes it has to generate
+  live in three separate package source trees. Automatic source detection only sees the
+  package this file lives in, so detection is turned off (`source(none)`) and every tree is
+  listed explicitly instead.
+*/
+@source "./*.tsx";
+@source "./src/**/*.{ts,tsx}";
+@source "../../commands/report/src/**/*.{ts,tsx,html}";
+@source "../../commands/measure/src/webapp/**/*.{ts,tsx,html}";
+
+/* Built from JS at runtime (score arcs), so no source file mentions them literally. */
+@source inline("stroke-success stroke-warning stroke-error bg-light-charcoal");
+
+@theme {
+  /* Inter, then the fallback stack Tailwind v3 shipped — v4's own default stack differs. */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-midnight-blue: #06182c;
+  --color-navy-blue: #0f395e;
+  --color-dark-navy-blue: #0a2540;
+  --color-light-sky-blue: #1199ee;
+  --color-dark-charcoal: #131313;
+  --color-light-charcoal: #1b1b1d;
+
+  --color-error: #e62e2e;
+  --color-warning: #e67f17;
+  --color-success: #158000;
+}
+
+/*
+  The accent colour is picked at runtime by `setThemeAtRandom()`, which sets `data-theme` on
+  <html>, and `ReportSummary` re-scopes it per card so each report gets its own accent (see
+  the `[data-theme]` rules at the bottom of this file). These tokens must therefore stay live
+  `var()` references resolved on the element that uses them — hence `inline`: a non-inline
+  `@theme` would emit `--color-theme-color: var(--theme-color)` on `:root`, freezing the
+  accent to the document-level theme and breaking the per-card scoping.
+*/
+@theme inline {
+  --color-theme-color: var(--theme-color);
+  --color-theme-color-100: var(--theme-color-100);
+
+  --shadow-glow: 0 0 10px 0 var(--theme-color);
+}
+
+@utility bg-gradient-radial {
+  /* `--theme-color-100` rather than the token, for the same per-element-resolution reason. */
+  background-image: radial-gradient(
+    57.7% 57.7% at 50% 0%,
+    var(--theme-color-100) 0%,
+    rgba(29, 29, 31, 0) 100%
+  );
+}
+
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Narrower than Tailwind's own `line-clamp-1`: this one also breaks long unbroken names. */
+@utility line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  word-break: break-all;
+}
 
 @layer base {
   html {
@@ -33,24 +106,5 @@
   [data-theme="bright-cyan"] {
     --theme-color: #00ffff;
     --theme-color-100: rgba(0, 255, 255, 0.13);
-  }
-}
-
-@layer utilities {
-  .hide-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .line-clamp-1 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-    word-break: break-all;
   }
 }

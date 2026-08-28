@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import ReactApexChart, { Props as ApexChartProps } from "react-apexcharts";
-import ApexCharts, { ApexOptions } from "apexcharts";
+// apexcharts 7 no longer declares its option types as ambient globals — they are exported
+// from the package (merged into the `ApexCharts` class namespace) and must be imported.
+import ApexCharts, { type ApexAxisChartSeries, type ApexOptions } from "apexcharts";
 import { POLLING_INTERVAL } from "@perf-profiler/types";
 import { merge, partition } from "lodash";
 
@@ -94,13 +96,14 @@ export const Chart = ({
 
   const chartOptions = useMemo(() => merge(commonOptions, options), [commonOptions, options]);
 
-  const ref = useRef<ReactApexChart>(null);
+  // react-apexcharts 2 is a function component: it no longer forwards a ref to the chart
+  // instance, and exposes it through the dedicated `chartRef` prop instead.
+  const ref = useRef<ApexCharts | null>(null);
   const seriesRef = useRef(series);
   seriesRef.current = series;
 
   useEffect(() => {
-    //@ts-expect-error chart is not defined in the typings, but it exists!
-    const chart: ApexCharts | undefined = ref.current?.chart;
+    const chart = ref.current;
     if (!chart) return;
 
     toggleSeriesVisibility(
@@ -116,7 +119,7 @@ export const Chart = ({
         {title}
       </div>
       <ReactApexChart
-        ref={ref}
+        chartRef={ref}
         options={chartOptions}
         series={series}
         type={type}

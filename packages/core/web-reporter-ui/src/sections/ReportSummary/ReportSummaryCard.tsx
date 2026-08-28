@@ -23,7 +23,7 @@ export const ReportSummaryCard: FunctionComponent<Props> = ({ report, baselineRe
   const averagedTestCaseResult = report.getAveragedResult();
 
   return (
-    <div className="flex flex-col items-center py-6 px-10 bg-dark-charcoal border border-gray-800 rounded-lg w-[500px] flex-shrink-0">
+    <div className="flex flex-col items-center py-6 px-10 bg-dark-charcoal border border-gray-800 rounded-lg w-[500px] shrink-0">
       <div className="flex flex-row items-center gap-2">
         {/* With the line clamp for some reason, we need min-w as well when the name is big */}
         <div className="bg-theme-color rounded-full min-w-[12px] w-[12px] min-h-[12px]" />

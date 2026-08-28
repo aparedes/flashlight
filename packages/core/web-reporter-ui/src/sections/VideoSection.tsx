@@ -103,7 +103,7 @@ export const VideoSection = ({ results }: { results: AveragedTestCaseResult[] })
 
   return (
     <div
-      className={`flex flex-row flex-nowrap h-full justify-center bg-dark-charcoal overflow-auto py-8 flex-shrink-0 transition-[max-width] ${
+      className={`flex flex-row flex-nowrap h-full justify-center bg-dark-charcoal overflow-auto py-8 shrink-0 transition-[max-width] ${
         isPanelExpanded ? "max-w-[24px]" : "max-w-[50vw]"
       }`}
     >
