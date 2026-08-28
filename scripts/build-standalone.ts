@@ -230,8 +230,9 @@ run(
     "bun",
     "build",
     "--compile",
-    // ESM output breaks ink's yoga-layout-prebuilt (asm.js): `ReferenceError: _a is not defined`
-    "--format=cjs",
+    // ESM output (the default) is required: ink >= 4 uses top-level await, which cannot be
+    // lowered to CJS. The old `--format=cjs` workaround for ink 3's yoga-layout-prebuilt
+    // asm.js is obsolete — ink 7 ships WASM yoga.
     `--target=${options.target}`,
     // Without [dir], the two index.html files (report + webapp) collide into one asset
     "--asset-naming=[dir]/[name].[ext]",
