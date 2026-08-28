@@ -23,6 +23,6 @@
     "@perf-profiler/logger": "^0.3.3",
     "@perf-profiler/profiler": "^0.10.12",
     "@perf-profiler/types": "^0.9.0",
-    "commander": "^12.0.0"
+    "commander": "^15.0.0"
   }
 }

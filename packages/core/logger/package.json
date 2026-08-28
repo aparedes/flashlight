@@ -10,6 +10,6 @@
     "perf-profiler-logger": "dist/bin.js"
   },
   "devDependencies": {
-    "@types/luxon": "^3.4.2"
+    "@types/luxon": "^3.7.5"
   }
 }

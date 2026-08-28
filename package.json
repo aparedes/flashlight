@@ -19,7 +19,7 @@
     "url": "https://github.com/bamlab/flashlight/issues"
   },
   "scripts": {
-    "clean-dist": "rm -rf packages/*/*/dist && rm -rf packages/*/*/tsconfig.tsbuildinfo",
+    "clean-dist": "bun scripts/clean.ts",
     "watch": "tsc --build --watch",
     "test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && bun run test:unit",
     "test:unit": "bun run test:unit:node && bun run test:unit:dom",
@@ -29,7 +29,7 @@
     "run-cli-example": "bun examples/cli/index.ts",
     "flashlight": "bun packages/commands/flashlight/dist/bin.js",
     "build:standalone": "bun scripts/build-standalone.ts",
-    "build": "bun run clean-dist && tsc --build && bun run --filter @perf-profiler/web-reporter build && bun run --filter @perf-profiler/measure build",
+    "build": "bun run clean-dist && tsc --build && bun run --filter '@perf-profiler/web-reporter' --filter '@perf-profiler/measure' build",
     "test:e2e": "mkdir -p report && bun packages/plugins/aws-device-farm/dist/bin.js runTest --apkPath .github/workflows/example.apk --projectName 'Flashlight-Serverless' --reportDestinationPath report --testCommand 'npx ts-node examples/e2e/appium-ci.test.ts' --testFolder .",
     "prepare": "lefthook install",
     "typecheck": "tsc --build",
@@ -42,7 +42,7 @@
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.11.12",
     "@types/bun": "^1.4.0",
-    "lefthook": "^2.0.0",
+    "lefthook": "^2.1.10",
     "oxfmt": "^0.65.0",
     "oxlint": "^1.80.0",
     "typescript": "7.0.2"

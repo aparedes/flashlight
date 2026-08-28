@@ -9,7 +9,6 @@
     "cpp-profiler",
     "coverage",
     "build",
-    "report.js",
     "report.html",
     "results*.json",
     "tasks",
