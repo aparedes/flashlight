@@ -8,6 +8,7 @@ import { fireEvent, render as webRender, screen, waitFor, act } from "@testing-l
 import { render as cliRender } from "ink-testing-library";
 import React from "react";
 import { ServerApp } from "../server/ServerApp";
+import { loadInk } from "../server/ink";
 import { open } from "@perf-profiler/shell";
 import * as shell from "@perf-profiler/shell";
 import { matchSnapshot } from "@perf-profiler/web-reporter-ui/utils/testUtils";
@@ -25,9 +26,14 @@ Logger.setLogLevel(LogLevel.SILENT);
 
 let originalWindow: Window & typeof globalThis;
 let MeasureWebApp: React.FC;
+let webAppSocket: (typeof import("../webapp/socket.js"))["socket"];
 
 describe("flashlight measure interactive", () => {
   beforeAll(async () => {
+    // `runServerApp` normally does this before rendering; these tests render `ServerApp`
+    // themselves, so they have to pull ink in on their own. See `server/ink.ts`.
+    await loadInk();
+
     originalWindow = global.window;
 
     global.window = Object.create(window);
@@ -37,6 +43,7 @@ describe("flashlight measure interactive", () => {
     });
 
     MeasureWebApp = (await import("../webapp/MeasureWebApp.js")).MeasureWebApp;
+    webAppSocket = (await import("../webapp/socket.js")).socket;
   });
 
   afterAll(() => {
@@ -46,10 +53,26 @@ describe("flashlight measure interactive", () => {
   const expectWebAppToBeOpened = () =>
     waitFor(() => expect(open).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}`));
 
+  // `webapp/socket.ts` creates the socket.io client at import time, which happens in
+  // `beforeAll` — before `setupCli()` has started the server. That first connection attempt
+  // therefore fails and the client only retries after its reconnection backoff (~1.3s here),
+  // which is longer than the 1s default timeout of `findBy*`. So wait for the connection
+  // explicitly rather than letting the first `findBy*` after a socket emit race against it.
+  const expectWebAppToBeConnected = () =>
+    waitFor(() => expect(webAppSocket.connected).toBe(true), { timeout: 10000 });
+
   const setupCli = (customPort = DEFAULT_PORT) => {
-    const { lastFrame, unmount } = cliRender(<ServerApp port={customPort} />);
+    // `ink-testing-library` drives its own React reconciler and doesn't wrap mount/unmount
+    // in `act`, which React 19 warns about once @testing-library/react has switched the
+    // process into an act environment — so wrap them here.
+    let cli!: ReturnType<typeof cliRender>;
+    act(() => {
+      cli = cliRender(<ServerApp port={customPort} />);
+    });
+    const { lastFrame, unmount } = cli;
+
     const closeCli = async () => {
-      unmount();
+      act(() => unmount());
       // Seems like we need to wait for the useEffect cleanup to happen
       await new Promise((resolve) => setTimeout(resolve, 0));
     };
@@ -65,7 +88,12 @@ describe("flashlight measure interactive", () => {
 
     return {
       closeWebApp: view.unmount,
-      expectWebAppToMatchSnapshot: (snapshotName: string) => matchSnapshot(view, snapshotName),
+      expectWebAppToMatchSnapshot: async (snapshotName: string) => {
+        // Flush pending effects first — MUI mounts its `TouchRipple` from an effect, so
+        // without this the snapshot depends on how many microtasks happened to run.
+        await act(async () => {});
+        matchSnapshot(view, snapshotName);
+      },
     };
   };
 
@@ -73,6 +101,7 @@ describe("flashlight measure interactive", () => {
     const { closeCli, expectCliOutput } = setupCli();
     const { closeWebApp, expectWebAppToMatchSnapshot } = setupWebApp();
     await expectWebAppToBeOpened();
+    await expectWebAppToBeConnected();
 
     expectCliOutput().toMatchInlineSnapshot(`
       "
@@ -90,7 +119,7 @@ describe("flashlight measure interactive", () => {
 
     // Initial report screen with no measures
     await screen.findByText("Average Test Runtime");
-    expectWebAppToMatchSnapshot("Web app with no measures yet");
+    await expectWebAppToMatchSnapshot("Web app with no measures yet");
 
     // Simulate measures being emitted on the device
     act(() => emitMeasures());
@@ -104,7 +133,7 @@ describe("flashlight measure interactive", () => {
     await screen.findByText("Other threads");
     fireEvent.click(screen.getByText("Other threads"));
 
-    expectWebAppToMatchSnapshot("Web app with measures and threads opened");
+    await expectWebAppToMatchSnapshot("Web app with measures and threads opened");
 
     // Stop measuring
     fireEvent.click(screen.getByText("Stop Measuring"));

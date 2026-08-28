@@ -16,6 +16,6 @@ flashlight measure`
       const port = Number(options.port) || DEFAULT_PORT;
       // measure command can be a bit slow to load since we run ink, express and socket.io, so lazy load it
       const { runServerApp } = await import("./ServerApp.js");
-      runServerApp(port);
+      await runServerApp(port);
     });
 };

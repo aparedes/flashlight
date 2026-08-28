@@ -10,7 +10,7 @@ import { SocketType, SocketServer } from "./socket/socketInterface";
 import { HostAndPortInfo } from "./components/HostAndPortInfo";
 import { getWebAppUrl } from "./constants";
 import { ServerSocketConnectionApp } from "./ServerSocketConnectionApp";
-import { render, useInput } from "ink";
+import { getInk, loadInk } from "./ink";
 import { profiler } from "@perf-profiler/profiler";
 
 const getPathToDist = () =>
@@ -47,6 +47,8 @@ const allowOnlyOneSocketClient = (io: SocketServer, onConnect: (socket: SocketTy
 };
 
 const useCleanupOnManualExit = () => {
+  const { useInput } = getInk();
+
   useInput(async (input) => {
     switch (input) {
       case "q":
@@ -95,7 +97,9 @@ export const ServerApp = ({ port }: ServerAppProps) => {
   );
 };
 
-export const runServerApp = (port: number) => {
+export const runServerApp = async (port: number) => {
+  const { render } = await loadInk();
+
   render(
     <ServerApp port={port} />,
     // handle it ourselves in the profiler to kill child processes thanks to useCleanupOnManualExit

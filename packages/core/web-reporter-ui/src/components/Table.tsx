@@ -8,6 +8,9 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
 import Checkbox from "@mui/material/Checkbox";
+import type { SxProps, Theme } from "@mui/material/styles";
+// MUI 5's `SxProps` expects an index signature that @types/react 19's `CSSProperties`
+// no longer has, so `visuallyHidden` needs a cast at its use site (fixed by MUI 9).
 import { visuallyHidden } from "@mui/utils";
 import { sanitizeProcessName } from "@perf-profiler/reporter";
 import { ArrowDownIcon } from "./icons/ArrowDownIcon";
@@ -101,7 +104,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             >
               {headCell.label}
               {orderBy === headCell.id ? (
-                <Box component="span" sx={visuallyHidden}>
+                <Box component="span" sx={visuallyHidden as SxProps<Theme>}>
                   {order === "desc" ? "sorted descending" : "sorted ascending"}
                 </Box>
               ) : null}

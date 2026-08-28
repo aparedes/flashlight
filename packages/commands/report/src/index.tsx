@@ -1,6 +1,11 @@
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import "../../../core/web-reporter-ui/index.css";
 
-const app = document.getElementById("app");
-ReactDOM.render(<App />, app);
+const container = document.getElementById("app");
+
+if (!container) {
+  throw new Error(`Report container #app is missing from the HTML document`);
+}
+
+createRoot(container).render(<App />);

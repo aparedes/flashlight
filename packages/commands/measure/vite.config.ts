@@ -7,9 +7,9 @@ export default defineConfig({
   // Relative asset URLs, resolved against `/` by `express.static(dist)`.
   base: "./",
   plugins: [
-    // The React Compiler stays off while we're on React 18 — enabling it emits
-    // `react/compiler-runtime` imports that only exist in React 19.
-    react(),
+    // React Compiler on, via oxc's native Rust port (`oxc-transform-react`) — no Babel
+    // in the pipeline. It emits `react/compiler-runtime` imports, which need React >= 19.
+    react({ compiler: true }),
   ],
   server: {
     // `getWebAppUrl` points at this port when DEVELOPMENT_MODE=true (the socket server itself
