@@ -147,7 +147,8 @@ describe("flashlight measure interactive", () => {
   });
 
   test("it handles the --port flag correctly", async () => {
-    const customPort = 1001;
+    // Must be >= 1024: lower ports are privileged on Linux, and CI runners are not root.
+    const customPort = 4001;
 
     const { closeCli, expectCliOutput } = setupCli(customPort);
 
