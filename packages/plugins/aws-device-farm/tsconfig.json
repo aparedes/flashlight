@@ -4,5 +4,10 @@
     "rootDir": "src",
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../../core/logger" },
+    { "path": "../../core/shell" },
+    { "path": "../../core/types" }
+  ],
   "include": ["src/**/*.ts"]
 }

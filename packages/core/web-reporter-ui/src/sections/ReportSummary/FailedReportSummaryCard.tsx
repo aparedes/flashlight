@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Report } from "@perf-profiler/reporter";
 
 type Props = {

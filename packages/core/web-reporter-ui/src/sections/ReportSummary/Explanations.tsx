@@ -1,5 +1,4 @@
 import orderBy from "lodash/orderBy";
-import React from "react";
 import { roundToDecimal, sanitizeProcessName } from "@perf-profiler/reporter";
 import { AveragedTestCaseResult } from "@perf-profiler/types";
 

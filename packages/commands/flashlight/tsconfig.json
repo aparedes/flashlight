@@ -4,6 +4,12 @@
     "rootDir": "src",
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../test" },
+    { "path": "../measure" },
+    { "path": "../tools" },
+    { "path": "../report" }
+  ],
   "include": ["src"],
   "exclude": ["src/standalone.ts", "src/embedded.generated.ts"]
 }

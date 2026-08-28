@@ -36,7 +36,7 @@ describe("flashlight measure interactive", () => {
       writable: true,
     });
 
-    MeasureWebApp = (await import("../webapp/MeasureWebApp")).MeasureWebApp;
+    MeasureWebApp = (await import("../webapp/MeasureWebApp.js")).MeasureWebApp;
   });
 
   afterAll(() => {

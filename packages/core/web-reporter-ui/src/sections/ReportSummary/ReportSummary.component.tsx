@@ -1,4 +1,3 @@
-import React from "react";
 import { ReportSummaryCard } from "./ReportSummaryCard";
 import { getThemeColorPalette } from "../../theme/colors";
 import { FailedReportSummaryCard } from "./FailedReportSummaryCard";

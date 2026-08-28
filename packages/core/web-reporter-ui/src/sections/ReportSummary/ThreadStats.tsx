@@ -1,4 +1,3 @@
-import React from "react";
 import { SummaryStats } from "./SummaryStats";
 
 export const ThreadStats = ({

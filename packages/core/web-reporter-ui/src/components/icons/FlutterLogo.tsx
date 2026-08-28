@@ -1,5 +1,3 @@
-import React from "react";
-
 export const FlutterLogo = ({ size }: { size: number }) => (
   <svg
     width={size}

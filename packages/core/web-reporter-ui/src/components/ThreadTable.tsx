@@ -1,4 +1,3 @@
-import React from "react";
 import { AveragedTestCaseResult, Measure } from "@perf-profiler/types";
 import { getAverageCpuUsagePerProcess } from "@perf-profiler/reporter";
 import { keyBy, uniq } from "lodash";

@@ -4,5 +4,13 @@
     "rootDir": "src",
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../test" },
+    { "path": "../../core/logger" },
+    { "path": "../../platforms/profiler" },
+    { "path": "../../core/shell" },
+    { "path": "../../core/types" },
+    { "path": "../../core/web-reporter-ui" }
+  ],
   "include": ["src"]
 }

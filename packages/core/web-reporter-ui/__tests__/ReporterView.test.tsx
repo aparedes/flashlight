@@ -1,4 +1,3 @@
-import React from "react";
 import { describe, it, expect } from "bun:test";
 import { render, fireEvent, screen } from "@testing-library/react";
 import { IterationsReporterView } from "../ReporterView";

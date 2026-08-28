@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [{ "path": "../ios-instruments" }, { "path": "../../core/types" }],
   "include": ["./src/**/*.ts"],
   "exclude": ["./dist/**/*"]
 }

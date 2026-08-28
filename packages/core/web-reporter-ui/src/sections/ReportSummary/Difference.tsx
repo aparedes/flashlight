@@ -1,4 +1,3 @@
-import React from "react";
 import { roundToDecimal } from "@perf-profiler/reporter";
 
 type Props = {

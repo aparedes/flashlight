@@ -1,6 +1,5 @@
 import { PlayArrow, Stop } from "@mui/icons-material";
 import { Button } from "@perf-profiler/web-reporter-ui";
-import React from "react";
 
 export const StartButton = ({
   isMeasuring,

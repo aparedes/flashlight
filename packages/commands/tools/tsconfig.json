@@ -4,5 +4,6 @@
     "rootDir": "src",
     "outDir": "./dist"
   },
+  "references": [{ "path": "../../platforms/profiler" }, { "path": "../../core/shell" }],
   "include": ["src"]
 }

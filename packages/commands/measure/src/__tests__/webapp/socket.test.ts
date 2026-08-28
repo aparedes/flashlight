@@ -24,7 +24,7 @@ describe("socket", () => {
   });
 
   it("sets the expected socket server URL", async () => {
-    await import("../../webapp/socket");
+    await import("../../webapp/socket.js");
     expect(ioMock).toHaveBeenCalledWith("http://localhost:9999");
   });
 });

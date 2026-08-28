@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [{ "path": "../types" }],
   "include": ["./src/**/*.ts"],
   "exclude": ["./dist/**/*"]
 }

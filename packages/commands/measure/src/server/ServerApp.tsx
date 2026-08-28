@@ -5,7 +5,7 @@ import path from "path";
 import cors from "cors";
 import { Server } from "socket.io";
 import { open } from "@perf-profiler/shell";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { SocketType, SocketServer } from "./socket/socketInterface";
 import { HostAndPortInfo } from "./components/HostAndPortInfo";
 import { getWebAppUrl } from "./constants";

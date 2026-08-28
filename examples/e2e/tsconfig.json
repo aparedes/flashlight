@@ -3,5 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../../packages/plugins/appium-helper" },
+    { "path": "../../packages/commands/test" }
+  ],
   "files": ["appium.test.ts"]
 }

@@ -2,13 +2,20 @@ import { Logger } from "@perf-profiler/logger";
 import { profiler, waitFor } from "@perf-profiler/profiler";
 import { basename, dirname } from "path";
 import { Trace } from "./Trace";
-import { Measure, POLLING_INTERVAL, TestCaseIterationResult } from "@perf-profiler/types";
+import {
+  Measure,
+  POLLING_INTERVAL,
+  ScreenRecorder,
+  TestCaseIterationResult,
+} from "@perf-profiler/types";
 
 export class PerformanceMeasurer {
   measures: Measure[] = [];
   polling?: { stop: () => void };
   shouldStop = false;
   timingTrace?: Trace;
+
+  private recorder: ScreenRecorder | undefined | null;
 
   constructor(
     private bundleId: string,
@@ -22,11 +29,11 @@ export class PerformanceMeasurer {
             videoPath: string;
           };
     }
-  ) {}
-
-  private recorder = this.options.recordOptions.record
-    ? profiler.getScreenRecorder(basename(this.options.recordOptions.videoPath))
-    : null;
+  ) {
+    this.recorder = this.options.recordOptions.record
+      ? profiler.getScreenRecorder(basename(this.options.recordOptions.videoPath))
+      : null;
+  }
 
   async start(
     onMeasure: (measure: Measure) => void = () => {
