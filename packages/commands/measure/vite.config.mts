@@ -16,7 +16,7 @@ export default defineConfig({
       ),
     },
   },
-  // Relative asset URLs, resolved against `/` by `express.static(dist)`.
+  // Relative asset URLs, resolved against `/` by the `Bun.serve` static handler.
   base: "./",
   plugins: [
     // React Compiler on, via oxc's native Rust port (`oxc-transform-react`) — no Babel

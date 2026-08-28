@@ -1,9 +1,8 @@
 import { Logger } from "@perf-profiler/logger";
 import { useEffect } from "react";
-import type { Socket } from "socket.io";
-import type { Socket as ClientSocket } from "socket.io-client";
+import type { SocketEventBroadcaster } from "../socket/typedSocket";
 
-export const useLogSocketEvents = (socket: Socket | ClientSocket) => {
+export const useLogSocketEvents = (socket: SocketEventBroadcaster) => {
   useEffect(() => {
     function onSocketEvent(event: string, ...args: unknown[]) {
       Logger.debug(`Received socket event: ${event} with ${JSON.stringify(args)}`);

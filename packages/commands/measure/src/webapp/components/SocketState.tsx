@@ -8,7 +8,7 @@ import Button from "@mui/material/Button";
 import { Logger } from "@perf-profiler/logger";
 import { socket } from "../socket";
 import { useLogSocketEvents } from "../../common/useLogSocketEvents";
-import { SocketEvents } from "../../server/socket/socketInterface";
+import { SocketEvents } from "../../socket/socketInterface";
 
 const useSocketState = (onError: (error: string) => void) => {
   useLogSocketEvents(socket);

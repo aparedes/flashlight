@@ -53,11 +53,11 @@ describe("flashlight measure interactive", () => {
   const expectWebAppToBeOpened = () =>
     waitFor(() => expect(open).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}`));
 
-  // `webapp/socket.ts` creates the socket.io client at import time, which happens in
-  // `beforeAll` — before `setupCli()` has started the server. That first connection attempt
-  // therefore fails and the client only retries after its reconnection backoff (~1.3s here),
-  // which is longer than the 1s default timeout of `findBy*`. So wait for the connection
-  // explicitly rather than letting the first `findBy*` after a socket emit race against it.
+  // `webapp/socket.ts` opens its WebSocket at import time, which happens in `beforeAll` —
+  // before `setupCli()` has started the server. That first connection attempt therefore fails
+  // and the client only retries after its backoff, which can outlast the 1s default timeout of
+  // `findBy*`. So wait for the connection explicitly rather than letting the first `findBy*`
+  // after a socket emit race against it.
   const expectWebAppToBeConnected = () =>
     waitFor(() => expect(webAppSocket.connected).toBe(true), { timeout: 10000 });
 

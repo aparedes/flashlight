@@ -1,6 +1,6 @@
 import { profiler } from "@perf-profiler/profiler";
 import { useEffect } from "react";
-import { SocketType, SocketData, SocketEvents } from "./socket/socketInterface";
+import { SocketType, SocketData, SocketEvents } from "../socket/socketInterface";
 
 export const useBundleIdControls = (
   socket: SocketType,
