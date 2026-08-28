@@ -28,23 +28,26 @@ export interface Options {
 }
 
 export class SingleIterationTester {
+  private currentTestCaseIterationResult: TestCaseIterationResult | undefined = undefined;
+  private videoPath: string;
+  private performanceMeasurer: PerformanceMeasurer;
+
   constructor(
     private bundleId: string,
     private testCase: TestCase,
     private options: Options,
     private iterationIndex: number
-  ) {}
-
-  private currentTestCaseIterationResult: TestCaseIterationResult | undefined = undefined;
-  private videoPath = `${this.options.resultsFileOptions.path.replace(".json", "")}_iteration_${
-    this.iterationIndex
-  }_${new Date().getTime()}.mp4`;
-  private performanceMeasurer: PerformanceMeasurer = new PerformanceMeasurer(this.bundleId, {
-    recordOptions: {
-      ...this.options.recordOptions,
-      videoPath: this.videoPath,
-    },
-  });
+  ) {
+    this.videoPath = `${this.options.resultsFileOptions.path.replace(".json", "")}_iteration_${
+      this.iterationIndex
+    }_${new Date().getTime()}.mp4`;
+    this.performanceMeasurer = new PerformanceMeasurer(this.bundleId, {
+      recordOptions: {
+        ...this.options.recordOptions,
+        videoPath: this.videoPath,
+      },
+    });
+  }
 
   public getCurrentTestCaseIterationResult() {
     return this.currentTestCaseIterationResult;

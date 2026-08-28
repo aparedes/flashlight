@@ -1,5 +1,5 @@
 import { TestCaseResult } from "@perf-profiler/types";
-import { Server, Socket } from "socket.io";
+import type { TypedSocket } from "./typedSocket";
 
 export interface SocketData {
   isMeasuring: boolean;
@@ -21,23 +21,26 @@ export interface ClientToServerEvents {
   autodetectRefreshRate: () => void;
 }
 
-interface InterServerEvents {
-  ping: () => void;
+/**
+ * Connection lifecycle, dispatched locally by the web app client (never sent over the wire).
+ * socket.io reserved the same two event names, so listeners did not have to change.
+ */
+export interface SocketLifecycleEvents {
+  connect: () => void;
+  disconnect: (reason: string) => void;
 }
 
-export type SocketServer = Server<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
->;
+/** The measure server's end of the connection with the (single) web app client. */
+export type SocketType = TypedSocket<ServerToClientEvents, ClientToServerEvents>;
 
-export type SocketType = Socket<
+/** The web app's end of the same connection. */
+export type ClientSocketType = TypedSocket<
   ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
->;
+  ServerToClientEvents & SocketLifecycleEvents
+> & {
+  /** Closes the connection for good — no reconnection attempt follows. */
+  close(): void;
+};
 
 export enum SocketEvents {
   START = "start",
@@ -47,7 +50,6 @@ export enum SocketEvents {
   SET_BUNDLE_ID = "setBundleId",
   UPDATE_STATE = "updateState",
   SEND_ERROR = "sendError",
-  PING = "ping",
   CONNECT = "connect",
   DISCONNECT = "disconnect",
 }

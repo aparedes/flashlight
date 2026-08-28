@@ -70,6 +70,26 @@ export const getResultsFromPaths = (jsonPaths: string[]): TestCaseResult[] => {
 
 const getAssetsDir = () => process.env.FLASHLIGHT_REPORT_ASSETS_PATH || __dirname;
 
+/**
+ * The token `App.tsx` initialises the results with. Vite builds a single self-contained
+ * `index.html` (see vite.config.ts + vite-plugin-singlefile), so the placeholder — quoted by the
+ * minifier as a string or a template literal — appears exactly once in the built HTML.
+ */
+const RESULTS_PLACEHOLDER =
+  /(["'`])THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT\1/;
+
+export const injectResults = (html: string, results: TestCaseResult[]): string => {
+  if (!RESULTS_PLACEHOLDER.test(html)) {
+    throw new Error("Could not find the results placeholder in the report HTML");
+  }
+
+  // `<` is escaped so that a `</script>` sequence inside the data cannot end the inline script.
+  const payload = JSON.stringify(results).replace(/</g, "\\u003c");
+
+  // A replacer function keeps `$&`, `$1`, ... sequences in the data from being interpreted.
+  return html.replace(RESULTS_PLACEHOLDER, () => payload);
+};
+
 export const writeReport = ({
   jsonPaths,
   outputDir,
@@ -81,31 +101,16 @@ export const writeReport = ({
   duration: number | null;
   skip: number;
 }) => {
-  const newJsFile = "report.js";
-
-  const oldHtmlContent = fs.readFileSync(`${getAssetsDir()}/index.html`, "utf8");
-  const scriptName = oldHtmlContent.match(/src="(.*?)"/)?.[1];
-
-  const newHtmlContent = fs
-    .readFileSync(`${getAssetsDir()}/index.html`, "utf8")
-    .replace(`src="${scriptName}"`, `src="${newJsFile}"`)
-    .replace('type="module"', "");
+  const html = fs.readFileSync(`${getAssetsDir()}/index.html`, "utf8");
 
   const results = getResultsFromPaths(jsonPaths);
   const isIOSTestCaseResult = results.every((result) => result.type === "IOS_EXPERIMENTAL");
 
-  const report = JSON.stringify(getMeasuresForTimeInterval({ results, skip, duration }));
-
-  const jsFileContent = fs.readFileSync(`${getAssetsDir()}/${scriptName}`, "utf8").replace(
-    // See App.tsx for the reason why we do this
-    '"THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT"',
-    report
-  );
-
-  fs.writeFileSync(`${outputDir}/report.js`, jsFileContent);
+  const reportHtml = injectResults(html, getMeasuresForTimeInterval({ results, skip, duration }));
 
   const htmlFilePath = `${outputDir}/report.html`;
+  // Videos stay next to the report as separate files, by design.
   if (!isIOSTestCaseResult) copyVideoFiles(results, outputDir);
-  fs.writeFileSync(htmlFilePath, newHtmlContent);
+  fs.writeFileSync(htmlFilePath, reportHtml);
   return htmlFilePath;
 };

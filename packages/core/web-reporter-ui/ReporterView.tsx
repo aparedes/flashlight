@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Measure, POLLING_INTERVAL, TestCaseResult } from "@perf-profiler/types";
 import { CPUReport } from "./src/sections/CPUReport";
 import { ReportSummary } from "./src/sections/ReportSummary/ReportSummary.component";

@@ -5,7 +5,6 @@ import {
   TestCaseIterationResult,
   TestCaseResult,
 } from "@perf-profiler/types";
-import { mapValues } from "lodash";
 import { getHighCpuUsage } from "./highCpu";
 
 const range = (n: number) =>
@@ -37,7 +36,9 @@ const averageMaps = (maps: { [key: string]: number }[]): { [key: string]: number
     return aggr;
   }, {});
 
-  return mapValues(totalByThread, (value) => value / maps.length);
+  return Object.fromEntries(
+    Object.entries(totalByThread).map(([key, value]) => [key, value / maps.length])
+  );
 };
 
 const averageMeasures = (measures: Measure[]): Measure => {

@@ -3,5 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../appium-helper" },
+    { "path": "../../commands/test" },
+    { "path": "../../core/reporter" },
+    { "path": "../../core/types" }
+  ],
   "include": ["*.ts"]
 }

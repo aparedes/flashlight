@@ -1,4 +1,3 @@
-import React from "react";
 import { AveragedTestCaseResult } from "@perf-profiler/types";
 import { buildValueGraph } from "./hideSectionForEmptyValue";
 import { ReportChart } from "../components/Charts/ReportChart";

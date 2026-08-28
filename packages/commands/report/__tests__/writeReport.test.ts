@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Measure, TestCaseIterationResult, TestCaseResult } from "@perf-profiler/types";
-import { getMeasuresForTimeInterval } from "../writeReport";
+import { getMeasuresForTimeInterval, injectResults } from "../writeReport";
 
 const mockMeasure = (name: string) => {
   // We're just mocking measure to make tests more readable here
@@ -124,5 +124,56 @@ describe("getMeasuresForTimeInterval", () => {
         status: "SUCCESS",
       },
     ]);
+  });
+});
+
+describe("injectResults", () => {
+  const PLACEHOLDER =
+    "THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT";
+
+  const mockResult = (name: string): TestCaseResult => ({
+    iterations: [mockResultIteration([])],
+    name,
+    status: "SUCCESS",
+  });
+
+  it("replaces the placeholder in the single-file HTML", () => {
+    const html = `<html><script>let r="${PLACEHOLDER}";</script></html>`;
+
+    expect(injectResults(html, [mockResult("Result")])).toBe(
+      `<html><script>let r=${JSON.stringify([mockResult("Result")])};</script></html>`
+    );
+  });
+
+  it("replaces the placeholder when the minifier quoted it as a template literal", () => {
+    const html = `<html><script>let r=\`${PLACEHOLDER}\`;</script></html>`;
+
+    expect(injectResults(html, [])).toBe(`<html><script>let r=[];</script></html>`);
+  });
+
+  it("escapes `<` so that data cannot close the inline script", () => {
+    const html = `<html><script>let r="${PLACEHOLDER}";</script></html>`;
+
+    const output = injectResults(html, [mockResult("</script><script>alert(1)</script>")]);
+
+    expect(output).toContain("\\u003c/script>\\u003cscript>alert(1)\\u003c/script>");
+    expect(output.match(/<script>/g)).toHaveLength(1);
+    expect(
+      JSON.parse(output.slice(output.indexOf("let r=") + 6, output.indexOf(";</script>")))
+    ).toEqual([mockResult("</script><script>alert(1)</script>")]);
+  });
+
+  it("does not interpret `$` sequences in the data as replacement patterns", () => {
+    const html = `<html><script>let r="${PLACEHOLDER}";</script></html>`;
+
+    const output = injectResults(html, [mockResult("$& $` $' $1 $$")]);
+
+    expect(output).toContain(JSON.stringify("$& $` $' $1 $$"));
+  });
+
+  it("throws when the placeholder is missing", () => {
+    expect(() => injectResults("<html></html>", [])).toThrowErrorMatchingInlineSnapshot(
+      `"Could not find the results placeholder in the report HTML"`
+    );
   });
 });

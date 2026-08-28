@@ -1,5 +1,3 @@
-import React from "react";
-
 export const RNLogo = ({ size }: { size: number }) => (
   <svg
     width={size}

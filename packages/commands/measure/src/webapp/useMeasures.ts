@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SocketData, SocketEvents } from "../server/socket/socketInterface";
+import { SocketData, SocketEvents } from "../socket/socketInterface";
 import { socket } from "./socket";
 
 export const useMeasures = () => {

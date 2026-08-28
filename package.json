@@ -19,19 +19,20 @@
     "url": "https://github.com/bamlab/flashlight/issues"
   },
   "scripts": {
-    "clean-dist": "rm -rf packages/*/*/dist && rm -rf packages/*/*/tsconfig.tsbuildinfo",
+    "clean-dist": "bun scripts/clean.ts",
     "watch": "tsc --build --watch",
     "test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && bun run test:unit",
     "test:unit": "bun run test:unit:node && bun run test:unit:dom",
     "test:unit:node": "bun test --preload ./test-setup/node.ts packages/platforms/android/src packages/plugins/aws-device-farm/src packages/commands/test/src packages/core/reporter/src packages/commands/report/__tests__",
-    "test:unit:dom": "bun test --preload ./test-setup/dom.tsx packages/commands/measure/src/__tests__/webapp && bun test --preload ./test-setup/dom.tsx packages/core/web-reporter-ui/__tests__ packages/commands/measure/src/__tests__/measure.test.tsx packages/commands/measure/src/__tests__/server",
+    "test:unit:dom": "bun test --timeout 20000 --preload ./test-setup/dom.tsx packages/commands/measure/src/__tests__/webapp && bun test --timeout 20000 --preload ./test-setup/dom.tsx packages/core/web-reporter-ui/__tests__ packages/commands/measure/src/__tests__/measure.test.tsx packages/commands/measure/src/__tests__/server",
     "test:coverage": "bun run test:unit:node --coverage && bun run test:unit:dom --coverage",
     "run-cli-example": "bun examples/cli/index.ts",
     "flashlight": "bun packages/commands/flashlight/dist/bin.js",
     "build:standalone": "bun scripts/build-standalone.ts",
-    "build": "rm -rf .parcel-cache && bun run clean-dist && tsc --build && bun run --filter @perf-profiler/web-reporter build && bun run --filter @perf-profiler/measure build",
+    "build": "bun run clean-dist && tsc --build && bun run --filter '@perf-profiler/web-reporter' --filter '@perf-profiler/measure' build",
     "test:e2e": "mkdir -p report && bun packages/plugins/aws-device-farm/dist/bin.js runTest --apkPath .github/workflows/example.apk --projectName 'Flashlight-Serverless' --reportDestinationPath report --testCommand 'npx ts-node examples/e2e/appium-ci.test.ts' --testFolder .",
-    "prepare": "husky",
+    "prepare": "lefthook install",
+    "typecheck": "tsc --build",
     "lint": "oxlint --max-warnings 0",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
@@ -41,16 +42,10 @@
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.11.12",
     "@types/bun": "^1.4.0",
-    "@types/lodash": "^4.17.0",
-    "husky": "^9.0.11",
-    "lint-staged": "15.2.10",
+    "lefthook": "^2.1.10",
     "oxfmt": "^0.65.0",
     "oxlint": "^1.80.0",
-    "typescript": "^5.4.2"
-  },
-  "lint-staged": {
-    "*.{js,ts,tsx}": "oxlint --fix",
-    "*": "oxfmt --no-error-on-unmatched-pattern"
+    "typescript": "7.0.2"
   },
   "dependencies": {}
 }

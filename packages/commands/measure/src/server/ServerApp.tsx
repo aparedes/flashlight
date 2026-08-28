@@ -1,52 +1,16 @@
-import express from "express";
-import http from "http";
-import { promises as fs } from "fs";
-import path from "path";
-import cors from "cors";
-import { Server } from "socket.io";
 import { open } from "@perf-profiler/shell";
-import React, { useEffect, useState } from "react";
-import { SocketType, SocketServer } from "./socket/socketInterface";
+import { useEffect, useState } from "react";
+import type { SocketType } from "../socket/socketInterface";
 import { HostAndPortInfo } from "./components/HostAndPortInfo";
 import { getWebAppUrl } from "./constants";
 import { ServerSocketConnectionApp } from "./ServerSocketConnectionApp";
-import { render, useInput } from "ink";
+import { getInk, loadInk } from "./ink";
 import { profiler } from "@perf-profiler/profiler";
-
-const getPathToDist = () =>
-  process.env.FLASHLIGHT_WEBAPP_PATH || path.join(__dirname, "../../dist");
-
-export const createExpressApp = ({ port }: { port: number }) => {
-  const app = express();
-  app.use(cors({ origin: true }));
-
-  app.get("/", async (_, res) => {
-    try {
-      const indexHtml = path.join(getPathToDist(), "index.html");
-      let data = await fs.readFile(indexHtml, "utf8");
-      data = data.replace("localhost:3000", `localhost:${port}`);
-
-      res.send(data);
-    } catch {
-      res.status(500).send("Error loading the page");
-    }
-  });
-
-  // Serve the webapp folder built by parcel
-  app.use(express.static(getPathToDist()));
-  return app;
-};
-
-const allowOnlyOneSocketClient = (io: SocketServer, onConnect: (socket: SocketType) => void) => {
-  let currentSocketClient: SocketType | null = null;
-  io.on("connection", (socket) => {
-    currentSocketClient?.disconnect(true);
-    onConnect(socket);
-    currentSocketClient = socket;
-  });
-};
+import { createWebAppServer } from "./webAppServer";
 
 const useCleanupOnManualExit = () => {
+  const { useInput } = getInk();
+
   useInput(async (input) => {
     switch (input) {
       case "q":
@@ -65,25 +29,13 @@ export const ServerApp = ({ port }: ServerAppProps) => {
   const [socket, setSocket] = useState<SocketType | null>(null);
   const webAppUrl = getWebAppUrl(port);
   useEffect(() => {
-    const app = createExpressApp({ port });
-
-    const server = http.createServer(app);
-    const io: SocketServer = new Server(server, {
-      cors: {
-        origin: [webAppUrl],
-        methods: ["GET", "POST"],
-      },
-    });
-
-    allowOnlyOneSocketClient(io, setSocket);
-
-    server.listen(port, () => {
-      open(webAppUrl);
-    });
+    // `Bun.serve` is listening as soon as it returns, so the browser can be opened right away.
+    const server = createWebAppServer({ port, onConnection: setSocket });
+    open(webAppUrl);
 
     return () => {
-      server.close();
-      io.close();
+      // `true` closes the active WebSocket too, which the web app reports as a disconnection.
+      server.stop(true);
     };
   }, [port, webAppUrl]);
   useCleanupOnManualExit();
@@ -95,7 +47,9 @@ export const ServerApp = ({ port }: ServerAppProps) => {
   );
 };
 
-export const runServerApp = (port: number) => {
+export const runServerApp = async (port: number) => {
+  const { render } = await loadInk();
+
   render(
     <ServerApp port={port} />,
     // handle it ourselves in the profiler to kill child processes thanks to useCleanupOnManualExit

@@ -4,25 +4,34 @@ import {
   TestCaseIterationResult,
   AveragedTestCaseResult,
 } from "@perf-profiler/types";
-import _ from "lodash";
+import { groupBy } from "es-toolkit";
 import { getMinMax } from "../utils/getMinMax";
 import { getStandardDeviation } from "../utils/getStandardDeviation";
 import { variationCoefficient } from "../utils/variationCoefficient";
 
-export const getHighCpuUsage = (measures: Measure[], cpuUsageThreshold: number | undefined = 90) =>
-  _(measures)
+export const getHighCpuUsage = (
+  measures: Measure[],
+  cpuUsageThreshold: number | undefined = 90
+) => {
+  const highCpuUsageMeasures = measures
     .map((measure) => measure.cpu)
-    .map(({ perName }) =>
+    .flatMap(({ perName }) =>
       Object.keys(perName).map((processName) => ({
         processName,
         cpuUsage: perName[processName],
       }))
     )
-    .flatten()
-    .filter((measure) => measure.cpuUsage > cpuUsageThreshold)
-    .groupBy((measure) => measure.processName)
-    .mapValues((measures) => measures.length * POLLING_INTERVAL)
-    .value();
+    .filter((measure) => measure.cpuUsage > cpuUsageThreshold);
+
+  const groupedByProcessName = groupBy(highCpuUsageMeasures, (measure) => measure.processName);
+
+  return Object.fromEntries(
+    Object.entries(groupedByProcessName).map(([processName, measuresForProcess]) => [
+      processName,
+      measuresForProcess.length * POLLING_INTERVAL,
+    ])
+  );
+};
 
 export const getAverageTotalHighCPUUsage = (highCpuProcesses: { [processName: string]: number }) =>
   Object.keys(highCpuProcesses).reduce((sum, name) => sum + highCpuProcesses[name], 0);

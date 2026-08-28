@@ -3,5 +3,10 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../../packages/platforms/profiler" },
+    { "path": "../../packages/core/reporter" },
+    { "path": "../../packages/core/types" }
+  ],
   "files": ["index.ts"]
 }

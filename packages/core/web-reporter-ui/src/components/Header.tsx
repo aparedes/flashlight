@@ -8,7 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 
 export type MenuOption = {
   label: string;
-  icon: JSX.Element;
+  icon: React.JSX.Element;
   onClick: () => void;
 };
 

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [{ "path": "../../core/logger" }, { "path": "../../core/types" }],
   "include": ["./src/**/*.ts"],
   "exclude": ["./dist/**/*"]
 }

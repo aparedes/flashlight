@@ -1,31 +1,37 @@
 import { Measure, TestCaseIterationResult } from "@perf-profiler/types";
-import _, { round } from "lodash";
+import { groupBy, orderBy } from "es-toolkit";
 import { getMinMax } from "../utils/getMinMax";
 import { getStandardDeviation } from "../utils/getStandardDeviation";
 import { variationCoefficient } from "../utils/variationCoefficient";
+import { roundToDecimal } from "../utils/round";
 
-const _getAverageCpuUsagePerProcess = (measures: Measure[]) =>
-  _(measures)
+const _getAverageCpuUsagePerProcess = (measures: Measure[]) => {
+  const allProcessCpuUsages = measures
     .map((measure) => measure.cpu)
-    .map(({ perName }) =>
+    .flatMap(({ perName }) =>
       Object.keys(perName).map((processName) => ({
         processName,
         cpuUsage: perName[processName],
       }))
-    )
-    .flatten()
-    .groupBy((measure) => measure.processName)
-    .map((measure, processName) => ({
+    );
+
+  const groupedByProcessName = groupBy(allProcessCpuUsages, (measure) => measure.processName);
+
+  const averagedByProcess = Object.entries(groupedByProcessName).map(
+    ([processName, measuresForProcess]) => ({
       processName,
-      cpuUsage: _.sumBy(measure, (measure) => measure.cpuUsage) / measures.length,
-    }))
-    .orderBy((measure) => measure.cpuUsage, "desc")
-    .value();
+      cpuUsage:
+        measuresForProcess.reduce((sum, measure) => sum + measure.cpuUsage, 0) / measures.length,
+    })
+  );
+
+  return orderBy(averagedByProcess, [(measure) => measure.cpuUsage], ["desc"]);
+};
 
 export const getAverageCpuUsagePerProcess = (measures: Measure[]) =>
   _getAverageCpuUsagePerProcess(measures).map((measure) => ({
     ...measure,
-    cpuUsage: round(measure.cpuUsage, 1),
+    cpuUsage: roundToDecimal(measure.cpuUsage, 1),
   }));
 
 export const getAverageCpuUsage = (measures: Measure[]) =>

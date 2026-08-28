@@ -79,20 +79,20 @@ function EnhancedTableHead(props: EnhancedTableProps) {
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox" className="!text-neutral-300 !bg-dark-charcoal" />
+        <TableCell padding="checkbox" className="text-neutral-300! bg-dark-charcoal!" />
         {props.headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
             align={headCell.numeric ? "right" : "left"}
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
-            className="!text-neutral-300 !bg-dark-charcoal"
+            className="text-neutral-300! bg-dark-charcoal!"
           >
             <TableSortLabel
               active={orderBy === headCell.id}
               direction={orderBy === headCell.id ? order : "asc"}
               onClick={createSortHandler(headCell.id)}
-              className="!text-neutral-300 "
+              className="text-neutral-300! "
               style={{
                 color: "white",
                 fontWeight: orderBy === headCell.id ? 700 : 400,
@@ -191,14 +191,16 @@ export default function EnhancedTable({
                 key={row.name}
                 selected={isItemSelected}
               >
-                <TableCell padding="checkbox" className="!text-neutral-300 border-b-neutral-500">
+                <TableCell padding="checkbox" className="text-neutral-300! border-b-neutral-500">
                   <Checkbox
                     color="primary"
                     checked={isItemSelected}
-                    inputProps={{
-                      "aria-labelledby": labelId,
+                    slotProps={{
+                      input: {
+                        "aria-labelledby": labelId,
+                      },
                     }}
-                    className="!text-neutral-300"
+                    className="text-neutral-300!"
                   />
                 </TableCell>
                 <TableCell
@@ -206,7 +208,7 @@ export default function EnhancedTable({
                   id={labelId}
                   scope="row"
                   padding="none"
-                  className="!text-neutral-300 border-b-neutral-500"
+                  className="text-neutral-300! border-b-neutral-500"
                 >
                   {sanitizeProcessName(row.name)}
                 </TableCell>
@@ -214,7 +216,7 @@ export default function EnhancedTable({
                   <TableCell
                     align="right"
                     key={headCell.id}
-                    className="!text-neutral-300 border-b-neutral-500"
+                    className="text-neutral-300! border-b-neutral-500"
                   >
                     {row[headCell.id]}
                   </TableCell>

@@ -1,12 +1,8 @@
-import { io, Socket } from "socket.io-client";
-import {
-  ServerToClientEvents,
-  ClientToServerEvents,
-  SocketEvents,
-} from "../server/socket/socketInterface";
+import { ClientSocket } from "../socket/clientSocket";
 
-export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
-  window.__FLASHLIGHT_DATA__.socketServerUrl
-);
-
-socket.on(SocketEvents.DISCONNECT, () => socket.close());
+/**
+ * The web app's connection to the measure CLI. Created at import time — before the CLI's server
+ * is necessarily listening — so `ClientSocket` retries until the first connection succeeds and
+ * buffers anything emitted meanwhile.
+ */
+export const socket = new ClientSocket(window.__FLASHLIGHT_DATA__.socketServerUrl);

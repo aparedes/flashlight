@@ -1,18 +1,18 @@
 import React from "react";
-import { TinyEmitter } from "tiny-emitter";
 
-const emitter = new TinyEmitter();
+const emitter = new EventTarget();
 
 const SET_VIDEO_CURRENT_TIME = "SET_VIDEO_CURRENT_TIME";
 export const setVideoCurrentTime = (time: number) => {
-  emitter.emit(SET_VIDEO_CURRENT_TIME, time);
+  emitter.dispatchEvent(new CustomEvent<number>(SET_VIDEO_CURRENT_TIME, { detail: time }));
 };
 
 export const useListenToVideoCurrentTime = (callback: (time: number) => void) => {
   React.useEffect(() => {
-    emitter.on(SET_VIDEO_CURRENT_TIME, callback);
+    const listener = (event: Event) => callback((event as CustomEvent<number>).detail);
+    emitter.addEventListener(SET_VIDEO_CURRENT_TIME, listener);
     return () => {
-      emitter.off(SET_VIDEO_CURRENT_TIME, callback);
+      emitter.removeEventListener(SET_VIDEO_CURRENT_TIME, listener);
     };
   }, [callback]);
 };

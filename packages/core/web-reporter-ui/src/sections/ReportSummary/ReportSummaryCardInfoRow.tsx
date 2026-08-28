@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactNode, useMemo } from "react";
+import { FunctionComponent, ReactNode, useMemo } from "react";
 import { Collapsible } from "../../components/Collapsible";
 
 type Props = {

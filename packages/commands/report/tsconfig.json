@@ -3,6 +3,12 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
+  "references": [
+    { "path": "../../core/logger" },
+    { "path": "../../core/shell" },
+    { "path": "../../core/types" },
+    { "path": "../../core/web-reporter-ui" }
+  ],
   "include": ["./src/**/*.ts*", "*.ts"],
-  "exclude": ["./dist/**/*"]
+  "exclude": ["./dist/**/*", "./src/index.tsx", "./vite.config.mts"]
 }
