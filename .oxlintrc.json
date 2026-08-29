@@ -31,7 +31,7 @@
   "ignorePatterns": [
     "dist",
     "node_modules",
-    "cpp-profiler",
+    "rust-profiler",
     "coverage",
     "build",
     "**/embedded.generated.ts"

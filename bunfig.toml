@@ -3,7 +3,7 @@ coverageSkipTestFiles = true
 coveragePathIgnorePatterns = [
   "**/node_modules/**",
   "**/dist/**",
-  "**/cpp-profiler/**",
+  "**/rust-profiler/**",
   "**/__tests__/**",
   "test-setup/**",
 ]
