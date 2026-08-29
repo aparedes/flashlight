@@ -19,7 +19,8 @@ Differences from the C++ version:
 
 ## Release
 
-To build all executables in the bin folder, run:
+To build the device binary into the bin folder (arm64-v8a is the only
+shipped ABI — real devices and the Apple Silicon emulator), run:
 
 ```sh
 ./build_all_abi.sh

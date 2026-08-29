@@ -11,9 +11,9 @@ stakes (it runs unattended on devices for minutes at a time).
 What the migration bought us, beyond the rewrite itself:
 
 - **No Android NDK.** The binaries are fully static musl builds linked with the
-  `rust-lld` bundled in the Rust toolchain. Building the supported ABIs
-  (arm64-v8a for devices, x86_64 for emulators — the unused 32-bit ABIs
-  armeabi-v7a and x86 were dropped) needs only
+  `rust-lld` bundled in the Rust toolchain. Building the one supported ABI
+  (arm64-v8a — real devices and the emulator on Apple Silicon; the unused
+  armeabi-v7a, x86 and x86_64 ABIs were dropped) needs only
   `rustup target add` (`./build_all_abi.sh` does everything) — the previous CMake +
   NDK toolchain requirement is gone.
 - **No runtime dependencies.** `pidof` is now a native `/proc/*/cmdline` scan
@@ -23,7 +23,7 @@ What the migration bought us, beyond the rewrite itself:
   per restart, and a thread disappearing mid-measure (a filesystem race that
   `std::terminate`'d the C++ binary) now just skips that file.
 - **Tests + CI.** The pidof matching rules are unit-tested (`cargo test`), and CI
-  runs fmt/clippy/test plus a cross-compile of both ABIs on every push.
+  runs fmt/clippy/test plus a cross-compile of the shipped ABI on every push.
 
 The wire protocol (`=START MEASURE=` / `=SEPARATOR=` / `=STOP MEASURE=` blocks and
 the `CPP_ERROR_*` stderr markers) is byte-compatible — verified by diffing Rust vs
@@ -52,7 +52,7 @@ CPU-bound enough for a Rust rewrite to pay for the added toolchain surface:
 ## Possible follow-up (architectural, not a port)
 
 The one genuinely interesting next step would be moving the measure
-*pre-processing* on-device: have `rust-profiler` parse stat/statm/atrace itself
+_pre-processing_ on-device: have `rust-profiler` parse stat/statm/atrace itself
 and emit compact JSON measures instead of raw dumps. That would cut the adb
 transfer (atrace lines dominate it), delete the TS parsing layer, and make the
 protocol schema-checked end to end. It is deliberately not done here because it

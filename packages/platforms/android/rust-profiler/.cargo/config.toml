@@ -2,6 +2,3 @@
 # rust-lld shipped in the Rust toolchain: no Android NDK is needed.
 [target.aarch64-unknown-linux-musl]
 linker = "rust-lld"
-
-[target.x86_64-unknown-linux-musl]
-linker = "rust-lld"

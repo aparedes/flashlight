@@ -91,7 +91,7 @@ export abstract class UnixProfiler implements Profiler {
     const binaryPath = `${getBinaryFolder()}/${CppProfilerName}-${abi}`;
     if (!fs.existsSync(binaryPath)) {
       throw new Error(
-        `Unsupported device ABI "${abi}": no profiler binary is shipped for it (supported: arm64-v8a, x86_64)`
+        `Unsupported device ABI "${abi}": no profiler binary is shipped for it (supported: arm64-v8a)`
       );
     }
     const binaryTmpPath = `${os.tmpdir()}/flashlight-${CppProfilerName}-${abi}`;

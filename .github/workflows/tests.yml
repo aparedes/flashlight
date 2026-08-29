@@ -70,9 +70,9 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: Test
         run: cargo test
-      # The committed bin/ binaries are static musl builds — verify the
+      # The committed bin/ binary is a static musl build — verify the
       # cross-compilation setup keeps working (no NDK needed, only rustup targets)
-      - name: Cross-compile the supported Android ABIs
+      - name: Cross-compile the supported Android ABI
         run: ./build_all_abi.sh
 
   audit:
