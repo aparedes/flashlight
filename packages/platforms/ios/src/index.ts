@@ -1,95 +1,123 @@
-import { Measure, Profiler, ProfilerPollingOptions, ScreenRecorder } from "@perf-profiler/types";
-import { ChildProcess, exec } from "child_process";
-import { killApp } from "@perf-profiler/ios-instruments";
+import { ChildProcess, execFile, spawn } from "child_process";
+import fs from "fs";
+import { createInterface } from "readline";
+import { Logger } from "@perf-profiler/logger";
+import {
+  Measure,
+  POLLING_INTERVAL,
+  Profiler,
+  ProfilerPollingOptions,
+  ScreenRecorder,
+} from "@perf-profiler/types";
 
-interface AppMonitorData {
-  Pid: number;
-  Name: string;
-  CPU: string;
-  Memory: string;
-  DiskReads: string;
-  DiskWrites: string;
-  Threads: number;
-  Time: string;
+const BINARY_NAME = "flashlight-ios-profiler";
+
+const defaultBinaryPath = `${__dirname}/../..${
+  __dirname.includes("dist") ? "/.." : ""
+}/rust-profiler/bin/${BINARY_NAME}`;
+
+// Allow overriding the binary path with an environment variable, mirroring
+// FLASHLIGHT_BINARY_PATH on Android
+const getBinaryPath = () => process.env.FLASHLIGHT_IOS_BINARY_PATH || defaultBinaryPath;
+
+interface MeasureLine {
+  type: "measure";
+  time: number;
+  cpu: { perName: { [name: string]: number }; perCore: { [core: number]: number } };
+  ram: number;
+  fps?: number;
+  threadCount: number;
+  pid: number;
 }
 
-interface FPSData {
-  currentTime: string;
-  fps: number;
+interface StatusLine {
+  type: "status";
+  event: string;
+  pid?: number;
+  name?: string;
+  detail?: string;
 }
 
-type DataTypes = "cpu" | "fps";
+type ProfilerLine = MeasureLine | StatusLine;
 
 export class IOSProfiler implements Profiler {
-  private measures: Record<string, Measure> = {};
-  private lastFPS: FPSData | null = null;
-  private lastCpu: AppMonitorData | null = null;
-  private onMeasure: ((measure: Measure) => void) | undefined;
-
-  parseData = async (childProcess: ChildProcess, type: DataTypes) => {
-    childProcess?.stdout?.on("data", (childProcess: ChildProcess) => {
-      const parsedData = JSON.parse(childProcess.toString().replace(/'/g, '"'));
-      if (type === "cpu") {
-        (parsedData as AppMonitorData).Time = new Date().toISOString();
-        this.lastCpu = parsedData;
-        this.synchronizeData();
-      }
-      if (type === "fps") {
-        this.lastFPS = parsedData as FPSData;
-      }
-    });
-  };
-
-  createMeasure = (lastCpu: AppMonitorData, lastFps: FPSData) => {
-    const cpuMeasure = {
-      perName: { Total: parseFloat(lastCpu.CPU.replace(" %", "")) },
-      perCore: {},
-    };
-    const measure: Measure = {
-      cpu: cpuMeasure,
-      ram: parseFloat(lastCpu.Memory.replace(" MiB", "")),
-      fps: lastFps.fps,
-      time: new Date(lastCpu.Time).getTime(),
-    };
-    this.measures[measure.time] = measure;
-    if (this.onMeasure) {
-      this.onMeasure(measure);
-    }
-  };
-
-  synchronizeData = () => {
-    const lastCpu = this.lastCpu;
-    const lastFps = this.lastFPS;
-    if (lastCpu && lastFps) {
-      this.createMeasure(lastCpu, lastFps);
-    }
-  };
+  private polling: ChildProcess | undefined;
 
   pollPerformanceMeasures(bundleId: string, options: ProfilerPollingOptions): { stop: () => void } {
-    this.onMeasure = options.onMeasure;
-    const cpuAndMemoryPolling = exec(
-      `pyidevice instruments appmonitor --format=flush -b ${bundleId} --time 500`
-    );
+    const child = spawn(getBinaryPath(), [
+      "poll",
+      "--bundle-id",
+      bundleId,
+      "--interval-ms",
+      `${POLLING_INTERVAL}`,
+    ]);
+    this.polling = child;
 
-    const fpsPolling = exec(`pyidevice instruments fps --format=flush --time 500`);
+    createInterface({ input: child.stdout }).on("line", (rawLine) => {
+      let line: ProfilerLine;
+      try {
+        line = JSON.parse(rawLine);
+      } catch {
+        Logger.debug(`Unparseable profiler output: ${rawLine}`);
+        return;
+      }
 
-    this.parseData(cpuAndMemoryPolling, "cpu");
-    this.parseData(fpsPolling, "fps");
+      switch (line.type) {
+        case "measure": {
+          const measure: Measure = {
+            cpu: line.cpu,
+            ram: line.ram,
+            fps: line.fps,
+            time: line.time,
+          };
+          options.onMeasure(measure);
+          break;
+        }
+        case "status":
+          if (line.event === "started") {
+            options.onStartMeasuring?.();
+          }
+          Logger.debug(`iOS profiler: ${line.event}${line.detail ? ` (${line.detail})` : ""}`);
+          break;
+      }
+    });
+
+    createInterface({ input: child.stderr }).on("line", (line) => {
+      if (line.startsWith("IOS_PROFILER_ERROR_")) {
+        Logger.error(line);
+      } else {
+        Logger.debug(line);
+      }
+    });
+
+    child.on("error", (error) => {
+      Logger.error(
+        `Failed to start ${getBinaryPath()}: ${error.message}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh or set FLASHLIGHT_IOS_BINARY_PATH.`
+      );
+    });
 
     return {
       stop: () => {
-        cpuAndMemoryPolling.kill();
-        fpsPolling.kill();
+        // SIGINT lets the binary tear down its instruments taps cleanly
+        child.kill("SIGINT");
+        this.polling = undefined;
       },
     };
   }
 
   detectCurrentBundleId(): string {
-    throw new Error("App Id detection is not implemented on iOS");
+    throw new Error(
+      "App id detection is not implemented on iOS, please pass the bundle id explicitly"
+    );
   }
 
   installProfilerOnDevice() {
-    // Do we need anything here?
+    const binaryPath = getBinaryPath();
+    if (!process.env.FLASHLIGHT_IOS_BINARY_PATH && !fs.existsSync(binaryPath)) {
+      throw new Error(
+        `${BINARY_NAME} not found at ${binaryPath}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh (macOS only) or set FLASHLIGHT_IOS_BINARY_PATH.`
+      );
+    }
   }
 
   getScreenRecorder(): ScreenRecorder | undefined {
@@ -97,16 +125,24 @@ export class IOSProfiler implements Profiler {
   }
 
   cleanup: () => void = () => {
-    // Do we need anything here?
+    this.polling?.kill("SIGINT");
+    this.polling = undefined;
   };
 
   async stopApp(bundleId: string): Promise<void> {
-    killApp(bundleId);
-    return new Promise<void>((resolve) => resolve());
+    await new Promise<void>((resolve) => {
+      execFile(getBinaryPath(), ["kill", "--bundle-id", bundleId], (error) => {
+        if (error) {
+          Logger.debug(`Could not stop ${bundleId}: ${error.message}`);
+        }
+        resolve();
+      });
+    });
   }
 
-  // This is a placeholder for the method that will be implemented in the future
   detectDeviceRefreshRate() {
+    // Not yet reported by the profiler binary; ProMotion devices actually
+    // run at 120 - measure with the device on hand before changing this.
     return 60;
   }
 }
