@@ -11,7 +11,9 @@ stakes (it runs unattended on devices for minutes at a time).
 What the migration bought us, beyond the rewrite itself:
 
 - **No Android NDK.** The binaries are fully static musl builds linked with the
-  `rust-lld` bundled in the Rust toolchain. Building all 4 ABIs needs only
+  `rust-lld` bundled in the Rust toolchain. Building the supported ABIs
+  (arm64-v8a for devices, x86_64 for emulators — the unused 32-bit ABIs
+  armeabi-v7a and x86 were dropped) needs only
   `rustup target add` (`./build_all_abi.sh` does everything) — the previous CMake +
   NDK toolchain requirement is gone.
 - **No runtime dependencies.** `pidof` is now a native `/proc/*/cmdline` scan
@@ -21,7 +23,7 @@ What the migration bought us, beyond the rewrite itself:
   per restart, and a thread disappearing mid-measure (a filesystem race that
   `std::terminate`'d the C++ binary) now just skips that file.
 - **Tests + CI.** The pidof matching rules are unit-tested (`cargo test`), and CI
-  runs fmt/clippy/test plus a cross-compile of all 4 ABIs on every push.
+  runs fmt/clippy/test plus a cross-compile of both ABIs on every push.
 
 The wire protocol (`=START MEASURE=` / `=SEPARATOR=` / `=STOP MEASURE=` blocks and
 the `CPP_ERROR_*` stderr markers) is byte-compatible — verified by diffing Rust vs

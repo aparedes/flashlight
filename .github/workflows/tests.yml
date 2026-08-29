@@ -72,7 +72,7 @@ jobs:
         run: cargo test
       # The committed bin/ binaries are static musl builds — verify the
       # cross-compilation setup keeps working (no NDK needed, only rustup targets)
-      - name: Cross-compile all Android ABIs
+      - name: Cross-compile the supported Android ABIs
         run: ./build_all_abi.sh
 
   audit:

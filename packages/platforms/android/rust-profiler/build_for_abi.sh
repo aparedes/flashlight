@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ABI=${1:?Usage: ./build_for_abi.sh <armeabi-v7a|arm64-v8a|x86|x86_64>}
+ABI=${1:?Usage: ./build_for_abi.sh <arm64-v8a|x86_64>}
 
 # Fully static musl builds: they run on any Android device (API 23+)
 # straight from adb shell, and no Android NDK is required to build them.
+# Only the ABIs in actual use are supported: arm64-v8a covers real devices,
+# x86_64 covers emulators. 32-bit ABIs (armeabi-v7a, x86) were dropped.
 case "$ABI" in
-  armeabi-v7a) TARGET=armv7-unknown-linux-musleabihf ;;
-  arm64-v8a)   TARGET=aarch64-unknown-linux-musl ;;
-  x86)         TARGET=i686-unknown-linux-musl ;;
-  x86_64)      TARGET=x86_64-unknown-linux-musl ;;
-  *) echo "Unknown ABI: $ABI" >&2; exit 1 ;;
+  arm64-v8a) TARGET=aarch64-unknown-linux-musl ;;
+  x86_64)    TARGET=x86_64-unknown-linux-musl ;;
+  *) echo "Unsupported ABI: $ABI (supported: arm64-v8a, x86_64)" >&2; exit 1 ;;
 esac
 
 rustup target add "$TARGET"
