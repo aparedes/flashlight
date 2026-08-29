@@ -1,0 +1,21 @@
+[package]
+name = "flashlight-profiler"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# The binary keeps its historical name: the TypeScript side pushes it to
+# /data/local/tmp/BAMPerfProfiler and finds it back by process name.
+[[bin]]
+name = "BAMPerfProfiler"
+path = "src/main.rs"
+
+[dependencies]
+libc = "0.2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

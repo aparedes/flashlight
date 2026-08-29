@@ -22,7 +22,7 @@ import { processOutput as processRamOutput } from "../ram/pollRamUsage";
 
 export const CppProfilerName = `BAMPerfProfiler`;
 
-const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ? "/.." : ""}/cpp-profiler/bin`;
+const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ? "/.." : ""}/rust-profiler/bin`;
 // Allow overriding the binary folder with an environment variable
 const getBinaryFolder = () => process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;
 
@@ -35,11 +35,11 @@ export abstract class UnixProfiler implements Profiler {
   private RAMPageSize: number | undefined;
 
   /**
-   * Main setup function for the cpp profiler
+   * Main setup function for the native (Rust) profiler
    *
    * It will:
-   * - install the C++ profiler for the correct architecture on the device
-   * - Starts the atrace process (the c++ profiler will then starts another thread to read from it)
+   * - install the profiler binary for the correct architecture on the device
+   * - Starts the atrace process (the profiler will then starts another thread to read from it)
    * - Populate needed values like CPU clock tick and RAM page size
    *
    * This needs to be done before measures and can take a few seconds
@@ -86,7 +86,7 @@ export abstract class UnixProfiler implements Profiler {
 
   private installCppProfilerOnDevice(): void {
     const abi = this.getAbi();
-    Logger.info(`Installing C++ profiler for ${abi} architecture`);
+    Logger.info(`Installing profiler for ${abi} architecture`);
 
     const binaryPath = `${getBinaryFolder()}/${CppProfilerName}-${abi}`;
     const binaryTmpPath = `${os.tmpdir()}/flashlight-${CppProfilerName}-${abi}`;
@@ -95,7 +95,7 @@ export abstract class UnixProfiler implements Profiler {
     fs.writeFileSync(binaryTmpPath, fs.readFileSync(binaryPath));
 
     this.pushExecutable(binaryTmpPath);
-    Logger.success(`C++ Profiler installed in ${this.getDeviceProfilerPath()}`);
+    Logger.success(`Profiler installed in ${this.getDeviceProfilerPath()}`);
   }
 
   pollPerformanceMeasures(

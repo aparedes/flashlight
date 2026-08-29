@@ -17,7 +17,7 @@ for (const asset of EMBEDDED_ASSETS) {
     fs.writeFileSync(destination, fs.readFileSync(asset.path)); // copyFileSync cannot read /$bunfs paths
   }
 }
-process.env.FLASHLIGHT_BINARY_PATH ??= path.join(assetsRoot, "cpp-profiler");
+process.env.FLASHLIGHT_BINARY_PATH ??= path.join(assetsRoot, "profiler");
 process.env.FLASHLIGHT_REPORT_ASSETS_PATH ??= path.join(assetsRoot, "report");
 process.env.FLASHLIGHT_WEBAPP_PATH ??= path.join(assetsRoot, "webapp");
 
