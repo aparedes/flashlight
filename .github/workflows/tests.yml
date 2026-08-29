@@ -57,6 +57,24 @@ jobs:
       - name: Run unit tests
         run: bun run test:unit
 
+  rust-profiler:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/platforms/android/rust-profiler
+    steps:
+      - uses: actions/checkout@v4
+      - name: Format
+        run: cargo fmt --check
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Test
+        run: cargo test
+      # The committed bin/ binaries are static musl builds — verify the
+      # cross-compilation setup keeps working (no NDK needed, only rustup targets)
+      - name: Cross-compile all Android ABIs
+        run: ./build_all_abi.sh
+
   audit:
     runs-on: ubuntu-latest
     steps:

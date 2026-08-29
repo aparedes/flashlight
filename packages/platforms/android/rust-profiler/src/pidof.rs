@@ -11,10 +11,7 @@ fn matches_bundle_id(cmdline: &[u8], bundle_id: &str) -> bool {
     if argv0.is_empty() {
         return false;
     }
-    let basename = argv0
-        .rsplit(|&b| b == b'/')
-        .next()
-        .unwrap_or(argv0);
+    let basename = argv0.rsplit(|&b| b == b'/').next().unwrap_or(argv0);
 
     argv0 == bundle_id.as_bytes() || basename == bundle_id.as_bytes()
 }

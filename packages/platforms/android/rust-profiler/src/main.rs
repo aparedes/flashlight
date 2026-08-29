@@ -88,7 +88,11 @@ fn print_performance_measure(
     let _ = write!(out, "TOTAL EXEC TIME: {}|", total_duration_ms);
     let _ = write!(out, "CPU TIME: {}|", cpu_end.as_millis());
     let _ = write!(out, "MEMORY TIME: {}|", (memory_end - cpu_end).as_millis());
-    let _ = writeln!(out, "ATRACE TIME: {}", (atrace_end - memory_end).as_millis());
+    let _ = writeln!(
+        out,
+        "ATRACE TIME: {}",
+        (atrace_end - memory_end).as_millis()
+    );
 
     stats.measure_count += 1;
     stats.total_duration_sum_ms += total_duration_ms;
