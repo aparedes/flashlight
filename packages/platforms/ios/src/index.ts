@@ -10,7 +10,7 @@ import {
   ScreenRecorder,
 } from "@lantern/types";
 
-const BINARY_NAME = "flashlight-ios-profiler";
+const BINARY_NAME = "lantern-ios-profiler";
 
 // Resolves to <package root>/rust-profiler/bin, from either src/ or dist/src/
 const defaultBinaryPath = `${__dirname}/..${

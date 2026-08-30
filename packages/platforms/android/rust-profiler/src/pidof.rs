@@ -5,7 +5,7 @@ use std::fs;
 /// Matches like `pidof`: against argv[0] and against its basename. Android
 /// app processes have their package name (e.g. `com.example`) as argv[0],
 /// while the self-profiling mode looks up the profiler binary itself, whose
-/// argv[0] is a path like `/data/local/tmp/BAMPerfProfiler`.
+/// argv[0] is a path like `/data/local/tmp/lantern-android-profiler`.
 fn matches_bundle_id(cmdline: &[u8], bundle_id: &str) -> bool {
     let argv0 = cmdline.split(|&b| b == 0).next().unwrap_or(&[]);
     if argv0.is_empty() {
@@ -52,13 +52,13 @@ mod tests {
     #[test]
     fn matches_binary_by_basename_for_self_profiling() {
         assert!(matches_bundle_id(
-            b"/data/local/tmp/BAMPerfProfiler\0pollPerformanceMeasures\0",
-            "BAMPerfProfiler"
+            b"/data/local/tmp/lantern-android-profiler\0pollPerformanceMeasures\0",
+            "lantern-android-profiler"
         ));
         // The self-profiling copy must NOT match itself
         assert!(!matches_bundle_id(
-            b"/data/local/tmp/BAMPerfProfiler_SELF_REPORT\0",
-            "BAMPerfProfiler"
+            b"/data/local/tmp/lantern-android-profiler_SELF_REPORT\0",
+            "lantern-android-profiler"
         ));
     }
 

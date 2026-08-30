@@ -1,7 +1,7 @@
 //! NDJSON wire protocol written to stdout.
 //!
 //! One JSON object per line. `{"type":"measure",...}` lines carry a Measure
-//! matching `@perf-profiler/types` (cpu.perName/perCore, ram in MB, fps,
+//! matching `@lantern/types` (cpu.perName/perCore, ram in MB, fps,
 //! time in epoch ms). `{"type":"status",...}` lines carry lifecycle events.
 
 use std::collections::BTreeMap;

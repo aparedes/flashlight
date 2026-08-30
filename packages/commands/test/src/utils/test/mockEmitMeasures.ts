@@ -30,7 +30,13 @@ spyOn(require("child_process") as typeof childProcess, "spawn")
   .mockImplementationOnce(((command: string, args: readonly string[]) => {
     expect([command, args]).toEqual([
       "adb",
-      ["shell", "/data/local/tmp/BAMPerfProfiler", "pollPerformanceMeasures", "com.example", "500"],
+      [
+        "shell",
+        "/data/local/tmp/lantern-android-profiler",
+        "pollPerformanceMeasures",
+        "com.example",
+        "500",
+      ],
     ]);
     return perfProfilerMock;
   }) as unknown as typeof childProcess.spawn);

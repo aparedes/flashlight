@@ -3,5 +3,5 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 ./build_for_abi.sh "$(adb shell getprop ro.product.cpu.abi | tr -d '\r')"
-adb push BAMPerfProfiler /data/local/tmp/BAMPerfProfiler
-adb shell /data/local/tmp/BAMPerfProfiler "$@"
+adb push lantern-android-profiler /data/local/tmp/lantern-android-profiler
+adb shell /data/local/tmp/lantern-android-profiler "$@"

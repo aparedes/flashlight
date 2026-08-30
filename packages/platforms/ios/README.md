@@ -3,7 +3,7 @@
 Implementation of the Lantern `Profiler` for real iOS devices.
 
 It spawns the bundled Rust binary (`rust-profiler/`,
-`flashlight-ios-profiler`) which talks to the device over usbmuxd and the
+`lantern-ios-profiler`) which talks to the device over usbmuxd and the
 instruments services — the CoreDevice tunnel on iOS 17+ (including iOS 26),
 or the legacy lockdown service before that — and streams CPU, RAM and FPS as
 NDJSON. No Python, idb, sudo, or external tunnel daemon required.

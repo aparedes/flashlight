@@ -1,11 +1,11 @@
 [package]
-name = "flashlight-ios-profiler"
+name = "lantern-ios-profiler"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [[bin]]
-name = "flashlight-ios-profiler"
+name = "lantern-ios-profiler"
 path = "src/main.rs"
 
 [dependencies]

@@ -23,7 +23,7 @@ process.env.LANTERN_BINARY_PATH ??= path.join(assetsRoot, "profiler");
 process.env.LANTERN_IOS_BINARY_PATH ??= path.join(
   assetsRoot,
   "ios-profiler",
-  "flashlight-ios-profiler"
+  "lantern-ios-profiler"
 );
 process.env.LANTERN_REPORT_ASSETS_PATH ??= path.join(assetsRoot, "report");
 process.env.LANTERN_WEBAPP_PATH ??= path.join(assetsRoot, "webapp");

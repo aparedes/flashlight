@@ -160,7 +160,7 @@ const webappDistDir = path.join(REPO_ROOT, "packages/commands/measure/dist");
 
 // The iOS profiler runs on the Mac itself, so only the binary matching the compile target is
 // embedded, under the un-suffixed name the `@lantern/ios` package resolves at runtime.
-const IOS_PROFILER_BINARY = "flashlight-ios-profiler";
+const IOS_PROFILER_BINARY = "lantern-ios-profiler";
 const iosProfilerSource = path.join(
   iosProfilerBinDir,
   `${IOS_PROFILER_BINARY}-${options.target === "bun-darwin-x64" ? "x86_64" : "aarch64"}-apple-darwin`

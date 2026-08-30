@@ -14,7 +14,7 @@ import { CppPerformanceMeasure, parseCppMeasure } from "../cppProfiler";
 import { processOutput } from "../cpu/getCpuStatsByProcess";
 import { processOutput as processRamOutput } from "../ram/pollRamUsage";
 
-export const CppProfilerName = `BAMPerfProfiler`;
+export const CppProfilerName = `lantern-android-profiler`;
 
 const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ? "/.." : ""}/rust-profiler/bin`;
 // Allow overriding the binary folder with an environment variable

@@ -1,4 +1,4 @@
-# flashlight-ios-profiler
+# lantern-ios-profiler
 
 Host-side Rust profiler for real iOS devices, built on the
 [`idevice`](https://github.com/jkcoxson/idevice) crate. It replaces the
@@ -22,12 +22,48 @@ enabled on the device.
 ## Commands
 
 ```
-flashlight-ios-profiler devices
-flashlight-ios-profiler apps    [--udid <udid>]
-flashlight-ios-profiler info    [--udid <udid>]
-flashlight-ios-profiler launch  --bundle-id <id> [--udid <udid>]
-flashlight-ios-profiler kill    --bundle-id <id> | --pid <n> [--udid <udid>]
-flashlight-ios-profiler poll    --bundle-id <id> [--interval-ms <n=500>] [--udid <udid>]
+lantern-ios-profiler devices
+lantern-ios-profiler apps         [--udid <udid>] [--raw]
+lantern-ios-profiler running-apps [--udid <udid>]
+lantern-ios-profiler info    [--udid <udid>]
+lantern-ios-profiler launch  --bundle-id <id> [--udid <udid>]
+lantern-ios-profiler kill    --bundle-id <id> | --pid <n> [--udid <udid>]
+lantern-ios-profiler poll    --bundle-id <id> [--interval-ms <n=500>] [--udid <udid>]
+```
+
+Set `LANTERN_IOS_DEBUG=1` for verbose protocol logs on stderr (or a
+`tracing` filter string such as `idevice=trace` for finer control).
+
+## Device and app listings (JSON)
+
+`devices` prints one object per usbmuxd entry. The three lockdown-sourced
+fields are best effort and are `null` when the device is not paired or
+lockdown is unreachable — the device is still listed either way:
+
+```json
+[{"udid":"00008120-...","deviceId":7,"connectionType":"Usb","productType":"iPhone16,1","productVersion":"26.0","deviceName":"Test iPhone"}]
+```
+
+`apps` prints the installed apps worth measuring — the listing's `Type` is
+`User` (third-party) or `Unknown` (Apple's own App Store apps such as Pages
+or TestFlight). `PluginKit` extensions and system apps are filtered out, and
+the array is sorted case-insensitively by `name`. `executableName` is `null`
+when the listing carries no executable name or path:
+
+```json
+[{"bundleId":"com.example.app","name":"Example","executableName":"Example","kind":"User"}]
+```
+
+`--raw` bypasses the filtering and dumps every listing entry verbatim, which
+is the shape to inspect when a device reports unfamiliar keys.
+
+`running-apps` is `apps` intersected with the device's process list: the same
+objects plus the `pid` of the matching process (matched by executable name,
+requiring the device's own `isApplication` flag). Apps that are installed but
+not running are omitted:
+
+```json
+[{"bundleId":"com.example.app","name":"Example","executableName":"Example","kind":"User","pid":1234}]
 ```
 
 ## Wire protocol (`poll`)
@@ -69,9 +105,9 @@ box):
 ./build_macos.sh   # builds aarch64 + x86_64 release binaries into bin/
 ```
 
-The per-arch binaries in `bin/` (`flashlight-ios-profiler-aarch64-apple-darwin`,
-`flashlight-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
-Android profiler: `@lantern/ios` resolves `bin/flashlight-ios-profiler`
+The per-arch binaries in `bin/` (`lantern-ios-profiler-aarch64-apple-darwin`,
+`lantern-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
+Android profiler: `@lantern/ios` resolves `bin/lantern-ios-profiler`
 (the universal `lipo` output, gitignored) from a source checkout, and
 `bun run build:standalone` embeds the binary matching its `--target`. Commit
 the rebuilt binaries together with the crate change that motivated them.
