@@ -14,8 +14,11 @@ NDJSON. No Python, idb, sudo, or external tunnel daemon required.
 - Developer Mode enabled on the device
 - The personalized Developer Disk Image mounted (opening the device once in
   Xcode, or `devicectl`, or `pymobiledevice3 mounter auto-mount` all do this)
-- The profiler binary built: `rust-profiler/build_macos.sh` (or set
-  `FLASHLIGHT_IOS_BINARY_PATH` to a binary you built elsewhere)
+- The profiler binary: the per-arch macOS builds are committed in
+  `rust-profiler/bin/` and embedded in the standalone CLI, like the Android
+  profiler. Rebuild them with `rust-profiler/build_macos.sh` after changing
+  the crate (or set `FLASHLIGHT_IOS_BINARY_PATH` to a binary you built
+  elsewhere)
 
 ## Usage
 

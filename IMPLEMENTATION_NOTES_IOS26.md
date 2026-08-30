@@ -48,14 +48,22 @@ attribute lists. Remaining checks below.
    architecture above.
 2. ~~sysmontap row shape~~ **VALIDATED**: rows parse and measures emit on
    iOS 26 (still worth capturing a FLASHLIGHT_IOS_DEBUG sample as a fixture).
-3. **CPU scale.** `cpuUsage` is assumed to be a fraction of one core
-   (0.35 = 35%); compare against Xcode Instruments on the same app. If it's
-   already a percentage, drop the ×100 in `ProcessSample::cpu_percent`.
+3. ~~CPU scale~~ **VALIDATED**: sysmontap's `cpuUsage` is already a percentage
+   of one core (see the doc comment on `ProcessSample::cpu_usage`); no ×100.
 4. ~~graphics.opengl on iOS 26~~ **VALIDATED**: channel opens and samples
    on iOS 26 (confirm fps values look sane while scrolling).
-5. **App-listing key names** (`CFBundleIdentifier` vs `BundleIdentifier`,
-   `ExecutableName` vs `CFBundleExecutable` vs path) — verify which iOS 26
-   returns; the code tries all candidates.
+5. ~~App-listing key names~~ **VALIDATED 2026-08-30** (`apps` on iOS 26):
+   every entry has `CFBundleIdentifier`, `ExecutableName`, `DisplayName`,
+   `BundlePath`, `Type` (`User` | `PluginKit` | `Unknown`), `Restricted`;
+   most have `Version`; `User`/`Unknown` entries carry `Placeholder`
+   (`"True"`/`"False"` strings). On a lived-in phone: 1841 entries, of which
+   384 `User` (third-party apps), 11 `Unknown` (Apple-published App Store apps
+   such as Pages/TestFlight) and 1446 `PluginKit` extensions. `ExecutableName`
+   can differ from the bundle folder name (e.g. Netflix → `Argo`), so the
+   listing lookup in `sysmon::executable_name_from_app` is required.
+   `info` (`hardwareInformation`) returns only CPU keys (`hwCPUtype`,
+   `hwCPUsubtype`, `numberOfCpus`, …) — nothing about the display, so refresh
+   rate detection needs a model lookup, not this call.
 6. **Stability.** 10-minute poll, app kill/relaunch mid-run (expect
    `targetLost` → `target` with a new pid), Mac-side CPU overhead.
 7. **End to end.** `PLATFORM=ios flashlight measure` / `flashlight test`
@@ -68,8 +76,10 @@ attribute lists. Remaining checks below.
 - No per-thread CPU (sysmontap doesn't provide it) and no per-core data.
 - No screen recording (`getScreenRecorder` returns undefined).
 - `detectCurrentBundleId` throws — pass the bundle id explicitly.
-- macOS binaries aren't committed; `build_macos.sh` produces them. Decide on
-  distribution (commit like Android's, or build in CI) once validated.
+- ~~macOS binaries aren't committed~~ **Resolved 2026-08-30:** the per-arch
+  macOS binaries are committed in `rust-profiler/bin/` (like Android's) and
+  `build:standalone` embeds the one matching its target; a macOS CI job
+  rebuilds them from source. Only the universal `lipo` output stays ignored.
 
 ## Build/test status on Linux (2026-08-29)
 

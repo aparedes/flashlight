@@ -48,7 +48,8 @@ One JSON object per stdout line (NDJSON):
   and is omitted until the first graphics sample arrives.
 - CPU comes from the DVT `sysmontap` service (whole-process only — per-thread
   CPU is not available from sysmontap), FPS from the DVT `graphics.opengl`
-  service. Each streams over its own instruments connection.
+  service. Both are channels multiplexed over one instruments connection
+  (iOS 26 closes concurrent `dtservicehub` connections).
 - The target process is matched by executable name (resolved via the
   application-listing service) falling back to the bundle id and its last
   component, every sample — so an app relaunch (new pid) re-attaches
@@ -68,12 +69,18 @@ box):
 ./build_macos.sh   # builds aarch64 + x86_64 release binaries into bin/
 ```
 
-The crate also compiles and unit-tests on Linux (`cargo test`), which is what
-CI runs; the parsing and protocol layers are covered there without a device.
+The per-arch binaries in `bin/` (`flashlight-ios-profiler-aarch64-apple-darwin`,
+`flashlight-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
+Android profiler: `@perf-profiler/ios` resolves `bin/flashlight-ios-profiler`
+(the universal `lipo` output, gitignored) from a source checkout, and
+`bun run build:standalone` embeds the binary matching its `--target`. Commit
+the rebuilt binaries together with the crate change that motivated them.
+
+CI runs `cargo fmt/clippy/test` and `build_macos.sh` on a macOS runner; the
+crate also compiles and unit-tests on Linux.
 
 ## Validation status
 
-Written against idevice 0.1.65 (pinned). The protocol layers are unit-tested;
-end-to-end behavior against a real iOS 26 device (tunnel bring-up, sysmontap
-attribute ordering, graphics FPS availability, CPU scale) still needs
-on-device validation — see `IMPLEMENTATION_NOTES_IOS26.md` at the repo root.
+Written against idevice 0.1.65 (pinned). Validated end to end on a real iOS 26
+device on 2026-08-30 (tunnel, sysmontap, graphics FPS, CPU scale). Remaining
+checks and known gaps: `IMPLEMENTATION_NOTES_IOS26.md` at the repo root.

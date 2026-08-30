@@ -186,10 +186,12 @@ that is expected.
 Other flags: `--skip-build` reuses the existing `dist/` output instead of re-running
 `bun run build`, and `--outfile <path>` overrides the output location.
 
-The executable embeds the `rust-profiler` binary (arm64-v8a — devices and the Apple Silicon emulator) and both web apps (the
-`report` web reporter and the `measure` live webapp). On the first run of a given version, they
-are extracted to `$TMPDIR/flashlight-<version>-assets` so that the regular folder-based lookups
-(and `adb push`) see real file paths.
+The executable embeds the Android `rust-profiler` binary (arm64-v8a — devices and the Apple
+Silicon emulator), the iOS profiler binary matching the `--target` architecture
+(`packages/platforms/ios/rust-profiler/bin/`, rebuilt with `build_macos.sh`) and both web apps
+(the `report` web reporter and the `measure` live webapp). On the first run of a given version,
+they are extracted to `$TMPDIR/flashlight-<version>-assets` so that the regular folder-based
+lookups (and `adb push`) see real file paths.
 
 ### Iterating without a full compile
 

@@ -15,9 +15,16 @@ for (const asset of EMBEDDED_ASSETS) {
   const source = fs.statSync(asset.path);
   if (!fs.existsSync(destination) || fs.statSync(destination).size !== source.size) {
     fs.writeFileSync(destination, fs.readFileSync(asset.path)); // copyFileSync cannot read /$bunfs paths
+    // The Android profiler is `adb push`ed, but the iOS one executes on this Mac.
+    if (asset.group === "ios-profiler") fs.chmodSync(destination, 0o755);
   }
 }
 process.env.FLASHLIGHT_BINARY_PATH ??= path.join(assetsRoot, "profiler");
+process.env.FLASHLIGHT_IOS_BINARY_PATH ??= path.join(
+  assetsRoot,
+  "ios-profiler",
+  "flashlight-ios-profiler"
+);
 process.env.FLASHLIGHT_REPORT_ASSETS_PATH ??= path.join(assetsRoot, "report");
 process.env.FLASHLIGHT_WEBAPP_PATH ??= path.join(assetsRoot, "webapp");
 
