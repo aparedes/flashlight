@@ -32,13 +32,11 @@ export interface TestCaseIterationResult {
 
 export type TestCaseResultStatus = "SUCCESS" | "FAILURE"; // Todo: add "SUCCESS_WITH_SOME_ITERATIONS_FAILED"
 
-type TestCaseResultType = "IOS_EXPERIMENTAL" | undefined;
 export interface TestCaseResult {
   name: string;
   score?: number;
   status: TestCaseResultStatus;
   iterations: TestCaseIterationResult[];
-  type?: TestCaseResultType;
   specs?: DeviceSpecs;
 }
 
@@ -49,7 +47,6 @@ export interface AveragedTestCaseResult {
   iterations: TestCaseIterationResult[];
   average: TestCaseIterationResult;
   averageHighCpuUsage: { [processName: string]: number };
-  type?: TestCaseResultType;
   specs?: DeviceSpecs;
 }
 

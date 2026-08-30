@@ -104,13 +104,12 @@ export const writeReport = ({
   const html = fs.readFileSync(`${getAssetsDir()}/index.html`, "utf8");
 
   const results = getResultsFromPaths(jsonPaths);
-  const isIOSTestCaseResult = results.every((result) => result.type === "IOS_EXPERIMENTAL");
 
   const reportHtml = injectResults(html, getMeasuresForTimeInterval({ results, skip, duration }));
 
   const htmlFilePath = `${outputDir}/report.html`;
   // Videos stay next to the report as separate files, by design.
-  if (!isIOSTestCaseResult) copyVideoFiles(results, outputDir);
+  copyVideoFiles(results, outputDir);
   fs.writeFileSync(htmlFilePath, reportHtml);
   return htmlFilePath;
 };

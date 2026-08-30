@@ -24,12 +24,6 @@ let testCaseResults: TestCaseResult[] =
 //   require("./example-reports/video/results_417dd25e-d901-4b1e-9d43-3b78305a48e2.json"),
 //   require("./example-reports/video/results_c7d5d17d-42ed-4354-8b43-bb26e2d6feee.json"),
 // ];
-// IOS Experimental
-// testCaseResults = [
-//   require("./example-reports/ios/ios_1.json"),
-//   require("./example-reports/ios/ios_2.json"),
-// ];
-
 // Uncomment when testing with time simulation
 // -------------------------------------------
 // const useTimeSimulationResults = () => {

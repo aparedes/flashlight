@@ -16,7 +16,7 @@ export const registerToolsCommand = (program: Command) => {
   toolsCommand
     .command("video_fix_metadata <videoFilePath>")
     .description(
-      "When coming from AWS Device Farm or certain devices, it seems the video from flashlight test is not encoded properly"
+      "On certain devices the video recorded by the test command is not encoded properly; this re-encodes it"
     )
     .action((videoFilePath) => {
       const backupFilePath = `${videoFilePath}.bak`;

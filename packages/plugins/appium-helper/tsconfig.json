@@ -1,8 +1,0 @@
-{
-  "extends": "../../../tsconfig.module.json",
-  "compilerOptions": {
-    "outDir": "./dist"
-  },
-  "references": [{ "path": "../../core/logger" }],
-  "include": ["*.ts"]
-}

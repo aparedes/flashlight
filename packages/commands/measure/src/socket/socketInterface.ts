@@ -18,7 +18,6 @@ export interface ClientToServerEvents {
   reset: () => void;
   autodetectBundleId: () => void;
   setBundleId: (bundleId: string) => void;
-  autodetectRefreshRate: () => void;
 }
 
 /**

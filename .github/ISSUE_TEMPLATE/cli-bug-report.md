@@ -32,7 +32,7 @@ If applicable, add screenshots to help explain your problem.
 - OS: [e.g. macOS, windows, ...]
 - Flashlight Version [e.g. 0.18.0] (use `flashlight -v` in your terminal)
 - Android SDK platform tools version (`adb version` or other)
-- Test Framework (appium, maestro, ...) and their version
+- Test Framework (maestro, ...) and their version
 - Share the bundle identifier of your app
 
 **Additional context**
