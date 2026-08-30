@@ -1,6 +1,8 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterEach, jest, mock } from "bun:test";
 import type { ApexOptions } from "apexcharts";
+import { createRequire } from "module";
+import path from "path";
 import "./node";
 
 /**
@@ -48,14 +50,37 @@ const ApexChartMock = ({
   </div>
 );
 
-// Both packages ship separate ESM and CJS builds behind an `exports` map, and `mock.module`
-// keys on the resolved file — so the bare specifier only covers the ESM build that the UI
-// sources import. `@lantern/web-reporter-ui` is also consumed through its tsc-built
-// CJS `dist` (by the measure webapp), which `require`s the CJS build; without the second
-// registration the real chart library would render into happy-dom for those tests.
+// `mock.module` keys on the *resolved file*, and each of these packages resolves to four
+// different files in this repo:
+//
+//   - both ship separate ESM and CJS builds behind an `exports` map. The UI sources `import`
+//     the ESM build; the measure webapp loads `@lantern/web-reporter-ui` through its tsc-built
+//     CJS `dist`, which `require`s the CJS build.
+//   - bun's isolated install keeps one copy at `node_modules/<pkg>` and another under
+//     `node_modules/.bun/<pkg>@<version>/`. Files at the repo root (this one) resolve to the
+//     former; files inside a workspace package resolve through that package's own
+//     `node_modules` symlink to the latter. They are physically distinct files.
+//
+// Resolving only from here therefore registers a copy that nothing under test ever loads, and
+// the real chart library renders into happy-dom instead of the mock. So resolve from the
+// package that actually imports the charts as well, and register every distinct path.
+const CHARTS_DIR = path.join(
+  import.meta.dir,
+  "../packages/core/web-reporter-ui/src/components/Charts"
+);
+const chartsRequire = createRequire(path.join(CHARTS_DIR, "Chart.tsx"));
+
 const mockModule = (specifier: string, factory: () => unknown) => {
-  mock.module(specifier, factory);
-  mock.module(require.resolve(specifier), factory);
+  const resolved = new Set([
+    specifier,
+    require.resolve(specifier), // CJS, from this file (root copy)
+    Bun.resolveSync(specifier, CHARTS_DIR), // ESM, from the consuming package (.bun copy)
+    chartsRequire.resolve(specifier), // CJS, from the consuming package (.bun copy)
+  ]);
+
+  for (const target of resolved) {
+    mock.module(target, factory);
+  }
 };
 
 mockModule("react-apexcharts", () => ({ default: ApexChartMock }));

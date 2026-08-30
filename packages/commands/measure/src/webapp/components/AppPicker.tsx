@@ -56,6 +56,10 @@ export const AppPicker = ({
       <PlatformIcon platform={platform} />
     </SearchIconWrapper>
     <Autocomplete
+      // Explicit id: MUI falls back to React's `useId`, whose counter depends on how many
+      // components rendered before it in the process — which makes the DOM snapshot test
+      // order-dependent.
+      id="bundle-id-picker"
       freeSolo
       options={apps}
       getOptionLabel={(option) => (typeof option === "string" ? option : option.bundleId)}
