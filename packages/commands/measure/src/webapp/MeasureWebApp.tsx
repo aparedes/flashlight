@@ -4,6 +4,7 @@ import {
   IterationsReporterView,
   getThemeColorPalette,
 } from "@lantern/web-reporter-ui";
+import { useEffect } from "react";
 
 import { BundleIdSelector } from "./components/BundleIdSelector";
 import { StartButton } from "./components/StartButton";
@@ -11,18 +12,42 @@ import { Delete } from "@mui/icons-material";
 import { AppBar } from "./components/AppBar";
 import { useMeasures } from "./useMeasures";
 import { SocketState } from "./components/SocketState";
+import { PlatformBadge, platformLabel } from "./components/PlatformBadge";
 
 setThemeAtRandom();
 
 export const MeasureWebApp = () => {
-  const { autodetect, bundleId, start, stop, results, isMeasuring, reset, setBundleId } =
-    useMeasures();
+  const {
+    autodetect,
+    bundleId,
+    start,
+    stop,
+    results,
+    isMeasuring,
+    reset,
+    setBundleId,
+    platform,
+    apps,
+    refreshApps,
+  } = useMeasures();
+
+  useEffect(() => {
+    document.title = `Lantern · ${platformLabel(platform)}`;
+  }, [platform]);
 
   return (
     <div className="bg-light-charcoal h-full text-black">
       <SocketState />
       <AppBar>
-        <BundleIdSelector autodetect={autodetect} bundleId={bundleId} onChange={setBundleId} />
+        <PlatformBadge platform={platform} />
+        <BundleIdSelector
+          autodetect={autodetect}
+          bundleId={bundleId}
+          onChange={setBundleId}
+          apps={apps}
+          platform={platform}
+          refreshApps={refreshApps}
+        />
         {bundleId ? (
           <div className="flex flex-row gap-2">
             <StartButton start={start} stop={stop} isMeasuring={isMeasuring} />

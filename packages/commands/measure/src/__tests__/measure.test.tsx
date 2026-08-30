@@ -106,8 +106,20 @@ describe("lantern measure interactive", () => {
     expectCliOutput().toMatchInlineSnapshot(`
       "
        Lantern web app running on: http://localhost:${DEFAULT_PORT}
+       Platform: Android
       "
     `);
+
+    expect((await screen.findByTestId("platform-badge")).textContent).toContain("Android");
+
+    // Open the app picker and confirm the installed-apps list arrived from the server.
+    // (Android's `AppInfo.name` mirrors `bundleId`, so the option renders it twice —
+    // hence `findAllByText` rather than `findByText`.)
+    fireEvent.mouseDown(screen.getByPlaceholderText("Bundle id — type or pick an installed app"));
+    await screen.findAllByText("com.other");
+    fireEvent.keyDown(screen.getByPlaceholderText("Bundle id — type or pick an installed app"), {
+      key: "Escape",
+    });
 
     // Autodetect app id com.example
     await screen.findByText("Auto-Detect");
@@ -161,6 +173,7 @@ describe("lantern measure interactive", () => {
     expectCliOutput().toMatchInlineSnapshot(`
     "
      Lantern web app running on: http://localhost:${customPort}
+     Platform: Android
     "
   `);
 

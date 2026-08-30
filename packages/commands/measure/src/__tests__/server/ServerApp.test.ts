@@ -141,7 +141,13 @@ describe("ServerApp", () => {
 
   describe("WebSocket endpoint", () => {
     it("round-trips typed events with the connected client", async () => {
-      const state: SocketData = { isMeasuring: false, bundleId: null, results: [] };
+      const state: SocketData = {
+        isMeasuring: false,
+        bundleId: null,
+        results: [],
+        platform: "android",
+        apps: [],
+      };
       let connectionCount = 0;
 
       const server = createWebAppServer({
@@ -178,6 +184,8 @@ describe("ServerApp", () => {
               isMeasuring: false,
               bundleId,
               results: [],
+              platform: "android",
+              apps: [],
             });
           });
         },

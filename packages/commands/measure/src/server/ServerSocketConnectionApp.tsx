@@ -1,6 +1,6 @@
 import { PerformanceMeasurer } from "@lantern/e2e";
 import { Logger } from "@lantern/logger";
-import { profiler } from "@lantern/profiler";
+import { profiler, getPlatform } from "@lantern/profiler";
 import { Measure } from "@lantern/types";
 import React, { useCallback, useEffect } from "react";
 import { HostAndPortInfo } from "./components/HostAndPortInfo";
@@ -11,7 +11,7 @@ import { useLogSocketEvents } from "../common/useLogSocketEvents";
 
 export const ServerSocketConnectionApp = ({ socket, url }: { socket: SocketType; url: string }) => {
   useLogSocketEvents(socket);
-  const [state, setState] = useSocketState(socket);
+  const [state, setState] = useSocketState(socket, getPlatform());
   const performanceMeasureRef = React.useRef<PerformanceMeasurer | null>(null);
 
   const stop = useCallback(async () => {
@@ -76,7 +76,7 @@ export const ServerSocketConnectionApp = ({ socket, url }: { socket: SocketType;
 
   return (
     <>
-      <HostAndPortInfo url={url} />
+      <HostAndPortInfo url={url} platform={getPlatform()} />
     </>
   );
 };

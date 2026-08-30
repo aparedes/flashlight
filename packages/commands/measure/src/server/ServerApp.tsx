@@ -5,7 +5,7 @@ import { HostAndPortInfo } from "./components/HostAndPortInfo";
 import { getWebAppUrl } from "./constants";
 import { ServerSocketConnectionApp } from "./ServerSocketConnectionApp";
 import { getInk, loadInk } from "./ink";
-import { profiler } from "@lantern/profiler";
+import { profiler, getPlatform } from "@lantern/profiler";
 import { createWebAppServer } from "./webAppServer";
 
 const useCleanupOnManualExit = () => {
@@ -43,7 +43,7 @@ export const ServerApp = ({ port }: ServerAppProps) => {
   return socket ? (
     <ServerSocketConnectionApp socket={socket} url={webAppUrl} />
   ) : (
-    <HostAndPortInfo url={webAppUrl} />
+    <HostAndPortInfo url={webAppUrl} platform={getPlatform()} />
   );
 };
 

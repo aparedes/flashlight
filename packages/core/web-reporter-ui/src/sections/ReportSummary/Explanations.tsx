@@ -30,8 +30,9 @@ const AverageCPUUsageExplanation = () => (
   <>
     An app might run at high frame rates, such as 60 FPS or higher, but might be using too much
     processing power, so it&apos;s important to check CPU usage.
-    <br /> Depending on the device, this value can go up to <code>100% x number of cores</code>. For
-    instance, a Samsung A10s has 4 cores, so the max value would be 400%.
+    <br /> Depending on the device, this value can go up to <code>100% × number of cores</code>{" "}
+    (400% on a 4-core device). On iOS the profiler reports the whole process, so it is not broken
+    down per thread.
   </>
 );
 
@@ -41,7 +42,8 @@ const AverageRAMUsageExplanation = () => (
     performance of the device and drain the battery more quickly.
     <br />
     It's worth noting that results might be higher than expected: on Android we measure RSS (not
-    PSS), so memory shared with other processes is counted in full.
+    PSS), so memory shared with other processes is counted in full. On iOS the value is the
+    process's physical footprint, as reported by the system monitor.
   </>
 );
 

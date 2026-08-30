@@ -29,6 +29,10 @@ const execSync = ((command: string) => ({
       case "adb shell atrace --async_stop 1>/dev/null":
       case "adb shell chmod 755 /data/local/tmp/lantern-android-profiler":
         return "";
+      case "adb shell pm list packages -3":
+        return "package:com.other\npackage:com.example\n";
+      case "adb devices -l":
+        return "List of devices attached\nemulator-5554 device product:sdk model:Pixel_7 device:generic\n";
       default:
         console.error(`Unknown command: ${command}`);
         return "";
