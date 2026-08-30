@@ -32,22 +32,27 @@ with a real iOS 26 device** before this ships.
   `IOS_PROFILER_ERROR_*` markers on stderr. Documented in the crate README.
 - TS side spawns the binary; path override: `FLASHLIGHT_IOS_BINARY_PATH`.
 
+## Validation status
+
+**2026-08-30: `poll` VALIDATED end to end on a real iOS 26 device** — tunnel,
+DVT, sysmontap and graphics all working, measures streaming. Root causes
+fixed along the way: missing DTX capability handshake (DTXBlockCompression),
+one-connection-only dtservicehub, and sysmontap requiring the device's own
+attribute lists. Remaining checks below.
+
 ## Needs on-device validation (in order of risk)
 
 1. ~~Tunnel bring-up on iOS 26~~ **VALIDATED 2026-08-30**: CDTunnel + RSD +
    dtservicehub DVT channels all work on a real iOS 26 device (app listing
    returned data). Single-connection constraint discovered and fixed — see
    architecture above.
-2. **sysmontap row shape.** Parser handles both array-ordered (per procAttrs)
-   and dict-keyed rows; verify which iOS 26 sends, and that
-   `pid/name/cpuUsage/physFootprint/threadCount` all populate. Capture a raw
-   sample as a test fixture.
+2. ~~sysmontap row shape~~ **VALIDATED**: rows parse and measures emit on
+   iOS 26 (still worth capturing a FLASHLIGHT_IOS_DEBUG sample as a fixture).
 3. **CPU scale.** `cpuUsage` is assumed to be a fraction of one core
    (0.35 = 35%); compare against Xcode Instruments on the same app. If it's
    already a percentage, drop the ×100 in `ProcessSample::cpu_percent`.
-4. **graphics.opengl on iOS 26.** The FPS service is the part Apple most
-   plausibly broke; pymobiledevice3 doesn't expose it in its CLI (issue #871).
-   If dead: fall back to xctrace post-hoc frame data, or leave fps absent.
+4. ~~graphics.opengl on iOS 26~~ **VALIDATED**: channel opens and samples
+   on iOS 26 (confirm fps values look sane while scrolling).
 5. **App-listing key names** (`CFBundleIdentifier` vs `BundleIdentifier`,
    `ExecutableName` vs `CFBundleExecutable` vs path) — verify which iOS 26
    returns; the code tries all candidates.
