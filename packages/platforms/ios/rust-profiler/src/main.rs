@@ -28,8 +28,11 @@ Commands:
   info       [--udid <udid>]                Device hardware information (JSON)
   launch     --bundle-id <id> [--udid ...]  Launch an app, print {\"pid\": n}
   kill       --bundle-id <id> | --pid <n>   Kill an app
-  poll       --bundle-id <id> [--interval-ms <n=500>] [--udid ...]
+  poll       --bundle-id <id> [--interval-ms <n=500>] [--no-fps] [--udid ...]
                                             Stream NDJSON measures to stdout
+
+Set FLASHLIGHT_IOS_DEBUG=1 for verbose protocol logs on stderr (and a dump
+of the first raw sysmontap sample during poll).
 ";
 
 #[derive(Default)]
@@ -39,6 +42,7 @@ struct Args {
     udid: Option<String>,
     pid: Option<u64>,
     interval_ms: u32,
+    no_fps: bool,
 }
 
 fn parse_args() -> Args {
@@ -69,6 +73,7 @@ fn parse_args() -> Args {
                     .parse()
                     .unwrap_or_else(|_| error::fail(error::USAGE, "--interval-ms must be a number"))
             }
+            "--no-fps" => args.no_fps = true,
             other => error::fail(error::USAGE, format!("unknown flag {other}\n{USAGE}")),
         }
     }
@@ -218,13 +223,33 @@ async fn cmd_kill(args: &Args) {
 async fn cmd_poll(args: &Args) {
     let bundle_id = require_bundle_id(args);
     let mut conn = open_connection(args).await;
-    if let Err(e) = poll::poll(&mut conn, bundle_id, args.interval_ms).await {
+    if let Err(e) = poll::poll(&mut conn, bundle_id, args.interval_ms, !args.no_fps).await {
         error::fail(error::STREAM_ENDED, format!("{e:?}"));
     }
 }
 
+fn init_debug_tracing() {
+    // FLASHLIGHT_IOS_DEBUG=1 turns on the idevice/jktcp protocol logs on
+    // stderr; a filter string (e.g. "idevice=trace") can be passed instead
+    // of 1 for finer control. The DVT reader logs its exit reason at warn
+    // level, which is the key signal when a connection dies.
+    let Ok(value) = std::env::var("FLASHLIGHT_IOS_DEBUG") else {
+        return;
+    };
+    let filter = if value == "1" || value.is_empty() {
+        "idevice=debug,jktcp=debug".to_string()
+    } else {
+        value
+    };
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(std::io::stderr)
+        .init();
+}
+
 #[tokio::main]
 async fn main() {
+    init_debug_tracing();
     let args = parse_args();
     match args.command.as_str() {
         "devices" => cmd_devices().await,

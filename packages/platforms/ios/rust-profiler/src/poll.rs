@@ -79,7 +79,10 @@ async fn start_taps(
     rs: &mut RemoteServer,
     interval_ms: u32,
     mut next_channel: i32,
+    with_fps: bool,
 ) -> Result<Channels, IdeviceError> {
+    // Create and configure every channel first; start the sysmontap flood
+    // LAST so no control-plane request has to race the heavy data stream.
     let sysmontap = next_channel;
     next_channel += 1;
     {
@@ -91,23 +94,31 @@ async fn start_taps(
                 system_attributes: Vec::new(),
             })
             .await?;
-        client.start().await?;
     }
 
-    let graphics = match GraphicsClient::new(rs).await {
-        Ok(mut client) => match client.start_sampling(0.0).await {
-            Ok(()) => Some(next_channel),
+    let graphics = if with_fps {
+        match GraphicsClient::new(rs).await {
+            Ok(mut client) => match client.start_sampling(0.0).await {
+                Ok(()) => Some(next_channel),
+                Err(e) => {
+                    error::report(error::SERVICE_FAILED, format!("graphics sampling: {e:?}"));
+                    None
+                }
+            },
             Err(e) => {
-                error::report(error::SERVICE_FAILED, format!("graphics sampling: {e:?}"));
+                // FPS is best-effort: measures still flow without it.
+                error::report(error::SERVICE_FAILED, format!("graphics channel: {e:?}"));
                 None
             }
-        },
-        Err(e) => {
-            // FPS is best-effort: measures still flow without it.
-            error::report(error::SERVICE_FAILED, format!("graphics channel: {e:?}"));
-            None
         }
+    } else {
+        None
     };
+
+    // The wrapper's start() would consume the initial ack; sent raw instead,
+    // the ack lands in the channel queue and the poll loop discards it.
+    rs.call_method(sysmontap, Some(Value::String("start".into())), None, false)
+        .await?;
 
     Ok(Channels {
         sysmontap,
@@ -119,6 +130,7 @@ pub async fn poll(
     conn: &mut Connection,
     bundle_id: &str,
     interval_ms: u32,
+    with_fps: bool,
 ) -> Result<(), IdeviceError> {
     let mut rs = conn.remote_server().await?;
 
@@ -141,7 +153,7 @@ pub async fn poll(
         1
     };
 
-    let channels = start_taps(&mut rs, interval_ms, next_channel).await?;
+    let channels = start_taps(&mut rs, interval_ms, next_channel, with_fps).await?;
 
     emit(&StatusLine {
         detail: Some(format!(

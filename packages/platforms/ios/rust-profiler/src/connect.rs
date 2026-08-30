@@ -89,13 +89,50 @@ impl Connection {
         self.tunnel.is_some()
     }
 
-    /// Opens a fresh instruments connection. The DVT channel API borrows its
-    /// RemoteServerClient mutably, so each concurrently-streaming service
-    /// (sysmontap, graphics) gets its own connection.
+    /// Opens a fresh instruments connection and performs the DTX capability
+    /// handshake. NOTE: iOS closes concurrent dtservicehub connections, so a
+    /// command should open ONE connection and multiplex channels on it.
     pub async fn remote_server(&mut self) -> Result<RemoteServer, IdeviceError> {
-        match &mut self.tunnel {
-            Some(tunnel) => tunnel.rsd.connect::<RemoteServer>(&mut tunnel.handle).await,
-            None => RemoteServer::connect(&self.provider).await,
-        }
+        let mut server = match &mut self.tunnel {
+            Some(tunnel) => {
+                tunnel
+                    .rsd
+                    .connect::<RemoteServer>(&mut tunnel.handle)
+                    .await?
+            }
+            None => RemoteServer::connect(&self.provider).await?,
+        };
+        publish_capabilities(&mut server).await?;
+        Ok(server)
     }
+}
+
+/// Announces our DTX capabilities on the control channel, mirroring
+/// pymobiledevice3's `DTXConnection._perform_handshake`. DTXBlockCompression=0
+/// is load-bearing: without it the server compresses large payloads (the
+/// first sysmontap sample, typically), which the idevice message parser
+/// cannot decode — the reader task dies and every channel reports
+/// "remote server connection closed".
+async fn publish_capabilities(server: &mut RemoteServer) -> Result<(), IdeviceError> {
+    let mut capabilities = plist::Dictionary::new();
+    capabilities.insert(
+        "com.apple.private.DTXBlockCompression".into(),
+        plist::Value::Integer(0u64.into()),
+    );
+    capabilities.insert(
+        "com.apple.private.DTXConnection".into(),
+        plist::Value::Integer(1u64.into()),
+    );
+    server
+        .call_method(
+            0,
+            Some(plist::Value::String(
+                "_notifyOfPublishedCapabilities:".into(),
+            )),
+            Some(vec![idevice::dvt::message::AuxValue::archived_value(
+                plist::Value::Dictionary(capabilities),
+            )]),
+            false,
+        )
+        .await
 }
