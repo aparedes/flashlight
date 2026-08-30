@@ -14,7 +14,9 @@ pub const PROC_ATTRS: [&str; 5] = ["pid", "name", "cpuUsage", "physFootprint", "
 pub struct ProcessSample {
     pub pid: u64,
     pub name: String,
-    /// Fraction of one core (1.0 = one full core), as reported by the device.
+    /// Percent of one core (100.0 = one full core), as reported by the
+    /// device. Verified against a real iOS 26 device: sysmontap's cpuUsage
+    /// is already a percentage, NOT a 0..1 fraction.
     pub cpu_usage: f64,
     pub phys_footprint_bytes: f64,
     pub thread_count: u64,
@@ -22,7 +24,7 @@ pub struct ProcessSample {
 
 impl ProcessSample {
     pub fn cpu_percent(&self) -> f64 {
-        self.cpu_usage * 100.0
+        self.cpu_usage
     }
 
     pub fn ram_mb(&self) -> f64 {
@@ -152,7 +154,7 @@ mod tests {
     #[test]
     fn parses_array_rows_in_proc_attrs_order() {
         let mut processes = Dictionary::new();
-        processes.insert("42".into(), array_row(42, "MyApp", 0.35, 104_857_600.0, 17));
+        processes.insert("42".into(), array_row(42, "MyApp", 35.0, 104_857_600.0, 17));
 
         let parsed = parse_processes(&processes, &PROC_ATTRS);
         assert_eq!(
@@ -160,7 +162,7 @@ mod tests {
             vec![ProcessSample {
                 pid: 42,
                 name: "MyApp".into(),
-                cpu_usage: 0.35,
+                cpu_usage: 35.0,
                 phys_footprint_bytes: 104_857_600.0,
                 thread_count: 17,
             }]

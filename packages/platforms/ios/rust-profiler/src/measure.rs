@@ -90,7 +90,7 @@ mod tests {
         ProcessSample {
             pid: 42,
             name: "MyApp".into(),
-            cpu_usage: 0.255,
+            cpu_usage: 25.5,
             phys_footprint_bytes: 3.0 * 1024.0 * 1024.0,
             thread_count: 12,
         }
