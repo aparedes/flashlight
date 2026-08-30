@@ -13,22 +13,31 @@ with a real iOS 26 device** before this ships.
   userspace TCP → RSD → `com.apple.instruments.dtservicehub` (iOS 17+),
   falling back to lockdown `com.apple.instruments.remoteserver` (iOS < 17).
   No sudo, no external daemon: the tunnel lives in-process.
-- One instruments connection **per streaming service** (sysmontap, graphics):
-  the idevice crate's `Channel` borrows its `RemoteServerClient` mutably, so
-  concurrent taps can't share a connection. RSD allows multiple connections.
-- `poll.rs` — sysmontap drives emission (one measure per sample); graphics
-  FPS is merged in as "latest value" and omitted until the first frame.
-  Target matched by executable name every sample → survives app restarts.
+- **One instruments connection for everything**, with sysmontap and graphics
+  as multiplexed DTX channels addressed by code via the client's public
+  `read_message(channel)`/`call_method(channel, ...)`. Validated on a real
+  iOS 26 device (2026-08-30): opening multiple concurrent dtservicehub
+  connections gets them closed by the peer ("remote server connection
+  closed"), so the earlier connection-per-tap design was rebuilt. Channel
+  codes are deterministic (make_channel allocates 1, 2, ... per attempt);
+  on any app-listing hiccup the connection is reopened so streaming codes
+  stay known.
+- `poll.rs` — sysmontap drives emission (one measure per sample); queued
+  graphics frames are drained (1ms timeout reads) before each measure so
+  fps is fresh; fps omitted until the first frame. Target matched by
+  executable name every sample → survives app restarts.
+  `FLASHLIGHT_IOS_DEBUG=1` dumps the first raw sysmontap sample to stderr
+  (for verifying attribute order and the cpuUsage scale).
 - Wire protocol: NDJSON on stdout (`measure` matches `@perf-profiler/types`),
   `IOS_PROFILER_ERROR_*` markers on stderr. Documented in the crate README.
 - TS side spawns the binary; path override: `FLASHLIGHT_IOS_BINARY_PATH`.
 
 ## Needs on-device validation (in order of risk)
 
-1. **Tunnel bring-up on iOS 26.** idevice 0.1.65 is pinned; its changelog
-   claims iOS 26 request fields, but CDTunnel + RSD against a real iOS 26
-   build is unverified. If `dtservicehub` is absent from RSD, mount the
-   personalized DDI first (Xcode/devicectl/pymobiledevice3 all can).
+1. ~~Tunnel bring-up on iOS 26~~ **VALIDATED 2026-08-30**: CDTunnel + RSD +
+   dtservicehub DVT channels all work on a real iOS 26 device (app listing
+   returned data). Single-connection constraint discovered and fixed — see
+   architecture above.
 2. **sysmontap row shape.** Parser handles both array-ordered (per procAttrs)
    and dict-keyed rows; verify which iOS 26 sends, and that
    `pid/name/cpuUsage/physFootprint/threadCount` all populate. Capture a raw
