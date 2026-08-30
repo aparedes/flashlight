@@ -11,6 +11,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use idevice::dvt::application_listing::ApplicationListingClient;
+use idevice::dvt::device_info::DeviceInfoClient;
 use idevice::dvt::graphics::{GraphicsClient, GraphicsSample};
 use idevice::dvt::message::Message;
 use idevice::dvt::sysmontap::{SysmontapClient, SysmontapConfig};
@@ -73,11 +74,49 @@ async fn resolve_executable_name(rs: &mut RemoteServer, bundle_id: &str) -> Opti
     }
 }
 
+/// Queries the device for the attribute names its sysmontap supports,
+/// mirroring pymobiledevice3's Sysmontap.create: it always configures the
+/// tap with the device's own full lists, never a hand-picked subset. iOS 26
+/// closes the connection after `start` when it dislikes the tap config, so
+/// matching the known-good client exactly matters.
+async fn query_sysmon_attributes(rs: &mut RemoteServer) -> Option<(Vec<String>, Vec<String>)> {
+    let mut info = match DeviceInfoClient::new(rs).await {
+        Ok(client) => client,
+        Err(e) => {
+            error::report(error::SERVICE_FAILED, format!("device info: {e:?}"));
+            return None;
+        }
+    };
+    let process = match info.sysmon_process_attributes().await {
+        Ok(attrs) => attrs,
+        Err(e) => {
+            error::report(
+                error::SERVICE_FAILED,
+                format!("sysmonProcessAttributes: {e:?}"),
+            );
+            return None;
+        }
+    };
+    let system = match info.sysmon_system_attributes().await {
+        Ok(attrs) => attrs,
+        Err(e) => {
+            error::report(
+                error::SERVICE_FAILED,
+                format!("sysmonSystemAttributes: {e:?}"),
+            );
+            return None;
+        }
+    };
+    Some((process, system))
+}
+
 /// Creates and starts the sysmontap + graphics channels. Returns their codes.
 /// `next_channel` must be the code make_channel will hand out next.
 async fn start_taps(
     rs: &mut RemoteServer,
     interval_ms: u32,
+    proc_attrs: Vec<String>,
+    sys_attrs: Vec<String>,
     mut next_channel: i32,
     with_fps: bool,
 ) -> Result<Channels, IdeviceError> {
@@ -90,8 +129,8 @@ async fn start_taps(
         client
             .set_config(&SysmontapConfig {
                 interval_ms,
-                process_attributes: PROC_ATTRS.iter().map(|s| s.to_string()).collect(),
-                system_attributes: Vec::new(),
+                process_attributes: proc_attrs,
+                system_attributes: sys_attrs,
             })
             .await?;
     }
@@ -134,26 +173,35 @@ pub async fn poll(
 ) -> Result<(), IdeviceError> {
     let mut rs = conn.remote_server().await?;
 
-    // Channel 1: app listing, to resolve the app's executable name for
-    // process matching. If anything here fails, the channel counter's state
-    // is uncertain, so start over on a fresh connection where the streaming
-    // channel codes are deterministic again.
+    // Channel codes are deterministic: every client-creation attempt bumps
+    // the counter exactly once, succeed or fail. Creation order below:
+    //   1 app listing, 2 device info, 3 sysmontap, 4 graphics (if enabled).
     let executable_name = resolve_executable_name(&mut rs, bundle_id).await;
-    let next_channel = if executable_name.is_some() {
-        2
-    } else {
+    if executable_name.is_none() {
         emit(&StatusLine {
             detail: Some(format!(
                 "executable name for {bundle_id} not found; matching by bundle id"
             )),
             ..StatusLine::event("warning")
         });
-        drop(rs);
-        rs = conn.remote_server().await?;
-        1
-    };
+    }
 
-    let channels = start_taps(&mut rs, interval_ms, next_channel, with_fps).await?;
+    let (proc_attrs, sys_attrs) = query_sysmon_attributes(&mut rs).await.unwrap_or_else(|| {
+        (
+            PROC_ATTRS.iter().map(|s| s.to_string()).collect(),
+            Vec::new(),
+        )
+    });
+
+    let channels = start_taps(
+        &mut rs,
+        interval_ms,
+        proc_attrs.clone(),
+        sys_attrs,
+        3,
+        with_fps,
+    )
+    .await?;
 
     emit(&StatusLine {
         detail: Some(format!(
@@ -220,6 +268,20 @@ pub async fn poll(
 
         let Some(msg) = sysmon_msg else { continue };
         let Some(processes) = processes_from_message(&msg) else {
+            // Not a data row — a start ack or a DTTapMessage the archive
+            // decoder can't resolve. In debug mode dump it as a plain plist,
+            // which exposes the archive's string table (error text included).
+            if debug_raw {
+                if let Some(raw) = &msg.raw_data {
+                    let decoded = plist::from_bytes::<plist::Value>(raw)
+                        .map(|v| format!("{v:?}"))
+                        .unwrap_or_else(|e| format!("<unparseable: {e}>"));
+                    eprintln!(
+                        "FLASHLIGHT_IOS_DEBUG tap control message: {}",
+                        &decoded[..decoded.len().min(4000)]
+                    );
+                }
+            }
             continue;
         };
 
@@ -232,7 +294,7 @@ pub async fn poll(
             );
         }
 
-        let parsed: Vec<ProcessSample> = parse_processes(processes, &PROC_ATTRS);
+        let parsed: Vec<ProcessSample> = parse_processes(processes, &proc_attrs);
         match find_target(&parsed, executable_name.as_deref(), bundle_id) {
             Some(process) => {
                 if !target_seen {

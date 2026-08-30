@@ -51,10 +51,10 @@ fn value_as_u64(v: &Value) -> Option<u64> {
     }
 }
 
-fn row_attr<'v>(row: &'v Value, attrs: &[&str], attr: &str) -> Option<&'v Value> {
+fn row_attr<'v, S: AsRef<str>>(row: &'v Value, attrs: &[S], attr: &str) -> Option<&'v Value> {
     match row {
         Value::Array(values) => {
-            let index = attrs.iter().position(|a| *a == attr)?;
+            let index = attrs.iter().position(|a| a.as_ref() == attr)?;
             values.get(index)
         }
         Value::Dictionary(dict) => dict.get(attr),
@@ -62,7 +62,7 @@ fn row_attr<'v>(row: &'v Value, attrs: &[&str], attr: &str) -> Option<&'v Value>
     }
 }
 
-fn parse_row(pid_key: &str, row: &Value, attrs: &[&str]) -> Option<ProcessSample> {
+fn parse_row<S: AsRef<str>>(pid_key: &str, row: &Value, attrs: &[S]) -> Option<ProcessSample> {
     let pid = row_attr(row, attrs, "pid")
         .and_then(value_as_u64)
         .or_else(|| pid_key.parse().ok())?;
@@ -85,7 +85,7 @@ fn parse_row(pid_key: &str, row: &Value, attrs: &[&str]) -> Option<ProcessSample
     })
 }
 
-pub fn parse_processes(processes: &Dictionary, attrs: &[&str]) -> Vec<ProcessSample> {
+pub fn parse_processes<S: AsRef<str>>(processes: &Dictionary, attrs: &[S]) -> Vec<ProcessSample> {
     processes
         .iter()
         .filter_map(|(pid_key, row)| parse_row(pid_key, row, attrs))
