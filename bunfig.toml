@@ -7,3 +7,10 @@ coveragePathIgnorePatterns = [
   "**/__tests__/**",
   "test-setup/**",
 ]
+
+[install]
+# The repo relies on the hoisted layout: root-level test-setup resolves react,
+# and some packages resolve peers transitively. Newer bun defaults to the
+# isolated linker when it rewrites the lock, which breaks bun test setup, so
+# pin it explicitly.
+linker = "hoisted"
