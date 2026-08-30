@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 # Build universal macOS binaries into bin/. Run on macOS.
+mkdir -p bin
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
   rustup target add "$target" >/dev/null
   echo "Building for $target"
