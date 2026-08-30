@@ -1,5 +1,5 @@
 import fs from "fs";
-import { POLLING_INTERVAL, TestCaseResult } from "@perf-profiler/types";
+import { POLLING_INTERVAL, TestCaseResult } from "@lantern/types";
 import path from "path";
 
 const assertTimeIntervalMultiple = (n: number) => {
@@ -68,7 +68,7 @@ export const getResultsFromPaths = (jsonPaths: string[]): TestCaseResult[] => {
   return getJsonPaths().map((path) => JSON.parse(fs.readFileSync(path, "utf8")));
 };
 
-const getAssetsDir = () => process.env.FLASHLIGHT_REPORT_ASSETS_PATH || __dirname;
+const getAssetsDir = () => process.env.LANTERN_REPORT_ASSETS_PATH || __dirname;
 
 /**
  * The token `App.tsx` initialises the results with. Vite builds a single self-contained

@@ -1,5 +1,5 @@
-import { Logger } from "@perf-profiler/logger";
-import { POLLING_INTERVAL } from "@perf-profiler/types";
+import { Logger } from "@lantern/logger";
+import { POLLING_INTERVAL } from "@lantern/types";
 import { refreshRateManager } from "../detectCurrentDeviceRefreshRate";
 
 export const parseLine = (

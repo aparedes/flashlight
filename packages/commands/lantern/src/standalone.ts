@@ -7,7 +7,7 @@ import { createProgram } from "./cli";
 
 // Embedded files live on bun's virtual filesystem; materialize them once per version so the
 // existing folder-based lookups (and `adb push`) see real paths.
-const assetsRoot = path.join(os.tmpdir(), `flashlight-${version}-assets`);
+const assetsRoot = path.join(os.tmpdir(), `lantern-${version}-assets`);
 for (const asset of EMBEDDED_ASSETS) {
   // `asset.name` can be nested (Vite emits the webapp chunks into `assets/`).
   const destination = path.join(assetsRoot, asset.group, asset.name);
@@ -19,13 +19,13 @@ for (const asset of EMBEDDED_ASSETS) {
     if (asset.group === "ios-profiler") fs.chmodSync(destination, 0o755);
   }
 }
-process.env.FLASHLIGHT_BINARY_PATH ??= path.join(assetsRoot, "profiler");
-process.env.FLASHLIGHT_IOS_BINARY_PATH ??= path.join(
+process.env.LANTERN_BINARY_PATH ??= path.join(assetsRoot, "profiler");
+process.env.LANTERN_IOS_BINARY_PATH ??= path.join(
   assetsRoot,
   "ios-profiler",
   "flashlight-ios-profiler"
 );
-process.env.FLASHLIGHT_REPORT_ASSETS_PATH ??= path.join(assetsRoot, "report");
-process.env.FLASHLIGHT_WEBAPP_PATH ??= path.join(assetsRoot, "webapp");
+process.env.LANTERN_REPORT_ASSETS_PATH ??= path.join(assetsRoot, "report");
+process.env.LANTERN_WEBAPP_PATH ??= path.join(assetsRoot, "webapp");
 
 createProgram().parse();

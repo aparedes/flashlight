@@ -24,7 +24,7 @@
     { "path": "./packages/core/web-reporter-ui" },
     { "path": "./packages/commands/report" },
     { "path": "./packages/commands/measure" },
-    { "path": "./packages/commands/flashlight" },
+    { "path": "./packages/commands/lantern" },
     { "path": "./examples/cli" }
   ],
   "files": []

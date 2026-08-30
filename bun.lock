@@ -17,46 +17,46 @@
       "name": "cli-example",
       "version": "1.0.0-alpha.3",
       "dependencies": {
-        "@perf-profiler/profiler": "^0.10.12",
-        "@perf-profiler/reporter": "^0.10.0",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/profiler": "^0.10.12",
+        "@lantern/reporter": "^0.10.0",
+        "@lantern/types": "^0.9.0",
       },
     },
-    "packages/commands/flashlight": {
-      "name": "@perf-profiler/flashlight",
+    "packages/commands/lantern": {
+      "name": "@lantern/cli",
       "version": "0.18.0",
       "bin": {
-        "flashlight": "dist/bin.js",
+        "lantern": "dist/bin.js",
       },
       "dependencies": {
-        "@perf-profiler/e2e": "^0.11.4",
-        "@perf-profiler/measure": "^0.5.0",
-        "@perf-profiler/tools": "^0.2.4",
-        "@perf-profiler/web-reporter": "^0.11.3",
+        "@lantern/e2e": "^0.11.4",
+        "@lantern/measure": "^0.5.0",
+        "@lantern/tools": "^0.2.4",
+        "@lantern/web-reporter": "^0.11.3",
         "commander": "^15.0.0",
       },
     },
     "packages/commands/measure": {
-      "name": "@perf-profiler/measure",
+      "name": "@lantern/measure",
       "version": "0.5.0",
       "bin": {
-        "perf-profiler-measure": "dist/bin.js",
+        "lantern-measure": "dist/bin.js",
       },
       "dependencies": {
-        "@perf-profiler/e2e": "^0.11.4",
-        "@perf-profiler/logger": "^0.3.3",
-        "@perf-profiler/profiler": "^0.10.12",
-        "@perf-profiler/reporter": "^0.10.0",
-        "@perf-profiler/shell": "^0.2.1",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/e2e": "^0.11.4",
+        "@lantern/logger": "^0.3.3",
+        "@lantern/profiler": "^0.10.12",
+        "@lantern/reporter": "^0.10.0",
+        "@lantern/shell": "^0.2.1",
+        "@lantern/types": "^0.9.0",
         "commander": "^15.0.0",
         "ink": "^7.1.1",
         "react": "^19.2.0",
       },
       "devDependencies": {
+        "@lantern/web-reporter-ui": "^0.17.0",
         "@mui/icons-material": "^9.4.0",
         "@mui/material": "^9.4.0",
-        "@perf-profiler/web-reporter-ui": "^0.17.0",
         "@tailwindcss/vite": "^4.3.3",
         "@testing-library/dom": "^10.4.1",
         "@testing-library/react": "^16.3.3",
@@ -72,19 +72,19 @@
       },
     },
     "packages/commands/report": {
-      "name": "@perf-profiler/web-reporter",
+      "name": "@lantern/web-reporter",
       "version": "0.11.3",
       "bin": {
-        "generate-performance-web-report": "./dist/openReport.js",
+        "lantern-report": "./dist/openReport.js",
       },
       "dependencies": {
-        "@perf-profiler/logger": "^0.3.3",
-        "@perf-profiler/shell": "^0.2.1",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/logger": "^0.3.3",
+        "@lantern/shell": "^0.2.1",
+        "@lantern/types": "^0.9.0",
         "commander": "^15.0.0",
       },
       "devDependencies": {
-        "@perf-profiler/web-reporter-ui": "^0.17.0",
+        "@lantern/web-reporter-ui": "^0.17.0",
         "@tailwindcss/vite": "^4.3.3",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
@@ -98,36 +98,36 @@
       },
     },
     "packages/commands/test": {
-      "name": "@perf-profiler/e2e",
+      "name": "@lantern/e2e",
       "version": "0.11.4",
       "bin": {
-        "perf-profiler-e2e": "dist/bin.js",
+        "lantern-test": "dist/bin.js",
       },
       "dependencies": {
-        "@perf-profiler/logger": "^0.3.3",
-        "@perf-profiler/profiler": "^0.10.12",
-        "@perf-profiler/reporter": "^0.10.0",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/logger": "^0.3.3",
+        "@lantern/profiler": "^0.10.12",
+        "@lantern/reporter": "^0.10.0",
+        "@lantern/types": "^0.9.0",
         "commander": "^15.0.0",
       },
     },
     "packages/commands/tools": {
-      "name": "@perf-profiler/tools",
+      "name": "@lantern/tools",
       "version": "0.2.4",
       "bin": {
-        "perf-profiler-tools": "dist/bin.js",
+        "lantern-tools": "dist/bin.js",
       },
       "dependencies": {
-        "@perf-profiler/profiler": "^0.10.12",
-        "@perf-profiler/shell": "^0.2.1",
+        "@lantern/profiler": "^0.10.12",
+        "@lantern/shell": "^0.2.1",
         "commander": "^15.0.0",
       },
     },
     "packages/core/logger": {
-      "name": "@perf-profiler/logger",
+      "name": "@lantern/logger",
       "version": "0.3.3",
       "bin": {
-        "perf-profiler-logger": "dist/bin.js",
+        "lantern-logger": "dist/bin.js",
       },
       "dependencies": {
         "kleur": "^4.1.5",
@@ -138,18 +138,18 @@
       },
     },
     "packages/core/reporter": {
-      "name": "@perf-profiler/reporter",
+      "name": "@lantern/reporter",
       "version": "0.10.0",
       "dependencies": {
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/types": "^0.9.0",
         "es-toolkit": "^1.51.0",
       },
     },
     "packages/core/shell": {
-      "name": "@perf-profiler/shell",
+      "name": "@lantern/shell",
       "version": "0.2.1",
       "dependencies": {
-        "@perf-profiler/logger": "^0.3.3",
+        "@lantern/logger": "^0.3.3",
         "adm-zip": "^0.5.18",
         "axios": "^1.20.0",
       },
@@ -158,20 +158,20 @@
       },
     },
     "packages/core/types": {
-      "name": "@perf-profiler/types",
+      "name": "@lantern/types",
       "version": "0.9.0",
     },
     "packages/core/web-reporter-ui": {
-      "name": "@perf-profiler/web-reporter-ui",
+      "name": "@lantern/web-reporter-ui",
       "version": "0.17.0",
       "dependencies": {
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
+        "@lantern/reporter": "^0.10.0",
+        "@lantern/types": "^0.9.0",
         "@mui/icons-material": "^9.4.0",
         "@mui/material": "^9.4.0",
         "@mui/utils": "^9.4.0",
-        "@perf-profiler/reporter": "^0.10.0",
-        "@perf-profiler/types": "^0.9.0",
         "apexcharts": "^7.0.0",
         "es-toolkit": "^1.51.0",
         "file-saver": "^2.0.5",
@@ -190,33 +190,33 @@
       },
     },
     "packages/platforms/android": {
-      "name": "@perf-profiler/android",
+      "name": "@lantern/android",
       "version": "0.14.0",
       "bin": {
-        "perf-profiler-commands": "./dist/src/commands.js",
+        "lantern-android-commands": "./dist/src/commands.js",
       },
       "dependencies": {
-        "@perf-profiler/logger": "^0.3.3",
-        "@perf-profiler/profiler": "^0.10.12",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/logger": "^0.3.3",
+        "@lantern/profiler": "^0.10.12",
+        "@lantern/types": "^0.9.0",
         "commander": "^15.0.0",
       },
     },
     "packages/platforms/ios": {
-      "name": "@perf-profiler/ios",
+      "name": "@lantern/ios",
       "version": "0.4.0",
       "dependencies": {
-        "@perf-profiler/logger": "^0.3.3",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/logger": "^0.3.3",
+        "@lantern/types": "^0.9.0",
       },
     },
     "packages/platforms/profiler": {
-      "name": "@perf-profiler/profiler",
+      "name": "@lantern/profiler",
       "version": "0.10.12",
       "dependencies": {
-        "@perf-profiler/android": "^0.14.0",
-        "@perf-profiler/ios": "^0.4.0",
-        "@perf-profiler/types": "^0.9.0",
+        "@lantern/android": "^0.14.0",
+        "@lantern/ios": "^0.4.0",
+        "@lantern/types": "^0.9.0",
       },
     },
   },
@@ -282,6 +282,32 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@lantern/android": ["@lantern/android@workspace:packages/platforms/android"],
+
+    "@lantern/cli": ["@lantern/cli@workspace:packages/commands/lantern"],
+
+    "@lantern/e2e": ["@lantern/e2e@workspace:packages/commands/test"],
+
+    "@lantern/ios": ["@lantern/ios@workspace:packages/platforms/ios"],
+
+    "@lantern/logger": ["@lantern/logger@workspace:packages/core/logger"],
+
+    "@lantern/measure": ["@lantern/measure@workspace:packages/commands/measure"],
+
+    "@lantern/profiler": ["@lantern/profiler@workspace:packages/platforms/profiler"],
+
+    "@lantern/reporter": ["@lantern/reporter@workspace:packages/core/reporter"],
+
+    "@lantern/shell": ["@lantern/shell@workspace:packages/core/shell"],
+
+    "@lantern/tools": ["@lantern/tools@workspace:packages/commands/tools"],
+
+    "@lantern/types": ["@lantern/types@workspace:packages/core/types"],
+
+    "@lantern/web-reporter": ["@lantern/web-reporter@workspace:packages/commands/report"],
+
+    "@lantern/web-reporter-ui": ["@lantern/web-reporter-ui@workspace:packages/core/web-reporter-ui"],
 
     "@mui/core-downloads-tracker": ["@mui/core-downloads-tracker@9.4.0", "", {}, "sha512-d+gIYM1raJP87yrVQcVg+Q3vycVMArMkgu/TjJLi2vTvO9FHKWNRR1xs9nnN4eLpM9nGxxm02UMvc9BrmcUKvQ=="],
 
@@ -414,32 +440,6 @@
     "@oxlint/binding-win32-ia32-msvc": ["@oxlint/binding-win32-ia32-msvc@1.80.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-xhRWBMpLxZvgKAH6+DJZmpP+W8Y8UdQOSU1JfxSWNXsaBaRGW77j+1hCuNHlzj7OH4SPN8fYd1q0o2qrDtoVyw=="],
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.80.0", "", { "os": "win32", "cpu": "x64" }, "sha512-yAnO7lwBYQnz2pcfBPIGQQZWIX5zd5R/1aAKIF3oE+TVj7IhoHcROjOkz3sRDngzqhfPKfFaXqug5j5rE5dn6Q=="],
-
-    "@perf-profiler/android": ["@perf-profiler/android@workspace:packages/platforms/android"],
-
-    "@perf-profiler/e2e": ["@perf-profiler/e2e@workspace:packages/commands/test"],
-
-    "@perf-profiler/flashlight": ["@perf-profiler/flashlight@workspace:packages/commands/flashlight"],
-
-    "@perf-profiler/ios": ["@perf-profiler/ios@workspace:packages/platforms/ios"],
-
-    "@perf-profiler/logger": ["@perf-profiler/logger@workspace:packages/core/logger"],
-
-    "@perf-profiler/measure": ["@perf-profiler/measure@workspace:packages/commands/measure"],
-
-    "@perf-profiler/profiler": ["@perf-profiler/profiler@workspace:packages/platforms/profiler"],
-
-    "@perf-profiler/reporter": ["@perf-profiler/reporter@workspace:packages/core/reporter"],
-
-    "@perf-profiler/shell": ["@perf-profiler/shell@workspace:packages/core/shell"],
-
-    "@perf-profiler/tools": ["@perf-profiler/tools@workspace:packages/commands/tools"],
-
-    "@perf-profiler/types": ["@perf-profiler/types@workspace:packages/core/types"],
-
-    "@perf-profiler/web-reporter": ["@perf-profiler/web-reporter@workspace:packages/commands/report"],
-
-    "@perf-profiler/web-reporter-ui": ["@perf-profiler/web-reporter-ui@workspace:packages/core/web-reporter-ui"],
 
     "@popperjs/core": ["@popperjs/core@2.11.8", "", {}, "sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A=="],
 

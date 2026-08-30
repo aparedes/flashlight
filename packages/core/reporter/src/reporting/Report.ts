@@ -1,4 +1,4 @@
-import { TestCaseResult, AveragedTestCaseResult } from "@perf-profiler/types";
+import { TestCaseResult, AveragedTestCaseResult } from "@lantern/types";
 import { roundToDecimal } from "../utils/round";
 import { averageTestCaseResult } from "./averageIterations";
 import { getScore } from "./getScore";

@@ -1,6 +1,6 @@
 # Measure the performance of any iOS app
 
-Implementation of the Flashlight `Profiler` for real iOS devices.
+Implementation of the Lantern `Profiler` for real iOS devices.
 
 It spawns the bundled Rust binary (`rust-profiler/`,
 `flashlight-ios-profiler`) which talks to the device over usbmuxd and the
@@ -17,13 +17,13 @@ NDJSON. No Python, idb, sudo, or external tunnel daemon required.
 - The profiler binary: the per-arch macOS builds are committed in
   `rust-profiler/bin/` and embedded in the standalone CLI, like the Android
   profiler. Rebuild them with `rust-profiler/build_macos.sh` after changing
-  the crate (or set `FLASHLIGHT_IOS_BINARY_PATH` to a binary you built
+  the crate (or set `LANTERN_IOS_BINARY_PATH` to a binary you built
   elsewhere)
 
 ## Usage
 
 ```bash
-PLATFORM=ios flashlight measure
+PLATFORM=ios lantern measure
 # or from source:
 PLATFORM=ios bun packages/commands/measure/dist/server/bin.js measure
 ```

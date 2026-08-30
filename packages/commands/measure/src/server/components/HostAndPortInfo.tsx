@@ -6,7 +6,7 @@ export const HostAndPortInfo = ({ url }: { url: string }) => {
   return (
     <Box padding={1} flexDirection="column">
       <Text>
-        <Text bold>Flashlight web app running on: </Text>
+        <Text bold>Lantern web app running on: </Text>
         <Text color={"blue"}>{url}</Text>
       </Text>
     </Box>

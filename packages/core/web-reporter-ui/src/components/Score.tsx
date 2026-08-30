@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { Report, roundToDecimal } from "@perf-profiler/reporter";
+import { Report, roundToDecimal } from "@lantern/reporter";
 
 type Props = {
   size?: number;

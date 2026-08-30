@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { ChildProcess, execSync } from "child_process";
 import { executeAsync, executeCommand } from "../shell";
 import { getAbi } from "../getAbi";

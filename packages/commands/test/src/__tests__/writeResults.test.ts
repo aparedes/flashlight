@@ -14,8 +14,8 @@ import {
 } from "bun:test";
 import * as PerformanceTester from "../PerformanceTester";
 import * as writeReport from "../writeReport";
-import { Logger, LogLevel } from "@perf-profiler/logger";
-import { profiler } from "@perf-profiler/profiler";
+import { Logger, LogLevel } from "@lantern/logger";
+import { profiler } from "@lantern/profiler";
 
 spyOn(profiler, "installProfilerOnDevice").mockImplementation(() => undefined);
 
@@ -87,11 +87,11 @@ describe("writeResults", () => {
     [
       {
         options: {
-          path: "/tmp/flashlight_test.json",
+          path: "/tmp/lantern_test.json",
           title: "Awesome title",
         },
         expected: {
-          filePath: `/tmp/flashlight_test.json`,
+          filePath: `/tmp/lantern_test.json`,
           overrideScore: undefined,
           title: "Awesome title",
         },
@@ -100,10 +100,10 @@ describe("writeResults", () => {
     [
       {
         options: {
-          path: "/tmp/flashlight_test.json",
+          path: "/tmp/lantern_test.json",
         },
         expected: {
-          filePath: `/tmp/flashlight_test.json`,
+          filePath: `/tmp/lantern_test.json`,
           overrideScore: undefined,
           title: "Results",
         },

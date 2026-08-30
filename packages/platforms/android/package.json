@@ -1,28 +1,19 @@
 {
-  "name": "@perf-profiler/android",
+  "name": "@lantern/android",
   "version": "0.14.0",
   "description": "",
   "main": "dist/src/index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bamlab/android-performance-profiler.git",
-    "directory": "very-secret-profiler"
-  },
   "bin": {
-    "perf-profiler-commands": "./dist/src/commands.js"
+    "lantern-android-commands": "./dist/src/commands.js"
   },
   "scripts": {
     "test": "tsc"
   },
-  "author": {
-    "name": "Almouro",
-    "email": "alexandrem@bam.tech"
-  },
   "license": "MIT",
   "dependencies": {
-    "@perf-profiler/logger": "^0.3.3",
-    "@perf-profiler/profiler": "^0.10.12",
-    "@perf-profiler/types": "^0.9.0",
+    "@lantern/logger": "^0.3.3",
+    "@lantern/profiler": "^0.10.12",
+    "@lantern/types": "^0.9.0",
     "commander": "^15.0.0"
   }
 }

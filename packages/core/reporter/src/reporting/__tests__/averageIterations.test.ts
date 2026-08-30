@@ -1,6 +1,6 @@
 import { it, expect } from "bun:test";
 import { averageHighCpuUsage, averageIterations } from "../averageIterations";
-import { TestCaseIterationResult } from "@perf-profiler/types";
+import { TestCaseIterationResult } from "@lantern/types";
 
 const ITERATION_1: TestCaseIterationResult = {
   measures: [

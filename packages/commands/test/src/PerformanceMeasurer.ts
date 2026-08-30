@@ -1,13 +1,8 @@
-import { Logger } from "@perf-profiler/logger";
-import { profiler, waitFor } from "@perf-profiler/profiler";
+import { Logger } from "@lantern/logger";
+import { profiler, waitFor } from "@lantern/profiler";
 import { basename, dirname } from "path";
 import { Trace } from "./Trace";
-import {
-  Measure,
-  POLLING_INTERVAL,
-  ScreenRecorder,
-  TestCaseIterationResult,
-} from "@perf-profiler/types";
+import { Measure, POLLING_INTERVAL, ScreenRecorder, TestCaseIterationResult } from "@lantern/types";
 
 export class PerformanceMeasurer {
   measures: Measure[] = [];

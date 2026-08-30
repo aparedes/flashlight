@@ -5,7 +5,7 @@ Android device (`/data/local/tmp/BAMPerfProfiler`) and polls CPU (`/proc/<pid>/t
 RAM (`/proc/<pid>/statm`) and atrace (`trace_pipe`) measures for a given app.
 
 Its stdout is a wire protocol (`=START MEASURE=` / `=SEPARATOR=` / `=STOP MEASURE=`
-blocks, `CPP_ERROR_*` markers on stderr) parsed by `@perf-profiler/android`
+blocks, `CPP_ERROR_*` markers on stderr) parsed by `@lantern/android`
 (`src/commands/cppProfiler.ts` and `UnixProfiler.ts`) — keep them in sync.
 
 Differences from the C++ version:

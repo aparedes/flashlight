@@ -1,10 +1,10 @@
 import { Command } from "commander";
-import { processVideoFile } from "@perf-profiler/shell";
-import { profiler } from "@perf-profiler/profiler";
+import { processVideoFile } from "@lantern/shell";
+import { profiler } from "@lantern/profiler";
 import fs from "fs";
 
 export const registerToolsCommand = (program: Command) => {
-  const toolsCommand = program.command("tools").description("Utility tools related to Flashlight");
+  const toolsCommand = program.command("tools").description("Utility tools related to Lantern");
 
   toolsCommand
     .command("android_get_bundle_id")

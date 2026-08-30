@@ -1,8 +1,8 @@
-import type { FlashlightData } from "../common/types";
+import type { LanternData } from "../common/types";
 
 declare global {
   interface Window {
-    __FLASHLIGHT_DATA__: FlashlightData;
+    __LANTERN_DATA__: LanternData;
   }
 }
 

@@ -1,9 +1,9 @@
 import React from "react";
-import { AveragedTestCaseResult, Measure, POLLING_INTERVAL } from "@perf-profiler/types";
+import { AveragedTestCaseResult, Measure, POLLING_INTERVAL } from "@lantern/types";
 import { ComparativeThreadTable, ThreadTable } from "../components/ThreadTable";
 import { Collapsible } from "../components/Collapsible";
 import { getColorPalette } from "../theme/colors";
-import { getAverageCpuUsage, roundToDecimal } from "@perf-profiler/reporter";
+import { getAverageCpuUsage, roundToDecimal } from "@lantern/reporter";
 import { ReportChart } from "../components/Charts/ReportChart";
 import { THREAD_ICON_MAPPING, getAutoSelectedThreads } from "./threads";
 

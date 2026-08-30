@@ -3,7 +3,7 @@ import {
   setThemeAtRandom,
   IterationsReporterView,
   getThemeColorPalette,
-} from "@perf-profiler/web-reporter-ui";
+} from "@lantern/web-reporter-ui";
 
 import { BundleIdSelector } from "./components/BundleIdSelector";
 import { StartButton } from "./components/StartButton";

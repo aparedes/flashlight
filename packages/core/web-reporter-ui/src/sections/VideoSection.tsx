@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import { setVideoCurrentTime, useListenToVideoCurrentTime } from "../../videoCurrentTimeContext";
-import { AveragedTestCaseResult } from "@perf-profiler/types";
+import { AveragedTestCaseResult } from "@lantern/types";
 import { Button } from "../components/Button";
 import { ArrowDownIcon } from "../components/icons/ArrowDownIcon";
 

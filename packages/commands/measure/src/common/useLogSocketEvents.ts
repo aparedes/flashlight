@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { useEffect } from "react";
 import type { SocketEventBroadcaster } from "../socket/typedSocket";
 

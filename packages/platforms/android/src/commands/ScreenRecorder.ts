@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { executeAsync, executeCommand } from "./shell";
 import { ChildProcess } from "child_process";
 import { waitFor } from "../utils/waitFor";

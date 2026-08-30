@@ -7,8 +7,8 @@ import { createWebAppServer, WebAppServer } from "../../server/webAppServer";
 import { SocketEvents, SocketData } from "../../socket/socketInterface";
 import { decodeFrame, encodeFrame, WEBSOCKET_PATH } from "../../socket/protocol";
 
-const FLASHLIGHT_DATA_PLACEHOLDER =
-  'window.__FLASHLIGHT_DATA__ = { socketServerUrl: "http://localhost:3000" };';
+const LANTERN_DATA_PLACEHOLDER =
+  'window.__LANTERN_DATA__ = { socketServerUrl: "http://localhost:3000" };';
 
 /** Stand-in for the Vite build, so the server can be exercised without one. */
 let tempRoot: string;
@@ -56,25 +56,25 @@ const nextClose = (socket: WebSocket) =>
 
 describe("ServerApp", () => {
   beforeAll(() => {
-    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "flashlight-webapp-"));
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "lantern-webapp-"));
     fs.writeFileSync(path.join(tempRoot, "outside-the-dist.txt"), "TOP SECRET");
 
     const dist = path.join(tempRoot, "dist");
     fs.mkdirSync(path.join(dist, "assets"), { recursive: true });
     fs.writeFileSync(
       path.join(dist, "index.html"),
-      `<html><script>${FLASHLIGHT_DATA_PLACEHOLDER}</script></html>`
+      `<html><script>${LANTERN_DATA_PLACEHOLDER}</script></html>`
     );
     fs.writeFileSync(path.join(dist, "assets", "index-abcd1234.js"), "console.log('webapp');");
 
-    originalWebAppPath = process.env.FLASHLIGHT_WEBAPP_PATH;
-    process.env.FLASHLIGHT_WEBAPP_PATH = dist;
+    originalWebAppPath = process.env.LANTERN_WEBAPP_PATH;
+    process.env.LANTERN_WEBAPP_PATH = dist;
   });
 
   afterAll(() => {
     // The dom suite runs every test file in one process — put the environment back.
-    if (originalWebAppPath === undefined) delete process.env.FLASHLIGHT_WEBAPP_PATH;
-    else process.env.FLASHLIGHT_WEBAPP_PATH = originalWebAppPath;
+    if (originalWebAppPath === undefined) delete process.env.LANTERN_WEBAPP_PATH;
+    else process.env.LANTERN_WEBAPP_PATH = originalWebAppPath;
 
     fs.rmSync(tempRoot, { recursive: true, force: true });
   });
@@ -84,7 +84,7 @@ describe("ServerApp", () => {
   });
 
   describe("GET /", () => {
-    it("injects FlashlightData with the port the server actually listens on", async () => {
+    it("injects LanternData with the port the server actually listens on", async () => {
       const server = startServer();
 
       const response = await fetch(`http://localhost:${server.port}/`);
@@ -92,12 +92,12 @@ describe("ServerApp", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("text/html");
       expect(await response.text()).toContain(
-        `window.__FLASHLIGHT_DATA__ = { socketServerUrl: "http://localhost:${server.port}" };`
+        `window.__LANTERN_DATA__ = { socketServerUrl: "http://localhost:${server.port}" };`
       );
     });
 
     it("returns a 500 when the web app has not been built", async () => {
-      process.env.FLASHLIGHT_WEBAPP_PATH = path.join(tempRoot, "does-not-exist");
+      process.env.LANTERN_WEBAPP_PATH = path.join(tempRoot, "does-not-exist");
       const server = startServer();
 
       const response = await fetch(`http://localhost:${server.port}/`);
@@ -105,7 +105,7 @@ describe("ServerApp", () => {
       expect(response.status).toBe(500);
       expect(await response.text()).toBe("Error loading the page");
 
-      process.env.FLASHLIGHT_WEBAPP_PATH = path.join(tempRoot, "dist");
+      process.env.LANTERN_WEBAPP_PATH = path.join(tempRoot, "dist");
     });
   });
 
@@ -223,8 +223,8 @@ describe("ServerApp", () => {
     });
   });
 
-  test("index.html contains the FlashlightData placeholder", () => {
+  test("index.html contains the LanternData placeholder", () => {
     const fileContent = fs.readFileSync(`${__dirname}/../../webapp/index.html`, "utf8");
-    expect(fileContent).toContain(FLASHLIGHT_DATA_PLACEHOLDER);
+    expect(fileContent).toContain(LANTERN_DATA_PLACEHOLDER);
   });
 });

@@ -1,11 +1,11 @@
-import { open } from "@perf-profiler/shell";
+import { open } from "@lantern/shell";
 import { useEffect, useState } from "react";
 import type { SocketType } from "../socket/socketInterface";
 import { HostAndPortInfo } from "./components/HostAndPortInfo";
 import { getWebAppUrl } from "./constants";
 import { ServerSocketConnectionApp } from "./ServerSocketConnectionApp";
 import { getInk, loadInk } from "./ink";
-import { profiler } from "@perf-profiler/profiler";
+import { profiler } from "@lantern/profiler";
 import { createWebAppServer } from "./webAppServer";
 
 const useCleanupOnManualExit = () => {

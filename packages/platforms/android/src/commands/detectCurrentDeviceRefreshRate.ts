@@ -1,5 +1,5 @@
 import { executeCommand } from "./shell";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 
 const DEFAULT_FRAME_RATE = 60;
 

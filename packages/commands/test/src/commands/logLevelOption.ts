@@ -1,4 +1,4 @@
-import { LogLevel, Logger } from "@perf-profiler/logger";
+import { LogLevel, Logger } from "@lantern/logger";
 import { Option } from "commander";
 
 export const logLevelOption = new Option("--logLevel <logLevel>", "Set Log level").choices(

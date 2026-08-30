@@ -1,5 +1,5 @@
 import { PlayArrow, Stop } from "@mui/icons-material";
-import { Button } from "@perf-profiler/web-reporter-ui";
+import { Button } from "@lantern/web-reporter-ui";
 
 export const StartButton = ({
   isMeasuring,

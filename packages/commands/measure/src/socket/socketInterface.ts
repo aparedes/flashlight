@@ -1,4 +1,4 @@
-import { TestCaseResult } from "@perf-profiler/types";
+import { TestCaseResult } from "@lantern/types";
 import type { TypedSocket } from "./typedSocket";
 
 export interface SocketData {

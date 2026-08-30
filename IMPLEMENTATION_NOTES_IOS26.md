@@ -26,11 +26,11 @@ with a real iOS 26 device** before this ships.
   graphics frames are drained (1ms timeout reads) before each measure so
   fps is fresh; fps omitted until the first frame. Target matched by
   executable name every sample → survives app restarts.
-  `FLASHLIGHT_IOS_DEBUG=1` dumps the first raw sysmontap sample to stderr
+  `LANTERN_IOS_DEBUG=1` dumps the first raw sysmontap sample to stderr
   (for verifying attribute order and the cpuUsage scale).
-- Wire protocol: NDJSON on stdout (`measure` matches `@perf-profiler/types`),
+- Wire protocol: NDJSON on stdout (`measure` matches `@lantern/types`),
   `IOS_PROFILER_ERROR_*` markers on stderr. Documented in the crate README.
-- TS side spawns the binary; path override: `FLASHLIGHT_IOS_BINARY_PATH`.
+- TS side spawns the binary; path override: `LANTERN_IOS_BINARY_PATH`.
 
 ## Validation status
 
@@ -47,7 +47,7 @@ attribute lists. Remaining checks below.
    returned data). Single-connection constraint discovered and fixed — see
    architecture above.
 2. ~~sysmontap row shape~~ **VALIDATED**: rows parse and measures emit on
-   iOS 26 (still worth capturing a FLASHLIGHT_IOS_DEBUG sample as a fixture).
+   iOS 26 (still worth capturing a LANTERN_IOS_DEBUG sample as a fixture).
 3. ~~CPU scale~~ **VALIDATED**: sysmontap's `cpuUsage` is already a percentage
    of one core (see the doc comment on `ProcessSample::cpu_usage`); no ×100.
 4. ~~graphics.opengl on iOS 26~~ **VALIDATED**: channel opens and samples
@@ -66,7 +66,7 @@ attribute lists. Remaining checks below.
    rate detection needs a model lookup, not this call.
 6. **Stability.** 10-minute poll, app kill/relaunch mid-run (expect
    `targetLost` → `target` with a new pid), Mac-side CPU overhead.
-7. **End to end.** `PLATFORM=ios flashlight measure` / `flashlight test`
+7. **End to end.** `PLATFORM=ios lantern measure` / `lantern test`
    against the phone; check the web reporter renders sane series.
 8. **Refresh rate** is still hardcoded to 60 in the TS layer; decide how to
    detect ProMotion (120 Hz) — possibly from `info` hardware output.

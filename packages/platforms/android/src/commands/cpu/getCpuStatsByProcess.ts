@@ -1,4 +1,4 @@
-import { ThreadNames } from "@perf-profiler/types";
+import { ThreadNames } from "@lantern/types";
 
 export interface ProcessStat {
   processId: string;

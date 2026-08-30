@@ -1,4 +1,4 @@
-import { roundToDecimal } from "@perf-profiler/reporter";
+import { roundToDecimal } from "@lantern/reporter";
 
 type Props = {
   value?: number;

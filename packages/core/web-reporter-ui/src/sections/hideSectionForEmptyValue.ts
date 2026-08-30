@@ -1,5 +1,5 @@
-import { POLLING_INTERVAL, AveragedTestCaseResult } from "@perf-profiler/types";
-import { roundToDecimal } from "@perf-profiler/reporter";
+import { POLLING_INTERVAL, AveragedTestCaseResult } from "@lantern/types";
+import { roundToDecimal } from "@lantern/reporter";
 import React from "react";
 
 type PropsType = {

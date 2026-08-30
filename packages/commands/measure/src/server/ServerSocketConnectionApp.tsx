@@ -1,7 +1,7 @@
-import { PerformanceMeasurer } from "@perf-profiler/e2e";
-import { Logger } from "@perf-profiler/logger";
-import { profiler } from "@perf-profiler/profiler";
-import { Measure } from "@perf-profiler/types";
+import { PerformanceMeasurer } from "@lantern/e2e";
+import { Logger } from "@lantern/logger";
+import { profiler } from "@lantern/profiler";
+import { Measure } from "@lantern/types";
 import React, { useCallback, useEffect } from "react";
 import { HostAndPortInfo } from "./components/HostAndPortInfo";
 import { SocketType, SocketEvents } from "../socket/socketInterface";

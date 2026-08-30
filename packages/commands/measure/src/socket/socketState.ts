@@ -1,4 +1,4 @@
-import { Measure, POLLING_INTERVAL } from "@perf-profiler/types";
+import { Measure, POLLING_INTERVAL } from "@lantern/types";
 import { useState, useEffect } from "react";
 import { SocketType, SocketData, SocketEvents } from "./socketInterface";
 

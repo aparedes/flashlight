@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Builds a standalone macOS executable of the flashlight CLI.
+ * Builds a standalone macOS executable of the lantern CLI.
  *
  * Usage:
  *   bun run build:standalone
@@ -14,8 +14,8 @@ import fs from "fs";
 import path from "path";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..");
-const FLASHLIGHT_SRC = path.join(REPO_ROOT, "packages/commands/flashlight/src");
-const GENERATED_FILE = path.join(FLASHLIGHT_SRC, "embedded.generated.ts");
+const CLI_SRC = path.join(REPO_ROOT, "packages/commands/lantern/src");
+const GENERATED_FILE = path.join(CLI_SRC, "embedded.generated.ts");
 
 const VALID_TARGETS = ["bun-darwin-arm64", "bun-darwin-x64"] as const;
 type Target = (typeof VALID_TARGETS)[number];
@@ -69,8 +69,8 @@ const parseArgs = () => {
   return {
     target,
     skipBuild,
-    signIdentity: sign ?? process.env.FLASHLIGHT_CODESIGN_IDENTITY ?? "-",
-    outfile: outfile ?? path.join(REPO_ROOT, `build/standalone/flashlight-macos-${arch}`),
+    signIdentity: sign ?? process.env.LANTERN_CODESIGN_IDENTITY ?? "-",
+    outfile: outfile ?? path.join(REPO_ROOT, `build/standalone/lantern-macos-${arch}`),
   };
 };
 
@@ -159,7 +159,7 @@ const reportDistDir = path.join(REPO_ROOT, "packages/commands/report/dist");
 const webappDistDir = path.join(REPO_ROOT, "packages/commands/measure/dist");
 
 // The iOS profiler runs on the Mac itself, so only the binary matching the compile target is
-// embedded, under the un-suffixed name the `@perf-profiler/ios` package resolves at runtime.
+// embedded, under the un-suffixed name the `@lantern/ios` package resolves at runtime.
 const IOS_PROFILER_BINARY = "flashlight-ios-profiler";
 const iosProfilerSource = path.join(
   iosProfilerBinDir,
@@ -208,7 +208,7 @@ for (const group of ASSET_GROUPS) {
 // --- Step 3: generate embedded.generated.ts ---------------------------------
 
 const toImportSpecifier = (sourcePath: string) => {
-  const relative = path.relative(FLASHLIGHT_SRC, sourcePath);
+  const relative = path.relative(CLI_SRC, sourcePath);
   return relative.startsWith(".") ? relative : `./${relative}`;
 };
 
@@ -260,7 +260,7 @@ run(
     // takes that path when DEV=true *and* `react-devtools-core` resolves, never in the binary.
     "--external",
     "*/devtools.js",
-    "packages/commands/flashlight/src/standalone.ts",
+    "packages/commands/lantern/src/standalone.ts",
     "--outfile",
     options.outfile,
   ],

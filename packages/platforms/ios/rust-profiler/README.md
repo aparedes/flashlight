@@ -42,7 +42,7 @@ One JSON object per stdout line (NDJSON):
 {"type":"status","event":"stopped"}
 ```
 
-- `measure` matches the `Measure` type in `@perf-profiler/types`: `time` is
+- `measure` matches the `Measure` type in `@lantern/types`: `time` is
   epoch ms, `cpu.perName.Total` is percent of one core (can exceed 100 on
   multiple cores), `ram` is MB (phys footprint), `fps` is CoreAnimation FPS
   and is omitted until the first graphics sample arrives.
@@ -71,7 +71,7 @@ box):
 
 The per-arch binaries in `bin/` (`flashlight-ios-profiler-aarch64-apple-darwin`,
 `flashlight-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
-Android profiler: `@perf-profiler/ios` resolves `bin/flashlight-ios-profiler`
+Android profiler: `@lantern/ios` resolves `bin/flashlight-ios-profiler`
 (the universal `lipo` output, gitignored) from a source checkout, and
 `bun run build:standalone` embeds the binary matching its `--target`. Commit
 the rebuilt binaries together with the crate change that motivated them.

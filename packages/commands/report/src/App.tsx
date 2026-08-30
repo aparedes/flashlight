@@ -1,10 +1,6 @@
 import React from "react";
-import { TestCaseResult } from "@perf-profiler/types";
-import {
-  IterationsReporterView,
-  PageBackground,
-  setThemeAtRandom,
-} from "@perf-profiler/web-reporter-ui";
+import { TestCaseResult } from "@lantern/types";
+import { IterationsReporterView, PageBackground, setThemeAtRandom } from "@lantern/web-reporter-ui";
 
 // @ts-expect-error
 // oxlint-disable-next-line prefer-const

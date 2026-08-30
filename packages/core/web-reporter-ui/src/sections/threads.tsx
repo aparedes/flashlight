@@ -1,4 +1,4 @@
-import { AveragedTestCaseResult, TestCaseResult, ThreadNames } from "@perf-profiler/types";
+import { AveragedTestCaseResult, TestCaseResult, ThreadNames } from "@lantern/types";
 import { RNLogo } from "../components/icons/ReactNativeLogo";
 import { FlutterLogo } from "../components/icons/FlutterLogo";
 

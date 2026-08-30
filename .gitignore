@@ -5,4 +5,4 @@ node_modules
 *.tsbuildinfo
 .cache
 /build/
-packages/commands/flashlight/src/embedded.generated.ts
+packages/commands/lantern/src/embedded.generated.ts

@@ -1,6 +1,6 @@
 import React from "react";
 import { TextField } from "./TextField";
-import { Button } from "@perf-profiler/web-reporter-ui";
+import { Button } from "@lantern/web-reporter-ui";
 
 export const BundleIdSelector = ({
   bundleId,

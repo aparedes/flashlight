@@ -12,7 +12,7 @@ export default defineConfig({
       // Bundle the shared UI library from source instead of its tsc-built CJS `dist`, so the
       // React Compiler (and Fast Refresh) actually see its components — `dist` ships JSX
       // already lowered to `jsx()` calls, which the compiler skips.
-      "@perf-profiler/web-reporter-ui": fileURLToPath(
+      "@lantern/web-reporter-ui": fileURLToPath(
         new URL("../../core/web-reporter-ui/index.tsx", import.meta.url)
       ),
     },

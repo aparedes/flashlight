@@ -1,4 +1,4 @@
-import { Measure, TestCaseIterationResult } from "@perf-profiler/types";
+import { Measure, TestCaseIterationResult } from "@lantern/types";
 import { groupBy, orderBy } from "es-toolkit";
 import { getMinMax } from "../utils/getMinMax";
 import { getStandardDeviation } from "../utils/getStandardDeviation";

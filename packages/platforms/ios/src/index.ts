@@ -1,14 +1,14 @@
 import { ChildProcess, execFile, spawn } from "child_process";
 import fs from "fs";
 import { createInterface } from "readline";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import {
   Measure,
   POLLING_INTERVAL,
   Profiler,
   ProfilerPollingOptions,
   ScreenRecorder,
-} from "@perf-profiler/types";
+} from "@lantern/types";
 
 const BINARY_NAME = "flashlight-ios-profiler";
 
@@ -18,8 +18,8 @@ const defaultBinaryPath = `${__dirname}/..${
 }/rust-profiler/bin/${BINARY_NAME}`;
 
 // Allow overriding the binary path with an environment variable, mirroring
-// FLASHLIGHT_BINARY_PATH on Android
-const getBinaryPath = () => process.env.FLASHLIGHT_IOS_BINARY_PATH || defaultBinaryPath;
+// LANTERN_BINARY_PATH on Android
+const getBinaryPath = () => process.env.LANTERN_IOS_BINARY_PATH || defaultBinaryPath;
 
 interface MeasureLine {
   type: "measure";
@@ -93,7 +93,7 @@ export class IOSProfiler implements Profiler {
 
     child.on("error", (error) => {
       Logger.error(
-        `Failed to start ${getBinaryPath()}: ${error.message}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh or set FLASHLIGHT_IOS_BINARY_PATH.`
+        `Failed to start ${getBinaryPath()}: ${error.message}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh or set LANTERN_IOS_BINARY_PATH.`
       );
     });
 
@@ -114,9 +114,9 @@ export class IOSProfiler implements Profiler {
 
   installProfilerOnDevice() {
     const binaryPath = getBinaryPath();
-    if (!process.env.FLASHLIGHT_IOS_BINARY_PATH && !fs.existsSync(binaryPath)) {
+    if (!process.env.LANTERN_IOS_BINARY_PATH && !fs.existsSync(binaryPath)) {
       throw new Error(
-        `${BINARY_NAME} not found at ${binaryPath}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh (macOS only) or set FLASHLIGHT_IOS_BINARY_PATH.`
+        `${BINARY_NAME} not found at ${binaryPath}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh (macOS only) or set LANTERN_IOS_BINARY_PATH.`
       );
     }
   }

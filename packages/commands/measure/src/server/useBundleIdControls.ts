@@ -1,4 +1,4 @@
-import { profiler } from "@perf-profiler/profiler";
+import { profiler } from "@lantern/profiler";
 import { useEffect } from "react";
 import { SocketType, SocketData, SocketEvents } from "../socket/socketInterface";
 

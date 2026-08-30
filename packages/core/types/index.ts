@@ -50,7 +50,7 @@ export interface AveragedTestCaseResult {
   specs?: DeviceSpecs;
 }
 
-// Shouldn't really be here but @perf-profiler/types is imported by everyone and doesn't contain any logic
+// Shouldn't really be here but @lantern/types is imported by everyone and doesn't contain any logic
 // so nice to have it here for now
 export const POLLING_INTERVAL = 500;
 

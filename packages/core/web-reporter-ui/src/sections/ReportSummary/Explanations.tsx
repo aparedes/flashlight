@@ -2,8 +2,8 @@
 // array of `string` (thread names) by a derived value, so use the compat build whose
 // signature (lodash-compatible: single iteratee/order, no array wrapping needed) covers it.
 import { orderBy } from "es-toolkit/compat";
-import { roundToDecimal, sanitizeProcessName } from "@perf-profiler/reporter";
-import { AveragedTestCaseResult } from "@perf-profiler/types";
+import { roundToDecimal, sanitizeProcessName } from "@lantern/reporter";
+import { AveragedTestCaseResult } from "@lantern/types";
 
 const AverageTestRuntimeExplanation = () => (
   <>
@@ -40,16 +40,8 @@ const AverageRAMUsageExplanation = () => (
     If an app consumes a large amount of RAM (random-access memory), it can impact the overall
     performance of the device and drain the battery more quickly.
     <br />
-    It’s worth noting that results might be higher than expected since we measure RSS and not PSS
-    (See{" "}
-    <a
-      href="https://github.com/bamlab/android-performance-profiler/issues/11#issuecomment-1219317891"
-      target="_blank"
-      rel="noreferrer"
-    >
-      here for more details
-    </a>
-    )
+    It's worth noting that results might be higher than expected: on Android we measure RSS (not
+    PSS), so memory shared with other processes is counted in full.
   </>
 );
 

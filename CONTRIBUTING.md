@@ -83,7 +83,7 @@ spies leak between files: a file that creates spies at module level should end w
 `afterAll(() => mock.restore());`. `mock.module()` is _not_ undone by `mock.restore()`, so prefer
 `spyOn` unless you really need to replace a whole module.
 
-## Running `flashlight` commands locally
+## Running `lantern` commands locally
 
 Start by building the whole project:
 
@@ -101,7 +101,7 @@ Keep this open in one terminal.
 Start the webapp with
 
 ```bash
-bun run --filter @perf-profiler/measure start
+bun run --filter @lantern/measure start
 ```
 
 Then run the `measure` commmand with:
@@ -121,7 +121,7 @@ bun packages/commands/test/dist/bin.js test
 This command is the equivalent of
 
 ```
-flashlight test
+lantern test
 ```
 
 ### `tools` command
@@ -135,7 +135,7 @@ bun packages/commands/tools/dist/bin.js tools
 This command is the equivalent of
 
 ```
-flashlight tools
+lantern tools
 ```
 
 ### web-reporter
@@ -143,7 +143,7 @@ flashlight tools
 Run in another terminal:
 
 ```
-bun run --filter @perf-profiler/web-reporter start
+bun run --filter @lantern/web-reporter start
 ```
 
 Then in `packages/commands/report/src/App.tsx`, uncomment the lines to add your own measures:
@@ -159,8 +159,8 @@ Run `bun run test:unit:dom --update-snapshots` after modifications.
 
 ## Building the standalone macOS binary
 
-`bun run build:standalone` builds a self-contained `flashlight` executable for arm64 (Apple
-Silicon) into `build/standalone/flashlight-macos-arm64`. The binary is ad-hoc signed, which is
+`bun run build:standalone` builds a self-contained `lantern` executable for arm64 (Apple
+Silicon) into `build/standalone/lantern-macos-arm64`. The binary is ad-hoc signed, which is
 fine for local use but will not pass Gatekeeper on another machine.
 
 ```
@@ -168,7 +168,7 @@ bun run build:standalone
 ```
 
 To produce a distributable, properly signed binary, pass your signing identity (the
-`FLASHLIGHT_CODESIGN_IDENTITY` env var works as a fallback):
+`LANTERN_CODESIGN_IDENTITY` env var works as a fallback):
 
 ```
 bun run build:standalone --sign "Developer ID Application: Your Name (TEAMID)"
@@ -180,7 +180,7 @@ To cross-compile for Intel Macs:
 bun run build:standalone --target bun-darwin-x64
 ```
 
-The resulting `build/standalone/flashlight-macos-x64` binary cannot be run on an arm64 Mac —
+The resulting `build/standalone/lantern-macos-x64` binary cannot be run on an arm64 Mac —
 that is expected.
 
 Other flags: `--skip-build` reuses the existing `dist/` output instead of re-running
@@ -190,7 +190,7 @@ The executable embeds the Android `rust-profiler` binary (arm64-v8a — devices 
 Silicon emulator), the iOS profiler binary matching the `--target` architecture
 (`packages/platforms/ios/rust-profiler/bin/`, rebuilt with `build_macos.sh`) and both web apps
 (the `report` web reporter and the `measure` live webapp). On the first run of a given version,
-they are extracted to `$TMPDIR/flashlight-<version>-assets` so that the regular folder-based
+they are extracted to `$TMPDIR/lantern-<version>-assets` so that the regular folder-based
 lookups (and `adb push`) see real file paths.
 
 ### Iterating without a full compile
@@ -199,5 +199,5 @@ Compiling takes a while. To run the aggregated CLI straight from the workspace `
 after a `bun run build`:
 
 ```
-bun run flashlight -- <command>
+bun run lantern -- <command>
 ```

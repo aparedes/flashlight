@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { executeCommand } from "./shell";
 
 export const getPidId = (bundleId: string) => {

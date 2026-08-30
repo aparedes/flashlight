@@ -2,7 +2,7 @@ import {
   AveragedTestCaseResult,
   TestCaseIterationResult,
   TestCaseIterationStatus,
-} from "@perf-profiler/types";
+} from "@lantern/types";
 import { PerformanceMeasurer } from "./PerformanceMeasurer";
 
 export interface TestCase {

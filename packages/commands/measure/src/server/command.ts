@@ -9,7 +9,7 @@ export const registerMeasureCommand = (program: Command) => {
       `Measure performance of an Android app. Display the results live in a web app.
 
 Main usage:
-flashlight measure`
+lantern measure`
     )
     .option("-p, --port [port]", "Specify the port number for the server")
     .action(async (options) => {

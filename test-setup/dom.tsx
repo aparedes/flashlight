@@ -50,7 +50,7 @@ const ApexChartMock = ({
 
 // Both packages ship separate ESM and CJS builds behind an `exports` map, and `mock.module`
 // keys on the resolved file — so the bare specifier only covers the ESM build that the UI
-// sources import. `@perf-profiler/web-reporter-ui` is also consumed through its tsc-built
+// sources import. `@lantern/web-reporter-ui` is also consumed through its tsc-built
 // CJS `dist` (by the measure webapp), which `require`s the CJS build; without the second
 // registration the real chart library would render into happy-dom for those tests.
 const mockModule = (specifier: string, factory: () => unknown) => {

@@ -1,6 +1,6 @@
-import { profiler } from "@perf-profiler/profiler";
-import { getAverageCpuUsage } from "@perf-profiler/reporter";
-import { Measure, ThreadNames } from "@perf-profiler/types";
+import { profiler } from "@lantern/profiler";
+import { getAverageCpuUsage } from "@lantern/reporter";
+import { Measure, ThreadNames } from "@lantern/types";
 
 const bundleId = profiler.detectCurrentBundleId() || "";
 

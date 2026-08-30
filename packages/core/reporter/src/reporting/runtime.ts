@@ -1,4 +1,4 @@
-import { TestCaseIterationResult } from "@perf-profiler/types";
+import { TestCaseIterationResult } from "@lantern/types";
 import { getMinMax } from "../utils/getMinMax";
 import { getStandardDeviation } from "../utils/getStandardDeviation";
 import { variationCoefficient } from "../utils/variationCoefficient";

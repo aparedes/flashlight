@@ -1,19 +1,13 @@
 import fs from "fs";
 import os from "os";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import {
   canIgnoreAwsTerminationError,
   cleanup,
   executeCommand,
   executeLongRunningProcess,
 } from "../shell";
-import {
-  Measure,
-  POLLING_INTERVAL,
-  Profiler,
-  ScreenRecorder,
-  ThreadNames,
-} from "@perf-profiler/types";
+import { Measure, POLLING_INTERVAL, Profiler, ScreenRecorder, ThreadNames } from "@lantern/types";
 import { CpuMeasureAggregator } from "../cpu/CpuMeasureAggregator";
 import { FrameTimeParser } from "../atrace/pollFpsUsage";
 import { CppPerformanceMeasure, parseCppMeasure } from "../cppProfiler";
@@ -24,7 +18,7 @@ export const CppProfilerName = `BAMPerfProfiler`;
 
 const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ? "/.." : ""}/rust-profiler/bin`;
 // Allow overriding the binary folder with an environment variable
-const getBinaryFolder = () => process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;
+const getBinaryFolder = () => process.env.LANTERN_BINARY_PATH || defaultBinaryFolder;
 
 export abstract class UnixProfiler implements Profiler {
   stop(): void {
@@ -94,7 +88,7 @@ export abstract class UnixProfiler implements Profiler {
         `Unsupported device ABI "${abi}": no profiler binary is shipped for it (supported: arm64-v8a)`
       );
     }
-    const binaryTmpPath = `${os.tmpdir()}/flashlight-${CppProfilerName}-${abi}`;
+    const binaryTmpPath = `${os.tmpdir()}/lantern-${CppProfilerName}-${abi}`;
 
     // Copy to a real file first: when running from the standalone executable the source may be an embedded (virtual) path
     fs.writeFileSync(binaryTmpPath, fs.readFileSync(binaryPath));

@@ -3,7 +3,7 @@ import ReactApexChart, { Props as ApexChartProps } from "react-apexcharts";
 // apexcharts 7 no longer declares its option types as ambient globals — they are exported
 // from the package (merged into the `ApexCharts` class namespace) and must be imported.
 import ApexCharts, { type ApexAxisChartSeries, type ApexOptions } from "apexcharts";
-import { POLLING_INTERVAL } from "@perf-profiler/types";
+import { POLLING_INTERVAL } from "@lantern/types";
 import { merge, partition } from "es-toolkit";
 
 function toggleSeriesVisibility(

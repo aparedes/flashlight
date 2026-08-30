@@ -3,7 +3,7 @@ import {
   POLLING_INTERVAL,
   TestCaseIterationResult,
   AveragedTestCaseResult,
-} from "@perf-profiler/types";
+} from "@lantern/types";
 import { groupBy } from "es-toolkit";
 import { getMinMax } from "../utils/getMinMax";
 import { getStandardDeviation } from "../utils/getStandardDeviation";

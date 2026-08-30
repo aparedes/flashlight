@@ -1,14 +1,10 @@
 {
-  "name": "@perf-profiler/shell",
+  "name": "@lantern/shell",
   "version": "0.2.1",
-  "author": {
-    "name": "Almouro",
-    "email": "alexandrem@bam.tech"
-  },
   "license": "MIT",
   "main": "dist/index.js",
   "dependencies": {
-    "@perf-profiler/logger": "^0.3.3",
+    "@lantern/logger": "^0.3.3",
     "adm-zip": "^0.5.18",
     "axios": "^1.20.0"
   },

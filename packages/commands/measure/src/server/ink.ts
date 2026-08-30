@@ -12,7 +12,7 @@
  * `runServerApp()` awaits `loadInk()` before it renders anything, which is what guarantees
  * the module is there by the time a component calls `getInk()`.
  *
- * This indirection disappears the day `@perf-profiler/measure` itself ships as ESM.
+ * This indirection disappears the day `@lantern/measure` itself ships as ESM.
  */
 type Ink = typeof import("ink");
 

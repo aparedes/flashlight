@@ -1,5 +1,5 @@
 import { FunctionComponent } from "react";
-import { Report, canComputeHighCpuUsage } from "@perf-profiler/reporter";
+import { Report, canComputeHighCpuUsage } from "@lantern/reporter";
 import { ReportSummaryCardInfoRow } from "./ReportSummaryCardInfoRow";
 import { Score } from "../../components/Score";
 import { Explanations } from "./Explanations";
