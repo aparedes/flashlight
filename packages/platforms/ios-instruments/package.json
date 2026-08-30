@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@perf-profiler/android": "^0.14.0",
     "@perf-profiler/logger": "^0.3.3",
     "@perf-profiler/profiler": "^0.10.12",
     "@perf-profiler/types": "^0.9.0",

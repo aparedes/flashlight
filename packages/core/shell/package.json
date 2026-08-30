@@ -11,5 +11,8 @@
     "@perf-profiler/logger": "^0.3.3",
     "adm-zip": "^0.5.18",
     "axios": "^1.20.0"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7"
   }
 }

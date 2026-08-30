@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 // TODO: refactor so that these functions are not in android
-import { executeAsync, executeCommand } from "@perf-profiler/android/dist/src/commands/shell";
+import { executeAsync, executeCommand } from "@perf-profiler/android";
 import fs from "fs";
 import { writeReport } from "./writeReport";
 import { program } from "commander";
