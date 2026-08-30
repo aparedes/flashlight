@@ -110,6 +110,10 @@ Then run the `measure` commmand with:
 DEVELOPMENT_MODE=true bun packages/commands/measure/dist/server/bin.js measure
 ```
 
+Pass `--platform android|ios` (or set `PLATFORM=ios` in the environment) to
+pick a platform explicitly; it's otherwise auto-detected when only one kind
+of device is connected.
+
 ### `test` command
 
 To run the command locally:
@@ -123,6 +127,9 @@ This command is the equivalent of
 ```
 lantern test
 ```
+
+`test` also accepts `--platform android|ios` (or the `PLATFORM` env var), the
+same as `measure`.
 
 ### `tools` command
 
@@ -192,6 +199,36 @@ Silicon emulator), the iOS profiler binary matching the `--target` architecture
 (the `report` web reporter and the `measure` live webapp). On the first run of a given version,
 they are extracted to `$TMPDIR/lantern-<version>-assets` so that the regular folder-based
 lookups (and `adb push`) see real file paths.
+
+### iOS profiler binary
+
+After changing the `packages/platforms/ios/rust-profiler` crate, rebuild the committed
+per-arch binaries with:
+
+```
+packages/platforms/ios/rust-profiler/build_macos.sh
+```
+
+This writes `lantern-ios-profiler-aarch64-apple-darwin` and
+`lantern-ios-profiler-x86_64-apple-darwin` into `rust-profiler/bin/`; commit them together
+with the crate change that motivated them. `LANTERN_IOS_BINARY_PATH` overrides the binary
+`@lantern/ios` spawns, which is useful for testing a build from elsewhere. Set
+`LANTERN_IOS_DEBUG=1` for verbose protocol logs on stderr. A macOS CI job rebuilds the
+binaries from source on every push to catch a crate/binary mismatch.
+
+### Android profiler binary
+
+After changing the `packages/platforms/android/rust-profiler` crate, rebuild the committed
+device binary with:
+
+```
+packages/platforms/android/rust-profiler/build_all_abi.sh
+```
+
+Builds are fully static musl binaries linked with Rust's bundled `rust-lld`, so no Android
+NDK (or any C toolchain) is required — only the relevant `rustup` targets. Only
+`bin/lantern-android-profiler-arm64-v8a` is shipped (real devices and the Apple Silicon
+emulator); commit it together with the crate change that motivated it.
 
 ### Iterating without a full compile
 

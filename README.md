@@ -1,42 +1,106 @@
-# Get a performance score for your app 🔦
+# Lantern 🏮
 
-Flashlight generates a performance score for your Android app, aggregating different metrics. _(📱 iOS support is also [in the works](https://github.com/bamlab/flashlight/issues))_
+Lantern measures the performance of any Android or iOS app — CPU, RAM, FPS —
+from the outside, with no code changes to your app and no restrictions on
+measuring production builds. It produces a live web dashboard while you use
+the app, plus shareable HTML reports for automated test runs.
 
-🙅 No setup required in your app  
-🚀 Measure performance even on **production** apps  
-✨ Generates beautiful reports
+## Commands
 
-<img width="596" alt="image" src="https://github.com/bamlab/flashlight/assets/4534323/82e107f4-8682-4c77-ab18-985fa1b8c2d1" style="border-radius: 10px">
-<br />
-<br />
-With Flashlight 🔦, you can either:
+- `lantern measure`: live web dashboard with real-time measures.
 
-- Upload an app and get your performance score on [app.flashlight.dev](https://app.flashlight.dev/)
+  ```bash
+  lantern measure --platform ios
+  ```
 
-Or use the CLI:
+  `--platform android|ios` is optional — it's auto-detected when only one
+  kind of device is connected.
 
-- `flashlight measure`: quickly audit your perf with real-time measures
-- `flashlight test`: automate your measures with e2e performance testing over several iterations
-- `flashlight cloud`: run measures on real devices in the cloud & integrate in your CI setup
+- `lantern test`: automate your measures with e2e performance testing,
+  averaged over several iterations, written out as JSON results.
+
+  ```bash
+  lantern test --bundleId com.example.app --testCommand "maestro test flow.yml" --platform ios
+  ```
+
+- `lantern report`: generate a static HTML report from one or more results
+  files.
+
+  ```bash
+  lantern report results1.json results2.json -o output-dir
+  ```
+
+- `lantern tools get_bundle_id`: retrieve the bundle id of the app currently
+  running on the device.
+
+  ```bash
+  lantern tools get_bundle_id --platform ios
+  ```
+
+Run `lantern --help` (or `lantern <command> --help`) for the full CLI
+reference.
+
+## Requirements
+
+- A macOS host — the standalone binary and the iOS profiler are macOS-only.
+- Android: `adb` on your PATH, and a device with USB debugging enabled
+  (API 24+).
+- iOS: a device connected over USB, with Developer Mode enabled and the
+  personalized Developer Disk Image mounted once via Xcode or `devicectl`.
+  See [`packages/platforms/ios/README.md`](./packages/platforms/ios/README.md)
+  for details.
 
 ## Installation
 
-**macOS/Linux**
+**From source**
 
 ```bash
-curl https://get.flashlight.dev | bash
+bun install
+bun run build
+bun run lantern -- measure
 ```
 
-**Windows**
+**Standalone macOS binary**
 
-```powershell
-iwr https://get.flashlight.dev/windows -useb | iex
+```bash
+bun run build:standalone
 ```
 
-## Usage
+produces `build/standalone/lantern-macos-arm64`, a self-contained
+executable you can copy anywhere on your PATH.
 
-Run `flashlight --help` (or `flashlight <command> --help`) for the CLI reference, and see [CONTRIBUTING.md](./CONTRIBUTING.md) to run the commands from source.
+There is no hosted installer — build from source or produce the standalone
+binary yourself.
+
+## How it works
+
+Android is profiled by a small Rust binary pushed to the device, reading
+`/proc` and atrace — see
+[`packages/platforms/android/rust-profiler/README.md`](./packages/platforms/android/rust-profiler/README.md).
+iOS is profiled by a host-side Rust binary that talks to the device over
+usbmuxd and the instruments services — see
+[`packages/platforms/ios/rust-profiler/README.md`](./packages/platforms/ios/rust-profiler/README.md).
+The performance score is computed from CPU, FPS and thread-lock; iOS has no
+per-thread data, so its score has no thread-lock penalty.
+
+## Environment variables
+
+| Variable                     | Purpose                                                 |
+| ---------------------------- | ------------------------------------------------------- |
+| `PLATFORM`                   | `android` or `ios`, used when `--platform` isn't passed |
+| `LANTERN_BINARY_PATH`        | Override the Android profiler binary                    |
+| `LANTERN_IOS_BINARY_PATH`    | Override the iOS profiler binary                        |
+| `LANTERN_IOS_DEBUG`          | Verbose iOS profiler protocol logs on stderr            |
+| `LANTERN_IOS_REFRESH_RATE`   | Override the auto-detected iOS display refresh rate     |
+| `LANTERN_WEBAPP_PATH`        | Override the bundled `measure` web app path             |
+| `LANTERN_REPORT_ASSETS_PATH` | Override the bundled `report` web app path              |
+| `LANTERN_CODESIGN_IDENTITY`  | Default signing identity for `build:standalone --sign`  |
 
 ## Contributing
 
-We love pull requests! Head over to [the contribution guide](./CONTRIBUTING.md) to get started.
+We love pull requests! Head over to [the contribution guide](./CONTRIBUTING.md)
+to get started.
+
+## Credits
+
+Lantern started as a fork of [Flashlight](https://github.com/bamlab/flashlight) by BAM (MIT); the Android profiler, the report UI and the measure workflow trace back to that project. Thank you to its authors.

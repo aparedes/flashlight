@@ -32,5 +32,48 @@ PLATFORM=ios bun packages/commands/measure/dist/server/bin.js measure
 device over USB, or an Android device visible to `adb`), Lantern auto-detects
 the platform. Pass the flag (or set `PLATFORM`) when both are plugged in.
 
-See `rust-profiler/README.md` for the binary's CLI and wire protocol, and
-`IMPLEMENTATION_NOTES_IOS26.md` at the repo root for validation status.
+See `rust-profiler/README.md` for the binary's CLI and wire protocol.
+
+## Architecture
+
+- The Rust binary discovers the device over usbmuxd and connects via the
+  CoreDevice tunnel on iOS 17+ (including iOS 26), falling back to the
+  legacy lockdown `remoteserver` service before that. No sudo or external
+  tunnel daemon: the tunnel runs in-process.
+- **One instruments (`dtservicehub`) connection is used for everything.**
+  Opening multiple concurrent connections gets them closed by the device
+  ("remote server connection closed"), so `sysmontap` (CPU/RAM) and
+  `graphics.opengl` (FPS) are multiplexed as separate DTX channels over that
+  single connection.
+- `poll.rs` lets `sysmontap` drive emission — one measure per sample —
+  draining any queued graphics frames first so FPS stays fresh; FPS is
+  omitted until the first frame arrives. The target process is matched by
+  executable name every sample, so it survives app restarts (`targetLost`
+  / `target` transitions).
+- See `rust-profiler/README.md`'s "Wire protocol" section for the exact
+  NDJSON shape emitted on stdout.
+
+## Validation status
+
+Validated end to end on a real iOS 26 device on 2026-08-30: CoreDevice
+tunnel bring-up, `sysmontap` rows and measure emission, CPU scale (already a
+percentage of one core, no `×100` needed), `graphics.opengl` FPS, and
+app-listing keys (`CFBundleIdentifier`, `ExecutableName`, `DisplayName`,
+`BundlePath`, `Type`, `Restricted`, `Placeholder`).
+
+Remaining: long-run stability (extended polling, app kill/relaunch mid-run,
+Mac-side CPU overhead), and confirming ProMotion (120 Hz) devices against
+the model-based refresh-rate lookup — `hardwareInformation` carries only CPU
+keys and no display data, so refresh rate can't be read from the device
+directly.
+
+## Known gaps
+
+- No per-thread CPU (`sysmontap` doesn't provide it) and no per-core data.
+- No screen recording.
+- `detectCurrentBundleId` uses a `running-apps` heuristic: it returns the
+  bundle id when exactly one user app is running, and otherwise asks the
+  user to pick one — iOS has no "focused app" API outside Instruments.
+- Refresh rate is derived from a `ProductType` → model lookup
+  (`isProMotionModel` in `src/index.ts`), defaulting to 60 Hz;
+  `LANTERN_IOS_REFRESH_RATE` overrides it for models the table gets wrong.

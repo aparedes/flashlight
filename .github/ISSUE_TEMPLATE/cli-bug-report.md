@@ -31,7 +31,9 @@ If applicable, add screenshots to help explain your problem.
 
 - OS: [e.g. macOS, windows, ...]
 - Lantern version [e.g. 0.18.0] (use `lantern -v` in your terminal)
-- Android SDK platform tools version (`adb version` or other)
+- Platform: Android / iOS
+- Android SDK platform tools version (`adb version` or other) (Android only)
+- Xcode / iOS version (iOS only)
 - Test Framework (maestro, ...) and their version
 - Share the bundle identifier of your app
 

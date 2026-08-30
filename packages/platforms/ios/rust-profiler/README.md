@@ -118,5 +118,6 @@ crate also compiles and unit-tests on Linux.
 ## Validation status
 
 Written against idevice 0.1.65 (pinned). Validated end to end on a real iOS 26
-device on 2026-08-30 (tunnel, sysmontap, graphics FPS, CPU scale). Remaining
-checks and known gaps: `IMPLEMENTATION_NOTES_IOS26.md` at the repo root.
+device on 2026-08-30 (tunnel, sysmontap, graphics FPS, CPU scale). See
+`../README.md`'s "Validation status" and "Known gaps" sections for the
+remaining checks and deliberate limitations.
