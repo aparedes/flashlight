@@ -7,7 +7,15 @@ import {
   executeCommand,
   executeLongRunningProcess,
 } from "../shell";
-import { Measure, POLLING_INTERVAL, Profiler, ScreenRecorder, ThreadNames } from "@lantern/types";
+import {
+  AppInfo,
+  DeviceInfo,
+  Measure,
+  POLLING_INTERVAL,
+  Profiler,
+  ScreenRecorder,
+  ThreadNames,
+} from "@lantern/types";
 import { CpuMeasureAggregator } from "../cpu/CpuMeasureAggregator";
 import { FrameTimeParser } from "../atrace/pollFpsUsage";
 import { CppPerformanceMeasure, parseCppMeasure } from "../cppProfiler";
@@ -255,4 +263,6 @@ export abstract class UnixProfiler implements Profiler {
   public abstract detectCurrentBundleId(): string;
   public abstract supportFPS(): boolean;
   public abstract detectDeviceRefreshRate(): number;
+  public abstract listApps(): Promise<AppInfo[]>;
+  public abstract listDevices(): DeviceInfo[];
 }

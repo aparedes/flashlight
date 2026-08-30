@@ -3,8 +3,7 @@ import { executeCommand } from "../shell";
 
 const TIME_INTERVAL = 500;
 
-const enableFpsDebug = () => executeCommand("adb shell setprop debug.hwui.profile true");
-enableFpsDebug();
+export const enableFpsDebug = () => executeCommand("adb shell setprop debug.hwui.profile true");
 
 export const getCommand = (bundleId: string) => `dumpsys gfxinfo ${bundleId}`;
 export const processOutput = (result: string) => {

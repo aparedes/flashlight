@@ -4,7 +4,7 @@ import { executeAsync } from "./executeAsync";
 import { applyLogLevelOption, logLevelOption } from "./commands/logLevelOption";
 import { PerformanceTester } from "./PerformanceTester";
 import { Logger } from "@lantern/logger";
-import { profiler } from "@lantern/profiler";
+import { PlatformResolutionError, profiler, resolvePlatform, setPlatform } from "@lantern/profiler";
 
 export const registerTestCommand = (program: Command) => {
   program
@@ -76,6 +76,12 @@ lantern test --bundleId com.example.app --testCommand "maestro test flow.yml"
         "By default, Lantern closes the app before each iteration. This is useful if your e2e test starts the app, if it doesn't, add this flag"
       ).default(false)
     )
+    .addOption(
+      new Option(
+        "--platform <platform>",
+        "android or ios. Defaults to the PLATFORM env var, then to whichever platform has a device connected"
+      ).choices(["android", "ios"])
+    )
     .addOption(logLevelOption)
     .action(async (options) => {
       await runTest(options);
@@ -98,6 +104,7 @@ const runTest = async ({
   recordSize,
   recordBitRate,
   skipRestart,
+  platform,
 }: {
   duration?: number;
   iterationCount?: number;
@@ -114,7 +121,18 @@ const runTest = async ({
   recordSize?: string;
   recordBitRate?: number;
   skipRestart?: boolean;
+  platform?: string;
 }) => {
+  try {
+    setPlatform(resolvePlatform(platform));
+  } catch (error) {
+    if (error instanceof PlatformResolutionError) {
+      Logger.error(error.message);
+      process.exit(1);
+    }
+    throw error;
+  }
+
   applyLogLevelOption(logLevel);
   if (beforeAllCommand) await executeAsync(beforeAllCommand);
 

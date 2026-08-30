@@ -68,14 +68,19 @@ attribute lists. Remaining checks below.
    `targetLost` → `target` with a new pid), Mac-side CPU overhead.
 7. **End to end.** `PLATFORM=ios lantern measure` / `lantern test`
    against the phone; check the web reporter renders sane series.
-8. **Refresh rate** is still hardcoded to 60 in the TS layer; decide how to
-   detect ProMotion (120 Hz) — possibly from `info` hardware output.
+8. ~~**Refresh rate** is still hardcoded to 60 in the TS layer~~ **Resolved
+   2026-08-30:** `info` carries no display keys, so the TS layer derives
+   ProMotion (120 Hz) from the `ProductType` reported by `devices`
+   (`isProMotionModel` in `packages/platforms/ios/src/index.ts`), defaulting to 60. `LANTERN_IOS_REFRESH_RATE` overrides it for models the table gets
+   wrong; still worth confirming against a real ProMotion device.
 
 ## Known gaps (deliberate)
 
 - No per-thread CPU (sysmontap doesn't provide it) and no per-core data.
 - No screen recording (`getScreenRecorder` returns undefined).
-- `detectCurrentBundleId` throws — pass the bundle id explicitly.
+- `detectCurrentBundleId` uses a `running-apps` heuristic: it returns the
+  bundle id when exactly one user app is running, and otherwise asks the user
+  to pick one (iOS has no "focused app" API outside Instruments).
 - ~~macOS binaries aren't committed~~ **Resolved 2026-08-30:** the per-arch
   macOS binaries are committed in `rust-profiler/bin/` (like Android's) and
   `build:standalone` embeds the one matching its target; a macOS CI job

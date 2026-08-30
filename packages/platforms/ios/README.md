@@ -23,10 +23,14 @@ NDJSON. No Python, idb, sudo, or external tunnel daemon required.
 ## Usage
 
 ```bash
-PLATFORM=ios lantern measure
+lantern measure --platform ios
 # or from source:
 PLATFORM=ios bun packages/commands/measure/dist/server/bin.js measure
 ```
+
+`--platform` is optional: when only one kind of device is connected (an iOS
+device over USB, or an Android device visible to `adb`), Lantern auto-detects
+the platform. Pass the flag (or set `PLATFORM`) when both are plugged in.
 
 See `rust-profiler/README.md` for the binary's CLI and wire protocol, and
 `IMPLEMENTATION_NOTES_IOS26.md` at the repo root for validation status.
