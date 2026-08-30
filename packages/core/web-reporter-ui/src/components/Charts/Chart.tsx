@@ -94,7 +94,12 @@ export const Chart = ({
     [colors]
   );
 
-  const chartOptions = useMemo(() => merge(commonOptions, options), [commonOptions, options]);
+  // es-toolkit's merge generic mangles the deep option types (apexcharts 7's
+  // animation typings in particular); the runtime shape is still ApexOptions.
+  const chartOptions = useMemo(
+    () => merge(commonOptions, options) as ApexOptions,
+    [commonOptions, options]
+  );
 
   // react-apexcharts 2 is a function component: it no longer forwards a ref to the chart
   // instance, and exposes it through the dedicated `chartRef` prop instead.
