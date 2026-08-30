@@ -12,7 +12,8 @@ import {
 
 const BINARY_NAME = "flashlight-ios-profiler";
 
-const defaultBinaryPath = `${__dirname}/../..${
+// Resolves to <package root>/rust-profiler/bin, from either src/ or dist/src/
+const defaultBinaryPath = `${__dirname}/..${
   __dirname.includes("dist") ? "/.." : ""
 }/rust-profiler/bin/${BINARY_NAME}`;
 
