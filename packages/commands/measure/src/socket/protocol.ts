@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 
 /**
  * Wire protocol shared by the measure server and the measure web app.

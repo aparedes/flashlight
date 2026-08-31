@@ -1,5 +1,5 @@
 import { mock } from "bun:test";
-import { Measure } from "@perf-profiler/types";
+import { Measure } from "@lantern/types";
 
 export class PerformancePollingMock {
   private cb?: (measure: Measure) => void;

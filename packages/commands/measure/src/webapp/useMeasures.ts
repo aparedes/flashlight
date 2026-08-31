@@ -23,6 +23,11 @@ export const useMeasures = () => {
     },
     results: state?.results ?? [],
     isMeasuring: state?.isMeasuring ?? false,
+    platform: state?.platform ?? "android",
+    apps: state?.apps ?? [],
+    refreshApps: () => {
+      socket.emit(SocketEvents.LIST_APPS);
+    },
     start: () => {
       socket.emit(SocketEvents.START);
     },

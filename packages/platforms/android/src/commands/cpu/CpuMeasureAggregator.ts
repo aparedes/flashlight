@@ -1,4 +1,4 @@
-import { CpuMeasure as Measure } from "@perf-profiler/types";
+import { CpuMeasure as Measure } from "@lantern/types";
 import { ProcessStat } from "./getCpuStatsByProcess";
 
 export class CpuMeasureAggregator {

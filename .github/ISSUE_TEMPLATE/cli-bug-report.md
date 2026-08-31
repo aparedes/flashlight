@@ -1,6 +1,6 @@
 ---
 name: CLI Bug Report
-about: Report a bug encountered while using the CLI (eg. `flashlight measure`)
+about: Report a bug encountered while using the CLI (eg. `lantern measure`)
 title: ""
 labels: Package:CLI, Status:Unconfirmed
 assignees: ""
@@ -30,9 +30,11 @@ If applicable, add screenshots to help explain your problem.
 **Environment (please complete the following information):**
 
 - OS: [e.g. macOS, windows, ...]
-- Flashlight Version [e.g. 0.18.0] (use `flashlight -v` in your terminal)
-- Android SDK platform tools version (`adb version` or other)
-- Test Framework (appium, maestro, ...) and their version
+- Lantern version [e.g. 0.18.0] (use `lantern -v` in your terminal)
+- Platform: Android / iOS
+- Android SDK platform tools version (`adb version` or other) (Android only)
+- Xcode / iOS version (iOS only)
+- Test Framework (maestro, ...) and their version
 - Share the bundle identifier of your app
 
 **Additional context**

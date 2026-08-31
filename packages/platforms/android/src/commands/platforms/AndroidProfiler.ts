@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { ChildProcess, execSync } from "child_process";
 import { executeAsync, executeCommand } from "../shell";
 import { getAbi } from "../getAbi";
@@ -6,6 +6,9 @@ import { detectCurrentAppBundleId } from "../detectCurrentAppBundleId";
 import { CppProfilerName, UnixProfiler } from "./UnixProfiler";
 import { ScreenRecorder } from "../ScreenRecorder";
 import { refreshRateManager } from "../detectCurrentDeviceRefreshRate";
+import { enableFpsDebug } from "../gfxInfo/pollFpsUsage";
+import { listAndroidDevices } from "../listDevices";
+import { listInstalledApps } from "../listInstalledApps";
 
 export class AndroidProfiler extends UnixProfiler {
   private aTraceProcess: ChildProcess | null = null;
@@ -47,6 +50,10 @@ export class AndroidProfiler extends UnixProfiler {
   }
 
   protected startATrace() {
+    // Done here rather than at import time so that a machine without `adb` (iOS only) can
+    // still load this package.
+    enableFpsDebug();
+
     Logger.debug("Stopping atrace and flushing output...");
     /**
      * Since output from the atrace --async_stop
@@ -87,5 +94,13 @@ export class AndroidProfiler extends UnixProfiler {
 
   public detectDeviceRefreshRate(): number {
     return refreshRateManager.getRefreshRate();
+  }
+
+  public listApps() {
+    return listInstalledApps();
+  }
+
+  public listDevices() {
+    return listAndroidDevices();
   }
 }

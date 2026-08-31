@@ -1,6 +1,6 @@
 import fs from "fs";
 import os from "os";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import {
   canIgnoreAwsTerminationError,
   cleanup,
@@ -8,23 +8,25 @@ import {
   executeLongRunningProcess,
 } from "../shell";
 import {
+  AppInfo,
+  DeviceInfo,
   Measure,
   POLLING_INTERVAL,
   Profiler,
   ScreenRecorder,
   ThreadNames,
-} from "@perf-profiler/types";
+} from "@lantern/types";
 import { CpuMeasureAggregator } from "../cpu/CpuMeasureAggregator";
 import { FrameTimeParser } from "../atrace/pollFpsUsage";
 import { CppPerformanceMeasure, parseCppMeasure } from "../cppProfiler";
 import { processOutput } from "../cpu/getCpuStatsByProcess";
 import { processOutput as processRamOutput } from "../ram/pollRamUsage";
 
-export const CppProfilerName = `BAMPerfProfiler`;
+export const CppProfilerName = `lantern-android-profiler`;
 
 const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ? "/.." : ""}/rust-profiler/bin`;
 // Allow overriding the binary folder with an environment variable
-const getBinaryFolder = () => process.env.FLASHLIGHT_BINARY_PATH || defaultBinaryFolder;
+const getBinaryFolder = () => process.env.LANTERN_BINARY_PATH || defaultBinaryFolder;
 
 export abstract class UnixProfiler implements Profiler {
   stop(): void {
@@ -94,7 +96,7 @@ export abstract class UnixProfiler implements Profiler {
         `Unsupported device ABI "${abi}": no profiler binary is shipped for it (supported: arm64-v8a)`
       );
     }
-    const binaryTmpPath = `${os.tmpdir()}/flashlight-${CppProfilerName}-${abi}`;
+    const binaryTmpPath = `${os.tmpdir()}/lantern-${CppProfilerName}-${abi}`;
 
     // Copy to a real file first: when running from the standalone executable the source may be an embedded (virtual) path
     fs.writeFileSync(binaryTmpPath, fs.readFileSync(binaryPath));
@@ -261,4 +263,6 @@ export abstract class UnixProfiler implements Profiler {
   public abstract detectCurrentBundleId(): string;
   public abstract supportFPS(): boolean;
   public abstract detectDeviceRefreshRate(): number;
+  public abstract listApps(): Promise<AppInfo[]>;
+  public abstract listDevices(): DeviceInfo[];
 }

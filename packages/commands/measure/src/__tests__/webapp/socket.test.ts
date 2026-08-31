@@ -73,7 +73,7 @@ describe("webapp socket", () => {
     originalWindow = global.window;
 
     global.window = Object.create(window);
-    Object.defineProperty(window, "__FLASHLIGHT_DATA__", {
+    Object.defineProperty(window, "__LANTERN_DATA__", {
       value: { socketServerUrl: "http://localhost:9999" },
       writable: true,
     });

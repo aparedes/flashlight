@@ -220,7 +220,7 @@ pub async fn poll(
         ..StatusLine::event("started")
     });
 
-    let debug_raw = std::env::var("FLASHLIGHT_IOS_DEBUG").is_ok();
+    let debug_raw = std::env::var("LANTERN_IOS_DEBUG").is_ok();
     let mut first_sample_dumped = false;
     let mut last_fps: Option<f64> = None;
     let mut graphics_alive = channels.graphics;
@@ -277,7 +277,7 @@ pub async fn poll(
                         .map(|v| format!("{v:?}"))
                         .unwrap_or_else(|e| format!("<unparseable: {e}>"));
                     eprintln!(
-                        "FLASHLIGHT_IOS_DEBUG tap control message: {}",
+                        "LANTERN_IOS_DEBUG tap control message: {}",
                         &decoded[..decoded.len().min(4000)]
                     );
                 }
@@ -289,7 +289,7 @@ pub async fn poll(
             first_sample_dumped = true;
             let raw = format!("{:?}", msg.data);
             eprintln!(
-                "FLASHLIGHT_IOS_DEBUG first sysmontap sample: {}",
+                "LANTERN_IOS_DEBUG first sysmontap sample: {}",
                 &raw[..raw.len().min(4000)]
             );
         }

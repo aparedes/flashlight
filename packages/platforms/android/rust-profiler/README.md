@@ -1,11 +1,11 @@
 # Rust Profiler
 
 Rust port of the former C++ profiler. This small binary is pushed to the
-Android device (`/data/local/tmp/BAMPerfProfiler`) and polls CPU (`/proc/<pid>/task/*/stat`),
+Android device (`/data/local/tmp/lantern-android-profiler`) and polls CPU (`/proc/<pid>/task/*/stat`),
 RAM (`/proc/<pid>/statm`) and atrace (`trace_pipe`) measures for a given app.
 
 Its stdout is a wire protocol (`=START MEASURE=` / `=SEPARATOR=` / `=STOP MEASURE=`
-blocks, `CPP_ERROR_*` markers on stderr) parsed by `@perf-profiler/android`
+blocks, `CPP_ERROR_*` markers on stderr) parsed by `@lantern/android`
 (`src/commands/cppProfiler.ts` and `UnixProfiler.ts`) — keep them in sync.
 
 Differences from the C++ version:

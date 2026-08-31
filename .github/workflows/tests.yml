@@ -75,6 +75,25 @@ jobs:
       - name: Cross-compile the supported Android ABI
         run: ./build_all_abi.sh
 
+  rust-profiler-ios:
+    # The iOS profiler runs on the Mac (usbmuxd/CoreDevice tunnel), so build it where it ships.
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: packages/platforms/ios/rust-profiler
+    steps:
+      - uses: actions/checkout@v4
+      - name: Format
+        run: cargo fmt --check
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Test
+        run: cargo test
+      # The per-arch bin/ binaries are committed and embedded by build:standalone — verify
+      # both macOS targets still build from the checked-in source.
+      - name: Build the macOS binaries
+        run: ./build_macos.sh
+
   audit:
     runs-on: ubuntu-latest
     steps:

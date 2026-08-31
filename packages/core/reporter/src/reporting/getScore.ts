@@ -1,4 +1,4 @@
-import { AveragedTestCaseResult, POLLING_INTERVAL } from "@perf-profiler/types";
+import { AveragedTestCaseResult, POLLING_INTERVAL } from "@lantern/types";
 import { roundToDecimal } from "../utils/round";
 import { average } from "./averageIterations";
 import { getAverageCpuUsage } from "./cpu";

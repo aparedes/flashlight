@@ -5,4 +5,4 @@ import { ClientSocket } from "../socket/clientSocket";
  * is necessarily listening — so `ClientSocket` retries until the first connection succeeds and
  * buffers anything emitted meanwhile.
  */
-export const socket = new ClientSocket(window.__FLASHLIGHT_DATA__.socketServerUrl);
+export const socket = new ClientSocket(window.__LANTERN_DATA__.socketServerUrl);

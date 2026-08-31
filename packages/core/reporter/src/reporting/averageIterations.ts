@@ -4,7 +4,7 @@ import {
   POLLING_INTERVAL,
   TestCaseIterationResult,
   TestCaseResult,
-} from "@perf-profiler/types";
+} from "@lantern/types";
 import { getHighCpuUsage } from "./highCpu";
 
 const range = (n: number) =>

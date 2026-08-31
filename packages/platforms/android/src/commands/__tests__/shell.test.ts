@@ -14,7 +14,7 @@ const mockSpawn = (): { stdout: EventEmitter } => {
   ) => {
     expect([command, args]).toEqual([
       "adb",
-      ["shell", "/data/local/tmp/BAMPerfProfiler", "pollPerformanceMeasures", "PID_ID"],
+      ["shell", "/data/local/tmp/lantern-android-profiler", "pollPerformanceMeasures", "PID_ID"],
     ]);
     return mockProcess;
   }) as unknown as typeof childProcess.spawn);
@@ -28,7 +28,7 @@ test("executeLongRunningProcess", () => {
   const mockProcess = mockSpawn();
 
   executeLongRunningProcess(
-    "adb shell /data/local/tmp/BAMPerfProfiler pollPerformanceMeasures PID_ID",
+    "adb shell /data/local/tmp/lantern-android-profiler pollPerformanceMeasures PID_ID",
     "DELIMITER",
     onData
   );
@@ -101,7 +101,7 @@ hello
 DELIMITER`;
 
   executeLongRunningProcess(
-    "adb shell /data/local/tmp/BAMPerfProfiler pollPerformanceMeasures PID_ID",
+    "adb shell /data/local/tmp/lantern-android-profiler pollPerformanceMeasures PID_ID",
     "DELIMITER",
     onData
   );

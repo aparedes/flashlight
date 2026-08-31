@@ -1,6 +1,6 @@
-import { Logger } from "@perf-profiler/logger";
-import { TestCaseIterationResult } from "@perf-profiler/types";
-import { profiler } from "@perf-profiler/profiler";
+import { Logger } from "@lantern/logger";
+import { TestCaseIterationResult } from "@lantern/types";
+import { profiler } from "@lantern/profiler";
 import * as p from "path";
 import { Options, SingleIterationTester, TestCase } from "./SingleIterationTester";
 import { writeReport } from "./writeReport";

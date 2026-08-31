@@ -15,4 +15,4 @@ esac
 
 rustup target add "$TARGET"
 cargo build --release --target "$TARGET"
-cp "target/$TARGET/release/BAMPerfProfiler" BAMPerfProfiler
+cp "target/$TARGET/release/lantern-android-profiler" lantern-android-profiler

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { Measure, POLLING_INTERVAL, TestCaseResult } from "@perf-profiler/types";
+import { Measure, POLLING_INTERVAL, TestCaseResult } from "@lantern/types";
 import { CPUReport } from "./src/sections/CPUReport";
 import { ReportSummary } from "./src/sections/ReportSummary/ReportSummary.component";
 import { RAMReport } from "./src/sections/RAMReport";
-import { Report as ReportModel } from "@perf-profiler/reporter";
+import { Report as ReportModel } from "@lantern/reporter";
 import styled from "@emotion/styled";
 import { FPSReport } from "./src/sections/FPSReport";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";

@@ -1,19 +1,19 @@
-import "@perf-profiler/e2e/src/utils/test/mockChildProcess";
+import "@lantern/e2e/src/utils/test/mockChildProcess";
 import {
   emitMeasures,
   perfProfilerMock,
   aTraceMock,
-} from "@perf-profiler/e2e/src/utils/test/mockEmitMeasures";
+} from "@lantern/e2e/src/utils/test/mockEmitMeasures";
 import { fireEvent, render as webRender, screen, waitFor, act } from "@testing-library/react";
 import { render as cliRender } from "ink-testing-library";
 import React from "react";
 import { ServerApp } from "../server/ServerApp";
 import { loadInk } from "../server/ink";
-import { open } from "@perf-profiler/shell";
-import * as shell from "@perf-profiler/shell";
-import { matchSnapshot } from "@perf-profiler/web-reporter-ui/utils/testUtils";
+import { open } from "@lantern/shell";
+import * as shell from "@lantern/shell";
+import { matchSnapshot } from "@lantern/web-reporter-ui/utils/testUtils";
 import { removeCLIColors } from "./utils/removeCLIColors";
-import { LogLevel, Logger } from "@perf-profiler/logger";
+import { LogLevel, Logger } from "@lantern/logger";
 import { DEFAULT_PORT } from "../server/constants";
 import { describe, test, expect, beforeAll, afterAll, spyOn } from "bun:test";
 
@@ -28,7 +28,7 @@ let originalWindow: Window & typeof globalThis;
 let MeasureWebApp: React.FC;
 let webAppSocket: (typeof import("../webapp/socket.js"))["socket"];
 
-describe("flashlight measure interactive", () => {
+describe("lantern measure interactive", () => {
   beforeAll(async () => {
     // `runServerApp` normally does this before rendering; these tests render `ServerApp`
     // themselves, so they have to pull ink in on their own. See `server/ink.ts`.
@@ -37,7 +37,7 @@ describe("flashlight measure interactive", () => {
     originalWindow = global.window;
 
     global.window = Object.create(window);
-    Object.defineProperty(window, "__FLASHLIGHT_DATA__", {
+    Object.defineProperty(window, "__LANTERN_DATA__", {
       value: { socketServerUrl: `http://localhost:${DEFAULT_PORT}` },
       writable: true,
     });
@@ -105,9 +105,21 @@ describe("flashlight measure interactive", () => {
 
     expectCliOutput().toMatchInlineSnapshot(`
       "
-       Flashlight web app running on: http://localhost:${DEFAULT_PORT}
+       Lantern web app running on: http://localhost:${DEFAULT_PORT}
+       Platform: Android
       "
     `);
+
+    expect((await screen.findByTestId("platform-badge")).textContent).toContain("Android");
+
+    // Open the app picker and confirm the installed-apps list arrived from the server.
+    // (Android's `AppInfo.name` mirrors `bundleId`, so the option renders it twice —
+    // hence `findAllByText` rather than `findByText`.)
+    fireEvent.mouseDown(screen.getByPlaceholderText("Bundle id — type or pick an installed app"));
+    await screen.findAllByText("com.other");
+    fireEvent.keyDown(screen.getByPlaceholderText("Bundle id — type or pick an installed app"), {
+      key: "Escape",
+    });
 
     // Autodetect app id com.example
     await screen.findByText("Auto-Detect");
@@ -160,7 +172,8 @@ describe("flashlight measure interactive", () => {
 
     expectCliOutput().toMatchInlineSnapshot(`
     "
-     Flashlight web app running on: http://localhost:${customPort}
+     Lantern web app running on: http://localhost:${customPort}
+     Platform: Android
     "
   `);
 

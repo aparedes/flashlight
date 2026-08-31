@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { Measure, TestCaseIterationResult, TestCaseResult } from "@perf-profiler/types";
+import { Measure, TestCaseIterationResult, TestCaseResult } from "@lantern/types";
 import { getMeasuresForTimeInterval, injectResults } from "../writeReport";
 
 const mockMeasure = (name: string) => {

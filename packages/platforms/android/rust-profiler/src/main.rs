@@ -177,7 +177,7 @@ fn main() {
     let stdout = std::io::stdout();
     let mut out = BufWriter::new(stdout.lock());
 
-    let usage = "Usage: BAMPerfProfiler pollPerformanceMeasures <bundleId> <intervalMs> | printPerformanceMeasure <pid> | printCpuClockTick | printRAMPageSize";
+    let usage = "Usage: lantern-android-profiler pollPerformanceMeasures <bundleId> <intervalMs> | printPerformanceMeasure <pid> | printCpuClockTick | printRAMPageSize";
 
     let Some(method_name) = args.get(1) else {
         eprintln!("{usage}");

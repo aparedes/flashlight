@@ -6,5 +6,5 @@ for abi in arm64-v8a
 do
   echo "Building for $abi"
   ./build_for_abi.sh $abi
-  mv BAMPerfProfiler bin/BAMPerfProfiler-$abi
+  mv lantern-android-profiler bin/lantern-android-profiler-$abi
 done

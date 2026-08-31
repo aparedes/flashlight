@@ -1,2 +1,3 @@
 target
-bin/flashlight-ios-profiler*
+# The universal lipo output is a local convenience; the per-arch binaries are committed.
+/bin/lantern-ios-profiler

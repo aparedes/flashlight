@@ -112,6 +112,50 @@ pub fn find_target<'p>(
     })
 }
 
+/// One installed app as the profiler reports it (`apps` / `running-apps` output).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppInfo {
+    pub bundle_id: String,
+    pub name: String,
+    pub executable_name: Option<String>,
+    /// The listing's `Type`: User | Unknown | PluginKit | …
+    pub kind: String,
+}
+
+/// `User` = third-party apps, `Unknown` = Apple's own App Store apps (Pages,
+/// TestFlight…); `PluginKit` rows are extensions and never measurable targets.
+pub fn is_user_visible(app: &Dictionary) -> bool {
+    matches!(
+        app.get("Type").and_then(|v| v.as_string()),
+        Some("User") | Some("Unknown")
+    )
+}
+
+/// Extracts the reportable fields of a DVT application-listing row. `None` when
+/// the row carries no bundle identifier at all.
+pub fn app_info(app: &Dictionary) -> Option<AppInfo> {
+    let bundle_id = ["CFBundleIdentifier", "BundleIdentifier"]
+        .iter()
+        .find_map(|key| app.get(key).and_then(|v| v.as_string()))?
+        .to_string();
+    let name = app
+        .get("DisplayName")
+        .and_then(|v| v.as_string())
+        .unwrap_or(&bundle_id)
+        .to_string();
+    Some(AppInfo {
+        executable_name: executable_name_of(app),
+        kind: app
+            .get("Type")
+            .and_then(|v| v.as_string())
+            .unwrap_or("")
+            .to_string(),
+        bundle_id,
+        name,
+    })
+}
+
 /// Extracts the executable name for `bundle_id` from a DVT application-listing
 /// row. Key names vary across iOS versions, so several candidates are tried.
 pub fn executable_name_from_app(app: &Dictionary, bundle_id: &str) -> Option<String> {
@@ -121,7 +165,11 @@ pub fn executable_name_from_app(app: &Dictionary, bundle_id: &str) -> Option<Str
     if listed_bundle_id != bundle_id {
         return None;
     }
+    executable_name_of(app)
+}
 
+/// The executable name of a listing row, regardless of which app it describes.
+fn executable_name_of(app: &Dictionary) -> Option<String> {
     ["ExecutableName", "CFBundleExecutable"]
         .iter()
         .find_map(|key| app.get(key).and_then(|v| v.as_string()))
@@ -274,5 +322,68 @@ mod tests {
             executable_name_from_app(&app, "com.x.app"),
             Some("XBin".into())
         );
+    }
+
+    fn listing_row(pairs: &[(&str, &str)]) -> Dictionary {
+        let mut app = Dictionary::new();
+        for (key, value) in pairs {
+            app.insert((*key).into(), Value::String((*value).into()));
+        }
+        app
+    }
+
+    #[test]
+    fn maps_a_user_app_row_to_app_info() {
+        let app = listing_row(&[
+            ("CFBundleIdentifier", "com.x.app"),
+            ("DisplayName", "X App"),
+            ("ExecutableName", "XApp"),
+            ("Type", "User"),
+        ]);
+
+        assert!(is_user_visible(&app));
+        assert_eq!(
+            app_info(&app),
+            Some(AppInfo {
+                bundle_id: "com.x.app".into(),
+                name: "X App".into(),
+                executable_name: Some("XApp".into()),
+                kind: "User".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn plugin_kit_rows_are_not_user_visible() {
+        let plugin = listing_row(&[
+            ("CFBundleIdentifier", "com.x.app.widget"),
+            ("Type", "PluginKit"),
+        ]);
+        assert!(!is_user_visible(&plugin));
+
+        // Apple's own App Store apps are reported as `Unknown`, but are targets.
+        let apple = listing_row(&[
+            ("CFBundleIdentifier", "com.apple.Pages"),
+            ("Type", "Unknown"),
+        ]);
+        assert!(is_user_visible(&apple));
+
+        // A row without a `Type` at all is not measurable either.
+        assert!(!is_user_visible(&listing_row(&[(
+            "CFBundleIdentifier",
+            "com.x.app"
+        )])));
+    }
+
+    #[test]
+    fn app_info_falls_back_to_the_bundle_id_as_name() {
+        let app = listing_row(&[("BundleIdentifier", "com.x.app"), ("Type", "User")]);
+        let info = app_info(&app).unwrap();
+        assert_eq!(info.name, "com.x.app");
+        assert_eq!(info.bundle_id, "com.x.app");
+        assert_eq!(info.executable_name, None);
+
+        // No bundle identifier at all: nothing to report.
+        assert_eq!(app_info(&listing_row(&[("Type", "User")])), None);
     }
 }

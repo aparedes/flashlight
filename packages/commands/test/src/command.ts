@@ -3,8 +3,8 @@ import type { TestCase } from "./measurePerformance";
 import { executeAsync } from "./executeAsync";
 import { applyLogLevelOption, logLevelOption } from "./commands/logLevelOption";
 import { PerformanceTester } from "./PerformanceTester";
-import { Logger } from "@perf-profiler/logger";
-import { profiler } from "@perf-profiler/profiler";
+import { Logger } from "@lantern/logger";
+import { PlatformResolutionError, profiler, resolvePlatform, setPlatform } from "@lantern/profiler";
 
 export const registerTestCommand = (program: Command) => {
   program
@@ -14,10 +14,10 @@ export const registerTestCommand = (program: Command) => {
       `Run a test several times and measure performance.
 
 Main usage:
-flashlight test --bundleId <your app id> --testCommand <your test command>
+lantern test --bundleId <your app id> --testCommand <your test command>
 
 Example with Maestro:
-flashlight test --bundleId com.example.app --testCommand "maestro test flow.yml"
+lantern test --bundleId com.example.app --testCommand "maestro test flow.yml"
 `
     )
     .requiredOption(
@@ -73,8 +73,14 @@ flashlight test --bundleId com.example.app --testCommand "maestro test flow.yml"
     .addOption(
       new Option(
         "--skipRestart",
-        "By default, Flashlight closes the app before each iteration. This is useful if your e2e test starts the app, if it doesn't, add this flag"
+        "By default, Lantern closes the app before each iteration. This is useful if your e2e test starts the app, if it doesn't, add this flag"
       ).default(false)
+    )
+    .addOption(
+      new Option(
+        "--platform <platform>",
+        "android or ios. Defaults to the PLATFORM env var, then to whichever platform has a device connected"
+      ).choices(["android", "ios"])
     )
     .addOption(logLevelOption)
     .action(async (options) => {
@@ -98,6 +104,7 @@ const runTest = async ({
   recordSize,
   recordBitRate,
   skipRestart,
+  platform,
 }: {
   duration?: number;
   iterationCount?: number;
@@ -114,7 +121,18 @@ const runTest = async ({
   recordSize?: string;
   recordBitRate?: number;
   skipRestart?: boolean;
+  platform?: string;
 }) => {
+  try {
+    setPlatform(resolvePlatform(platform));
+  } catch (error) {
+    if (error instanceof PlatformResolutionError) {
+      Logger.error(error.message);
+      process.exit(1);
+    }
+    throw error;
+  }
+
   applyLogLevelOption(logLevel);
   if (beforeAllCommand) await executeAsync(beforeAllCommand);
 
@@ -156,7 +174,7 @@ const runTest = async ({
     performanceTester.writeResults();
 
     if (error instanceof Error) {
-      Logger.error(`Flashlight test FAILED ❌: ${error.message}
+      Logger.error(`Lantern test FAILED ❌: ${error.message}
       You can still open a degraded view of the report`);
     }
 

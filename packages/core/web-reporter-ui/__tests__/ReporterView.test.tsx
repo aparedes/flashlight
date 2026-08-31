@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { render, fireEvent, screen } from "@testing-library/react";
 import { IterationsReporterView } from "../ReporterView";
-import { TestCaseResult } from "@perf-profiler/types";
+import { TestCaseResult } from "@lantern/types";
 import { getText } from "../utils/testUtils";
 
 describe("<ReporterView />", () => {

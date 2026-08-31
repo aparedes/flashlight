@@ -32,13 +32,11 @@ export interface TestCaseIterationResult {
 
 export type TestCaseResultStatus = "SUCCESS" | "FAILURE"; // Todo: add "SUCCESS_WITH_SOME_ITERATIONS_FAILED"
 
-type TestCaseResultType = "IOS_EXPERIMENTAL" | undefined;
 export interface TestCaseResult {
   name: string;
   score?: number;
   status: TestCaseResultStatus;
   iterations: TestCaseIterationResult[];
-  type?: TestCaseResultType;
   specs?: DeviceSpecs;
 }
 
@@ -49,13 +47,30 @@ export interface AveragedTestCaseResult {
   iterations: TestCaseIterationResult[];
   average: TestCaseIterationResult;
   averageHighCpuUsage: { [processName: string]: number };
-  type?: TestCaseResultType;
   specs?: DeviceSpecs;
 }
 
-// Shouldn't really be here but @perf-profiler/types is imported by everyone and doesn't contain any logic
+// Shouldn't really be here but @lantern/types is imported by everyone and doesn't contain any logic
 // so nice to have it here for now
 export const POLLING_INTERVAL = 500;
+
+export type Platform = "android" | "ios";
+
+export interface AppInfo {
+  bundleId: string;
+  /** Human-readable name when the platform provides one, else the bundle id. */
+  name: string;
+  /** Set by platforms that can tell (iOS); undefined means unknown. */
+  isRunning?: boolean;
+}
+
+export interface DeviceInfo {
+  id: string;
+  name: string;
+  platform: Platform;
+  /** iOS model identifier (e.g. "iPhone16,1"), when known. */
+  model?: string;
+}
 
 export const ThreadNames = {
   ANDROID: {
@@ -100,6 +115,10 @@ export interface Profiler {
   getScreenRecorder: (videoPath: string) => ScreenRecorder | undefined;
   stopApp: (bundleId: string) => Promise<void>;
   detectDeviceRefreshRate: () => number;
+  /** Installed, user-launchable apps. Used to populate the measure web app's picker. */
+  listApps: () => Promise<AppInfo[]>;
+  /** Devices reachable right now; `[]` when the platform tooling is missing. Must not throw. */
+  listDevices: () => DeviceInfo[];
 }
 
 export interface DeviceSpecs {

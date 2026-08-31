@@ -1,14 +1,10 @@
 {
-  "name": "flashlight",
+  "name": "lantern",
   "version": "0.18.0",
   "private": "true",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bamlab/flashlight.git"
-  },
-  "author": {
-    "name": "Almouro",
-    "email": "alexandrem@bam.tech"
+    "url": "git+https://github.com/aparedes/lantern.git"
   },
   "license": "MIT",
   "workspaces": [
@@ -16,21 +12,20 @@
     "examples/*"
   ],
   "bugs": {
-    "url": "https://github.com/bamlab/flashlight/issues"
+    "url": "https://github.com/aparedes/lantern/issues"
   },
   "scripts": {
     "clean-dist": "bun scripts/clean.ts",
     "watch": "tsc --build --watch",
     "test": "oxfmt --check && bun run build && oxlint --max-warnings 0 && bun run test:unit",
     "test:unit": "bun run test:unit:node && bun run test:unit:dom",
-    "test:unit:node": "bun test --preload ./test-setup/node.ts packages/platforms/android/src packages/plugins/aws-device-farm/src packages/commands/test/src packages/core/reporter/src packages/commands/report/__tests__",
+    "test:unit:node": "bun test --preload ./test-setup/node.ts packages/platforms/android/src packages/platforms/ios/src packages/platforms/profiler/src packages/commands/test/src packages/core/reporter/src packages/commands/report/__tests__",
     "test:unit:dom": "bun test --timeout 20000 --preload ./test-setup/dom.tsx packages/commands/measure/src/__tests__/webapp && bun test --timeout 20000 --preload ./test-setup/dom.tsx packages/core/web-reporter-ui/__tests__ packages/commands/measure/src/__tests__/measure.test.tsx packages/commands/measure/src/__tests__/server",
     "test:coverage": "bun run test:unit:node --coverage && bun run test:unit:dom --coverage",
     "run-cli-example": "bun examples/cli/index.ts",
-    "flashlight": "bun packages/commands/flashlight/dist/bin.js",
+    "lantern": "bun packages/commands/lantern/dist/bin.js",
     "build:standalone": "bun scripts/build-standalone.ts",
-    "build": "bun run clean-dist && tsc --build && bun run --filter '@perf-profiler/web-reporter' --filter '@perf-profiler/measure' build",
-    "test:e2e": "mkdir -p report && bun packages/plugins/aws-device-farm/dist/bin.js runTest --apkPath .github/workflows/example.apk --projectName 'Flashlight-Serverless' --reportDestinationPath report --testCommand 'npx ts-node examples/e2e/appium-ci.test.ts' --testFolder .",
+    "build": "bun run clean-dist && tsc --build && bun run --filter '@lantern/web-reporter' --filter '@lantern/measure' build",
     "prepare": "lefthook install",
     "typecheck": "tsc --build",
     "lint": "oxlint --max-warnings 0",
@@ -38,7 +33,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },
-  "homepage": "https://github.com/bamlab/flashlight#readme",
+  "homepage": "https://github.com/aparedes/lantern#readme",
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.11.12",
     "@types/bun": "^1.4.0",

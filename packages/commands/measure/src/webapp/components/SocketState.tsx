@@ -5,7 +5,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { socket } from "../socket";
 import { useLogSocketEvents } from "../../common/useLogSocketEvents";
 import { SocketEvents } from "../../socket/socketInterface";
@@ -25,7 +25,7 @@ const useSocketState = (onError: (error: string) => void) => {
       Logger.info(`socket disconnected with reason: ${reason}`);
 
       if (reason === "transport close" || reason === "transport error") {
-        onError("flashlight CLI command exited. Restart from the CLI.");
+        onError("lantern CLI command exited. Restart from the CLI.");
       }
     }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
-import { Logger } from "@perf-profiler/logger";
-import { Measure } from "@perf-profiler/types";
+import { Logger } from "@lantern/logger";
+import { Measure } from "@lantern/types";
 import { program } from "commander";
 import { detectCurrentAppBundleId } from "./commands/detectCurrentAppBundleId";
 import { getPidId } from "./commands/getPidId";

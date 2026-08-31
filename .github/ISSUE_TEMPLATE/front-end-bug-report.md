@@ -1,6 +1,6 @@
 ---
 name: Front-End Bug Report
-about: Report a bug encountered while using the front-end app (local or cloud)
+about: Report a bug in the measure web app or the HTML report
 title: ""
 labels: Package:Front-End, Status:Unconfirmed
 assignees: ""

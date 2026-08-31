@@ -16,21 +16,16 @@
     { "path": "./packages/core/logger" },
     { "path": "./packages/core/types" },
     { "path": "./packages/platforms/android" },
-    { "path": "./packages/platforms/ios-instruments" },
     { "path": "./packages/platforms/ios" },
     { "path": "./packages/platforms/profiler" },
-    { "path": "./packages/plugins/appium-helper" },
     { "path": "./packages/commands/test" },
     { "path": "./packages/commands/tools" },
     { "path": "./packages/core/reporter" },
     { "path": "./packages/core/web-reporter-ui" },
     { "path": "./packages/commands/report" },
-    { "path": "./packages/plugins/appium-test-cases" },
-    { "path": "./packages/plugins/aws-device-farm" },
     { "path": "./packages/commands/measure" },
-    { "path": "./packages/commands/flashlight" },
-    { "path": "./examples/cli" },
-    { "path": "./examples/e2e" }
+    { "path": "./packages/commands/lantern" },
+    { "path": "./examples/cli" }
   ],
   "files": []
 }

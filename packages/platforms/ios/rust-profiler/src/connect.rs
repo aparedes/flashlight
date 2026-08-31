@@ -11,7 +11,8 @@
 //! works). If dtservicehub is missing from RSD, that's the likely cause.
 
 use idevice::dvt::remote_server::RemoteServerClient;
-use idevice::provider::UsbmuxdProvider;
+use idevice::provider::{IdeviceProvider, UsbmuxdProvider};
+use idevice::services::lockdown::LockdownClient;
 use idevice::services::rsd::RsdHandshake;
 use idevice::tcp::handle::AdapterHandle;
 use idevice::usbmuxd::{
@@ -38,6 +39,49 @@ pub async fn list_devices() -> Result<Vec<UsbmuxdDevice>, IdeviceError> {
     mux.get_devices().await
 }
 
+/// Lockdown values used to describe a device (model, OS, name). Best effort:
+/// `None` when the device is not paired or lockdown is unreachable — `devices`
+/// must still list the device.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DeviceDescription {
+    pub product_type: Option<String>,
+    pub product_version: Option<String>,
+    pub device_name: Option<String>,
+}
+
+/// Reads `ProductType` / `ProductVersion` / `DeviceName` over lockdown. Mirrors
+/// `IdeviceService::connect`'s handshake (connect, pair, start a TLS session)
+/// but stops before requesting a service, since we only need GetValue.
+pub async fn describe_device(device: &UsbmuxdDevice) -> DeviceDescription {
+    let addr = UsbmuxdAddr::from_env_var().unwrap_or_default();
+    let provider = device.to_provider(addr, "lantern-ios-profiler");
+
+    let Ok(mut lockdown) = LockdownClient::connect(&provider).await else {
+        return DeviceDescription::default();
+    };
+    let Ok(pairing_file) = provider.get_pairing_file().await else {
+        return DeviceDescription::default();
+    };
+    if lockdown.start_session(&pairing_file).await.is_err() {
+        return DeviceDescription::default();
+    }
+
+    DeviceDescription {
+        product_type: read_string(&mut lockdown, "ProductType").await,
+        product_version: read_string(&mut lockdown, "ProductVersion").await,
+        device_name: read_string(&mut lockdown, "DeviceName").await,
+    }
+}
+
+async fn read_string(lockdown: &mut LockdownClient, key: &str) -> Option<String> {
+    lockdown
+        .get_value(Some(key), None)
+        .await
+        .ok()?
+        .as_string()
+        .map(str::to_string)
+}
+
 impl Connection {
     pub async fn open(udid: Option<&str>) -> Result<Self, IdeviceError> {
         let mut mux = UsbmuxdConnection::default().await?;
@@ -52,7 +96,7 @@ impl Connection {
                 .ok_or(IdeviceError::DeviceNotFound)?,
         };
         let addr = UsbmuxdAddr::from_env_var().unwrap_or_default();
-        let provider = device.to_provider(addr, "flashlight-ios-profiler");
+        let provider = device.to_provider(addr, "lantern-ios-profiler");
 
         let tunnel = match Self::open_tunnel(&provider).await {
             Ok(tunnel) => Some(tunnel),

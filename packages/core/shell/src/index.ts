@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 
 const getOpenReportCommand = () => {
   switch (process.platform) {

@@ -1,24 +1,19 @@
 {
-  "name": "@perf-profiler/e2e",
+  "name": "@lantern/e2e",
   "version": "0.11.4",
-  "author": {
-    "name": "Almouro",
-    "email": "alexandrem@bam.tech"
-  },
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
-    "perf-profiler-e2e": "dist/bin.js"
+    "lantern-test": "dist/bin.js"
   },
   "scripts": {
     "test": "tsc"
   },
   "dependencies": {
-    "@perf-profiler/ios-instruments": "^0.3.4",
-    "@perf-profiler/logger": "^0.3.3",
-    "@perf-profiler/profiler": "^0.10.12",
-    "@perf-profiler/reporter": "^0.10.0",
-    "@perf-profiler/types": "^0.9.0",
+    "@lantern/logger": "^0.3.3",
+    "@lantern/profiler": "^0.10.12",
+    "@lantern/reporter": "^0.10.0",
+    "@lantern/types": "^0.9.0",
     "commander": "^15.0.0"
   }
 }

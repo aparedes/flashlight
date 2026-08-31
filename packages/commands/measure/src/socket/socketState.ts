@@ -1,12 +1,14 @@
-import { Measure, POLLING_INTERVAL } from "@perf-profiler/types";
+import { Measure, Platform, POLLING_INTERVAL } from "@lantern/types";
 import { useState, useEffect } from "react";
 import { SocketType, SocketData, SocketEvents } from "./socketInterface";
 
-export const useSocketState = (socket: SocketType) => {
+export const useSocketState = (socket: SocketType, platform: Platform) => {
   const [state, _setState] = useState<SocketData>({
     isMeasuring: false,
     bundleId: null,
     results: [],
+    platform,
+    apps: [],
   });
 
   const setState = (

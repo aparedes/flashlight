@@ -83,7 +83,7 @@ spies leak between files: a file that creates spies at module level should end w
 `afterAll(() => mock.restore());`. `mock.module()` is _not_ undone by `mock.restore()`, so prefer
 `spyOn` unless you really need to replace a whole module.
 
-## Running `flashlight` commands locally
+## Running `lantern` commands locally
 
 Start by building the whole project:
 
@@ -101,7 +101,7 @@ Keep this open in one terminal.
 Start the webapp with
 
 ```bash
-bun run --filter @perf-profiler/measure start
+bun run --filter @lantern/measure start
 ```
 
 Then run the `measure` commmand with:
@@ -109,6 +109,10 @@ Then run the `measure` commmand with:
 ```bash
 DEVELOPMENT_MODE=true bun packages/commands/measure/dist/server/bin.js measure
 ```
+
+Pass `--platform android|ios` (or set `PLATFORM=ios` in the environment) to
+pick a platform explicitly; it's otherwise auto-detected when only one kind
+of device is connected.
 
 ### `test` command
 
@@ -121,8 +125,11 @@ bun packages/commands/test/dist/bin.js test
 This command is the equivalent of
 
 ```
-flashlight test
+lantern test
 ```
+
+`test` also accepts `--platform android|ios` (or the `PLATFORM` env var), the
+same as `measure`.
 
 ### `tools` command
 
@@ -135,7 +142,7 @@ bun packages/commands/tools/dist/bin.js tools
 This command is the equivalent of
 
 ```
-flashlight tools
+lantern tools
 ```
 
 ### web-reporter
@@ -143,7 +150,7 @@ flashlight tools
 Run in another terminal:
 
 ```
-bun run --filter @perf-profiler/web-reporter start
+bun run --filter @lantern/web-reporter start
 ```
 
 Then in `packages/commands/report/src/App.tsx`, uncomment the lines to add your own measures:
@@ -159,8 +166,8 @@ Run `bun run test:unit:dom --update-snapshots` after modifications.
 
 ## Building the standalone macOS binary
 
-`bun run build:standalone` builds a self-contained `flashlight` executable for arm64 (Apple
-Silicon) into `build/standalone/flashlight-macos-arm64`. The binary is ad-hoc signed, which is
+`bun run build:standalone` builds a self-contained `lantern` executable for arm64 (Apple
+Silicon) into `build/standalone/lantern-macos-arm64`. The binary is ad-hoc signed, which is
 fine for local use but will not pass Gatekeeper on another machine.
 
 ```
@@ -168,7 +175,7 @@ bun run build:standalone
 ```
 
 To produce a distributable, properly signed binary, pass your signing identity (the
-`FLASHLIGHT_CODESIGN_IDENTITY` env var works as a fallback):
+`LANTERN_CODESIGN_IDENTITY` env var works as a fallback):
 
 ```
 bun run build:standalone --sign "Developer ID Application: Your Name (TEAMID)"
@@ -180,16 +187,48 @@ To cross-compile for Intel Macs:
 bun run build:standalone --target bun-darwin-x64
 ```
 
-The resulting `build/standalone/flashlight-macos-x64` binary cannot be run on an arm64 Mac —
+The resulting `build/standalone/lantern-macos-x64` binary cannot be run on an arm64 Mac —
 that is expected.
 
 Other flags: `--skip-build` reuses the existing `dist/` output instead of re-running
 `bun run build`, and `--outfile <path>` overrides the output location.
 
-The executable embeds the `rust-profiler` binary (arm64-v8a — devices and the Apple Silicon emulator) and both web apps (the
-`report` web reporter and the `measure` live webapp). On the first run of a given version, they
-are extracted to `$TMPDIR/flashlight-<version>-assets` so that the regular folder-based lookups
-(and `adb push`) see real file paths.
+The executable embeds the Android `rust-profiler` binary (arm64-v8a — devices and the Apple
+Silicon emulator), the iOS profiler binary matching the `--target` architecture
+(`packages/platforms/ios/rust-profiler/bin/`, rebuilt with `build_macos.sh`) and both web apps
+(the `report` web reporter and the `measure` live webapp). On the first run of a given version,
+they are extracted to `$TMPDIR/lantern-<version>-assets` so that the regular folder-based
+lookups (and `adb push`) see real file paths.
+
+### iOS profiler binary
+
+After changing the `packages/platforms/ios/rust-profiler` crate, rebuild the committed
+per-arch binaries with:
+
+```
+packages/platforms/ios/rust-profiler/build_macos.sh
+```
+
+This writes `lantern-ios-profiler-aarch64-apple-darwin` and
+`lantern-ios-profiler-x86_64-apple-darwin` into `rust-profiler/bin/`; commit them together
+with the crate change that motivated them. `LANTERN_IOS_BINARY_PATH` overrides the binary
+`@lantern/ios` spawns, which is useful for testing a build from elsewhere. Set
+`LANTERN_IOS_DEBUG=1` for verbose protocol logs on stderr. A macOS CI job rebuilds the
+binaries from source on every push to catch a crate/binary mismatch.
+
+### Android profiler binary
+
+After changing the `packages/platforms/android/rust-profiler` crate, rebuild the committed
+device binary with:
+
+```
+packages/platforms/android/rust-profiler/build_all_abi.sh
+```
+
+Builds are fully static musl binaries linked with Rust's bundled `rust-lld`, so no Android
+NDK (or any C toolchain) is required — only the relevant `rustup` targets. Only
+`bin/lantern-android-profiler-arm64-v8a` is shipped (real devices and the Apple Silicon
+emulator); commit it together with the crate change that motivated it.
 
 ### Iterating without a full compile
 
@@ -197,5 +236,5 @@ Compiling takes a while. To run the aggregated CLI straight from the workspace `
 after a `bun run build`:
 
 ```
-bun run flashlight -- <command>
+bun run lantern -- <command>
 ```

@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { execSync, spawn, ChildProcess, SpawnSyncReturns } from "child_process";
 
 export const executeCommand = (command: string): string => {

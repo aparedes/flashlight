@@ -1,7 +1,7 @@
 import os from "os";
 import { Command } from "commander";
-import { Logger } from "@perf-profiler/logger";
-import { open } from "@perf-profiler/shell";
+import { Logger } from "@lantern/logger";
+import { open } from "@lantern/shell";
 import { writeReport } from "./writeReport";
 
 export const registerReportCommand = (program: Command) => {
@@ -13,9 +13,9 @@ export const registerReportCommand = (program: Command) => {
       `Generate web report from performance measures.
 
 Examples:
-flashlight report results1.json
-flashlight report results1.json results2.json -o output-dir
-flashlight report results1.json --skip 1500 --duration 10000
+lantern report results1.json
+lantern report results1.json results2.json -o output-dir
+lantern report results1.json --skip 1500 --duration 10000
 `
     )
     .option("-o, --output-dir <outputDir>", "Output directory for the web report")

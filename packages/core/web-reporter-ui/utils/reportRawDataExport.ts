@@ -1,6 +1,6 @@
 import { saveAs } from "file-saver";
 import JSZip = require("jszip");
-import { TestCaseResult } from "@perf-profiler/types";
+import { TestCaseResult } from "@lantern/types";
 
 const DEFAULT_EXPORT_EXTENSION = ".json";
 const DEFAULT_FILE_NAME_SEPARATOR = "_";

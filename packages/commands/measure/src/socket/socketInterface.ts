@@ -1,10 +1,12 @@
-import { TestCaseResult } from "@perf-profiler/types";
+import { AppInfo, Platform, TestCaseResult } from "@lantern/types";
 import type { TypedSocket } from "./typedSocket";
 
 export interface SocketData {
   isMeasuring: boolean;
   bundleId: string | null;
   results: TestCaseResult[];
+  platform: Platform;
+  apps: AppInfo[];
 }
 
 export interface ServerToClientEvents {
@@ -18,7 +20,7 @@ export interface ClientToServerEvents {
   reset: () => void;
   autodetectBundleId: () => void;
   setBundleId: (bundleId: string) => void;
-  autodetectRefreshRate: () => void;
+  listApps: () => void;
 }
 
 /**
@@ -48,6 +50,7 @@ export enum SocketEvents {
   RESET = "reset",
   AUTODETECT_BUNDLE_ID = "autodetectBundleId",
   SET_BUNDLE_ID = "setBundleId",
+  LIST_APPS = "listApps",
   UPDATE_STATE = "updateState",
   SEND_ERROR = "sendError",
   CONNECT = "connect",

@@ -4,8 +4,8 @@ import * as perfHooks from "perf_hooks";
 import { describe, it, expect, jest, spyOn, mock, afterAll, setDefaultTimeout } from "bun:test";
 import { measurePerformance } from "..";
 import { PerformancePollingMock } from "../utils/test/PerformancePollingMock";
-import { Logger, LogLevel } from "@perf-profiler/logger";
-import { profiler } from "@perf-profiler/profiler";
+import { Logger, LogLevel } from "@lantern/logger";
+import { profiler } from "@lantern/profiler";
 
 const mockPerformancePolling = new PerformancePollingMock();
 

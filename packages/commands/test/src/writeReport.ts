@@ -1,10 +1,6 @@
-import { Logger } from "@perf-profiler/logger";
-import { averageTestCaseResult } from "@perf-profiler/reporter";
-import {
-  AveragedTestCaseResult,
-  TestCaseIterationResult,
-  TestCaseResult,
-} from "@perf-profiler/types";
+import { Logger } from "@lantern/logger";
+import { averageTestCaseResult } from "@lantern/reporter";
+import { AveragedTestCaseResult, TestCaseIterationResult, TestCaseResult } from "@lantern/types";
 import fs from "fs";
 
 export const writeReport = (
@@ -43,6 +39,6 @@ export const writeReport = (
     `Results written to ${filePath}.
 To open the web report, run:
 
-flashlight report ${filePath}`
+lantern report ${filePath}`
   );
 };

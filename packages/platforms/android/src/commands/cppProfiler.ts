@@ -1,4 +1,4 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 
 export type CppPerformanceMeasure = {
   pid: string;

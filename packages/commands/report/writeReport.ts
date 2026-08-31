@@ -1,5 +1,5 @@
 import fs from "fs";
-import { POLLING_INTERVAL, TestCaseResult } from "@perf-profiler/types";
+import { POLLING_INTERVAL, TestCaseResult } from "@lantern/types";
 import path from "path";
 
 const assertTimeIntervalMultiple = (n: number) => {
@@ -68,7 +68,7 @@ export const getResultsFromPaths = (jsonPaths: string[]): TestCaseResult[] => {
   return getJsonPaths().map((path) => JSON.parse(fs.readFileSync(path, "utf8")));
 };
 
-const getAssetsDir = () => process.env.FLASHLIGHT_REPORT_ASSETS_PATH || __dirname;
+const getAssetsDir = () => process.env.LANTERN_REPORT_ASSETS_PATH || __dirname;
 
 /**
  * The token `App.tsx` initialises the results with. Vite builds a single self-contained
@@ -104,13 +104,12 @@ export const writeReport = ({
   const html = fs.readFileSync(`${getAssetsDir()}/index.html`, "utf8");
 
   const results = getResultsFromPaths(jsonPaths);
-  const isIOSTestCaseResult = results.every((result) => result.type === "IOS_EXPERIMENTAL");
 
   const reportHtml = injectResults(html, getMeasuresForTimeInterval({ results, skip, duration }));
 
   const htmlFilePath = `${outputDir}/report.html`;
   // Videos stay next to the report as separate files, by design.
-  if (!isIOSTestCaseResult) copyVideoFiles(results, outputDir);
+  copyVideoFiles(results, outputDir);
   fs.writeFileSync(htmlFilePath, reportHtml);
   return htmlFilePath;
 };

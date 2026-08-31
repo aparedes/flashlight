@@ -1,10 +1,9 @@
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { executeCommand } from "../shell";
 
 const TIME_INTERVAL = 500;
 
-const enableFpsDebug = () => executeCommand("adb shell setprop debug.hwui.profile true");
-enableFpsDebug();
+export const enableFpsDebug = () => executeCommand("adb shell setprop debug.hwui.profile true");
 
 export const getCommand = (bundleId: string) => `dumpsys gfxinfo ${bundleId}`;
 export const processOutput = (result: string) => {
@@ -13,7 +12,7 @@ export const processOutput = (result: string) => {
   const headerIndex = lines.findIndex((line) => line === "\tDraw\tPrepare\tProcess\tExecute");
   if (headerIndex === -1) {
     Logger.warn(
-      `FPS data not found, defaulting to 0, refer to https://github.com/bamlab/android-performance-profiler#getting-fps-data`
+      `FPS data not found, defaulting to 0. Check that the app is drawing on screen: "adb shell dumpsys gfxinfo <bundleId>" should list frame timings`
     );
 
     return 0;

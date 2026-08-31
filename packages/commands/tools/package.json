@@ -1,20 +1,17 @@
 {
-  "name": "@perf-profiler/tools",
+  "name": "@lantern/tools",
   "version": "0.2.4",
-  "author": {
-    "name": "Almouro",
-    "email": "alexandrem@bam.tech"
-  },
   "license": "MIT",
   "bin": {
-    "perf-profiler-tools": "dist/bin.js"
+    "lantern-tools": "dist/bin.js"
   },
   "scripts": {
     "test": "tsc"
   },
   "dependencies": {
-    "@perf-profiler/profiler": "^0.10.12",
-    "@perf-profiler/shell": "^0.2.1",
+    "@lantern/logger": "^0.3.3",
+    "@lantern/profiler": "^0.10.12",
+    "@lantern/shell": "^0.2.1",
     "commander": "^15.0.0"
   }
 }

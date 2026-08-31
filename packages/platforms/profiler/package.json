@@ -1,21 +1,12 @@
 {
-  "name": "@perf-profiler/profiler",
+  "name": "@lantern/profiler",
   "version": "0.10.12",
   "description": "",
   "main": "dist/src/index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bamlab/android-performance-profiler.git",
-    "directory": "very-secret-profiler"
-  },
-  "author": {
-    "name": "Almouro",
-    "email": "alexandrem@bam.tech"
-  },
   "license": "MIT",
   "dependencies": {
-    "@perf-profiler/android": "^0.14.0",
-    "@perf-profiler/ios": "^0.4.0",
-    "@perf-profiler/types": "^0.9.0"
+    "@lantern/android": "^0.14.0",
+    "@lantern/ios": "^0.4.0",
+    "@lantern/types": "^0.9.0"
   }
 }

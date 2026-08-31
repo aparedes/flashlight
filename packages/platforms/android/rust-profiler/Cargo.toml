@@ -1,13 +1,13 @@
 [package]
-name = "flashlight-profiler"
+name = "lantern-android-profiler"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
-# The binary keeps its historical name: the TypeScript side pushes it to
-# /data/local/tmp/BAMPerfProfiler and finds it back by process name.
+# The TypeScript side pushes the binary to
+# /data/local/tmp/lantern-android-profiler and finds it back by process name.
 [[bin]]
-name = "BAMPerfProfiler"
+name = "lantern-android-profiler"
 path = "src/main.rs"
 
 [dependencies]

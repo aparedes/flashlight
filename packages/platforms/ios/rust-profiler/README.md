@@ -1,4 +1,4 @@
-# flashlight-ios-profiler
+# lantern-ios-profiler
 
 Host-side Rust profiler for real iOS devices, built on the
 [`idevice`](https://github.com/jkcoxson/idevice) crate. It replaces the
@@ -22,12 +22,48 @@ enabled on the device.
 ## Commands
 
 ```
-flashlight-ios-profiler devices
-flashlight-ios-profiler apps    [--udid <udid>]
-flashlight-ios-profiler info    [--udid <udid>]
-flashlight-ios-profiler launch  --bundle-id <id> [--udid <udid>]
-flashlight-ios-profiler kill    --bundle-id <id> | --pid <n> [--udid <udid>]
-flashlight-ios-profiler poll    --bundle-id <id> [--interval-ms <n=500>] [--udid <udid>]
+lantern-ios-profiler devices
+lantern-ios-profiler apps         [--udid <udid>] [--raw]
+lantern-ios-profiler running-apps [--udid <udid>]
+lantern-ios-profiler info    [--udid <udid>]
+lantern-ios-profiler launch  --bundle-id <id> [--udid <udid>]
+lantern-ios-profiler kill    --bundle-id <id> | --pid <n> [--udid <udid>]
+lantern-ios-profiler poll    --bundle-id <id> [--interval-ms <n=500>] [--udid <udid>]
+```
+
+Set `LANTERN_IOS_DEBUG=1` for verbose protocol logs on stderr (or a
+`tracing` filter string such as `idevice=trace` for finer control).
+
+## Device and app listings (JSON)
+
+`devices` prints one object per usbmuxd entry. The three lockdown-sourced
+fields are best effort and are `null` when the device is not paired or
+lockdown is unreachable — the device is still listed either way:
+
+```json
+[{"udid":"00008120-...","deviceId":7,"connectionType":"Usb","productType":"iPhone16,1","productVersion":"26.0","deviceName":"Test iPhone"}]
+```
+
+`apps` prints the installed apps worth measuring — the listing's `Type` is
+`User` (third-party) or `Unknown` (Apple's own App Store apps such as Pages
+or TestFlight). `PluginKit` extensions and system apps are filtered out, and
+the array is sorted case-insensitively by `name`. `executableName` is `null`
+when the listing carries no executable name or path:
+
+```json
+[{"bundleId":"com.example.app","name":"Example","executableName":"Example","kind":"User"}]
+```
+
+`--raw` bypasses the filtering and dumps every listing entry verbatim, which
+is the shape to inspect when a device reports unfamiliar keys.
+
+`running-apps` is `apps` intersected with the device's process list: the same
+objects plus the `pid` of the matching process (matched by executable name,
+requiring the device's own `isApplication` flag). Apps that are installed but
+not running are omitted:
+
+```json
+[{"bundleId":"com.example.app","name":"Example","executableName":"Example","kind":"User","pid":1234}]
 ```
 
 ## Wire protocol (`poll`)
@@ -42,13 +78,14 @@ One JSON object per stdout line (NDJSON):
 {"type":"status","event":"stopped"}
 ```
 
-- `measure` matches the `Measure` type in `@perf-profiler/types`: `time` is
+- `measure` matches the `Measure` type in `@lantern/types`: `time` is
   epoch ms, `cpu.perName.Total` is percent of one core (can exceed 100 on
   multiple cores), `ram` is MB (phys footprint), `fps` is CoreAnimation FPS
   and is omitted until the first graphics sample arrives.
 - CPU comes from the DVT `sysmontap` service (whole-process only — per-thread
   CPU is not available from sysmontap), FPS from the DVT `graphics.opengl`
-  service. Each streams over its own instruments connection.
+  service. Both are channels multiplexed over one instruments connection
+  (iOS 26 closes concurrent `dtservicehub` connections).
 - The target process is matched by executable name (resolved via the
   application-listing service) falling back to the bundle id and its last
   component, every sample — so an app relaunch (new pid) re-attaches
@@ -68,12 +105,19 @@ box):
 ./build_macos.sh   # builds aarch64 + x86_64 release binaries into bin/
 ```
 
-The crate also compiles and unit-tests on Linux (`cargo test`), which is what
-CI runs; the parsing and protocol layers are covered there without a device.
+The per-arch binaries in `bin/` (`lantern-ios-profiler-aarch64-apple-darwin`,
+`lantern-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
+Android profiler: `@lantern/ios` resolves `bin/lantern-ios-profiler`
+(the universal `lipo` output, gitignored) from a source checkout, and
+`bun run build:standalone` embeds the binary matching its `--target`. Commit
+the rebuilt binaries together with the crate change that motivated them.
+
+CI runs `cargo fmt/clippy/test` and `build_macos.sh` on a macOS runner; the
+crate also compiles and unit-tests on Linux.
 
 ## Validation status
 
-Written against idevice 0.1.65 (pinned). The protocol layers are unit-tested;
-end-to-end behavior against a real iOS 26 device (tunnel bring-up, sysmontap
-attribute ordering, graphics FPS availability, CPU scale) still needs
-on-device validation — see `IMPLEMENTATION_NOTES_IOS26.md` at the repo root.
+Written against idevice 0.1.65 (pinned). Validated end to end on a real iOS 26
+device on 2026-08-30 (tunnel, sysmontap, graphics FPS, CPU scale). See
+`../README.md`'s "Validation status" and "Known gaps" sections for the
+remaining checks and deliberate limitations.

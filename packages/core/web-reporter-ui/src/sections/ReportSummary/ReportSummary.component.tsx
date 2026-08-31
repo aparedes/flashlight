@@ -1,7 +1,7 @@
 import { ReportSummaryCard } from "./ReportSummaryCard";
 import { getThemeColorPalette } from "../../theme/colors";
 import { FailedReportSummaryCard } from "./FailedReportSummaryCard";
-import { Report } from "@perf-profiler/reporter";
+import { Report } from "@lantern/reporter";
 
 export const ReportSummary = ({ reports }: { reports: Report[] }) => {
   const palette = getThemeColorPalette();

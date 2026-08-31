@@ -1,6 +1,6 @@
 import "../utils/test/mockChildProcess";
 import { describe, it, expect, spyOn } from "bun:test";
-import { LogLevel, Logger } from "@perf-profiler/logger";
+import { LogLevel, Logger } from "@lantern/logger";
 import { PerformanceMeasurer } from "../PerformanceMeasurer";
 import { emitMeasure, perfProfilerMock } from "../utils/test/mockEmitMeasures";
 

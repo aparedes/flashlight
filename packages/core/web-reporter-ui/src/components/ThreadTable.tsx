@@ -1,5 +1,5 @@
-import { AveragedTestCaseResult, Measure } from "@perf-profiler/types";
-import { getAverageCpuUsagePerProcess } from "@perf-profiler/reporter";
+import { AveragedTestCaseResult, Measure } from "@lantern/types";
+import { getAverageCpuUsagePerProcess } from "@lantern/reporter";
 import Table, { HeadCell } from "./Table";
 
 const keyBy = <T,>(items: T[], key: (item: T) => string): { [key: string]: T } =>

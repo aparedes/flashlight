@@ -1,4 +1,4 @@
-import { AveragedTestCaseResult } from "@perf-profiler/types";
+import { AveragedTestCaseResult } from "@lantern/types";
 import { buildValueGraph } from "./hideSectionForEmptyValue";
 import { ReportChart } from "../components/Charts/ReportChart";
 

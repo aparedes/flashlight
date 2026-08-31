@@ -1,4 +1,4 @@
-import { Measure, TestCaseIterationResult } from "@perf-profiler/types";
+import { Measure, TestCaseIterationResult } from "@lantern/types";
 import { getMinMax } from "../utils/getMinMax";
 import { getStandardDeviation } from "../utils/getStandardDeviation";
 import { average } from "./averageIterations";

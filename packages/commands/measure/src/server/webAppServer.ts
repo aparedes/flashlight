@@ -1,5 +1,5 @@
 import path from "path";
-import { Logger } from "@perf-profiler/logger";
+import { Logger } from "@lantern/logger";
 import { decodeFrame, WEBSOCKET_PATH } from "../socket/protocol";
 import { ServerSocket } from "../socket/serverSocket";
 import type { SocketType } from "../socket/socketInterface";
@@ -14,8 +14,7 @@ import type { SocketType } from "../socket/socketInterface";
  * not preflighted.
  */
 
-const getPathToDist = () =>
-  process.env.FLASHLIGHT_WEBAPP_PATH || path.join(__dirname, "../../dist");
+const getPathToDist = () => process.env.LANTERN_WEBAPP_PATH || path.join(__dirname, "../../dist");
 
 /** `index.html` ships the placeholder port; rewrite it to the port we actually listen on. */
 const serveIndexHtml = async (port: number): Promise<Response> => {
