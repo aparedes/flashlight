@@ -8,7 +8,7 @@
 //! the peer ("remote server connection closed"), so everything must share
 //! one DTX connection — the same model pymobiledevice3 uses.
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use idevice::dvt::application_listing::ApplicationListingClient;
 use idevice::dvt::device_info::DeviceInfoClient;
@@ -45,6 +45,44 @@ fn processes_from_message(msg: &Message) -> Option<&Dictionary> {
     rows.iter()
         .filter_map(|row| row.as_dictionary())
         .find_map(|dict| dict.get("Processes").and_then(|v| v.as_dictionary()))
+}
+
+/// Consecutive sysmontap read timeouts before a `stalled` status is emitted,
+/// and before the poller gives up with an error. Each timeout lasts
+/// `interval_ms * 4 + 2000` ms, so at the default 500 ms interval the stall
+/// notice comes after ~12 s of silence and the exit after ~40 s.
+const STALL_AFTER_TIMEOUTS: u32 = 3;
+const FAIL_AFTER_TIMEOUTS: u32 = 10;
+
+/// An FPS sample older than this many intervals is dropped rather than
+/// reported as if it were fresh (graphics pushes stop while the app is idle
+/// or backgrounded).
+const FPS_MAX_AGE_INTERVALS: u32 = 3;
+
+#[derive(Debug, PartialEq, Eq)]
+enum TimeoutVerdict {
+    /// Keep waiting quietly.
+    Wait,
+    /// Emit the `stalled` status once.
+    Stalled,
+    /// Give up: the stream is dead.
+    Fail,
+}
+
+fn timeout_verdict(consecutive_timeouts: u32) -> TimeoutVerdict {
+    if consecutive_timeouts >= FAIL_AFTER_TIMEOUTS {
+        TimeoutVerdict::Fail
+    } else if consecutive_timeouts == STALL_AFTER_TIMEOUTS {
+        TimeoutVerdict::Stalled
+    } else {
+        TimeoutVerdict::Wait
+    }
+}
+
+/// The last FPS sample, if it is recent enough to still describe the app.
+fn fresh_fps(last_fps: Option<(f64, Instant)>, now: Instant, max_age: Duration) -> Option<f64> {
+    let (fps, seen_at) = last_fps?;
+    (now.saturating_duration_since(seen_at) <= max_age).then_some(fps)
 }
 
 /// Channel codes on the shared connection. make_channel allocates codes
@@ -222,9 +260,12 @@ pub async fn poll(
 
     let debug_raw = std::env::var("LANTERN_IOS_DEBUG").is_ok();
     let mut first_sample_dumped = false;
-    let mut last_fps: Option<f64> = None;
+    let mut last_fps: Option<(f64, Instant)> = None;
+    let fps_max_age = Duration::from_millis(u64::from(interval_ms * FPS_MAX_AGE_INTERVALS));
     let mut graphics_alive = channels.graphics;
     let mut target_seen = false;
+    let read_timeout = Duration::from_millis(u64::from(interval_ms) * 4 + 2000);
+    let mut consecutive_timeouts: u32 = 0;
 
     let shutdown = shutdown_signal();
     tokio::pin!(shutdown);
@@ -234,16 +275,37 @@ pub async fn poll(
         let sysmon_msg = tokio::select! {
             biased;
             _ = &mut shutdown => break Ok(()),
-            read = tokio::time::timeout(
-                Duration::from_millis(u64::from(interval_ms) * 4 + 2000),
-                rs.read_message(channels.sysmontap),
-            ) => match read {
-                Ok(Ok(msg)) => Some(msg),
+            read = tokio::time::timeout(read_timeout, rs.read_message(channels.sysmontap)) => match read {
+                Ok(Ok(msg)) => {
+                    consecutive_timeouts = 0;
+                    Some(msg)
+                }
                 Ok(Err(e)) => {
                     error::report(error::STREAM_ENDED, format!("sysmontap: {e:?}"));
                     break Err(e);
                 }
-                Err(_timeout) => None,
+                Err(_timeout) => {
+                    consecutive_timeouts += 1;
+                    let silence = read_timeout * consecutive_timeouts;
+                    match timeout_verdict(consecutive_timeouts) {
+                        TimeoutVerdict::Wait => {}
+                        TimeoutVerdict::Stalled => emit(&StatusLine {
+                            detail: Some(format!(
+                                "no sysmontap sample for {}s",
+                                silence.as_secs()
+                            )),
+                            ..StatusLine::event("stalled")
+                        }),
+                        TimeoutVerdict::Fail => {
+                            error::report(
+                                error::STREAM_ENDED,
+                                format!("sysmontap: no sample for {}s", silence.as_secs()),
+                            );
+                            break Err(IdeviceError::Timeout);
+                        }
+                    }
+                    None
+                }
             },
         };
 
@@ -253,7 +315,7 @@ pub async fn poll(
                 Ok(Ok(msg)) => {
                     if let Some(data) = msg.data {
                         if let Ok(sample) = GraphicsSample::from_plist(data) {
-                            last_fps = Some(sample.fps);
+                            last_fps = Some((sample.fps, Instant::now()));
                         }
                     }
                 }
@@ -305,7 +367,11 @@ pub async fn poll(
                         ..StatusLine::event("target")
                     });
                 }
-                emit(&MeasureLine::new(now_ms(), process, last_fps));
+                emit(&MeasureLine::new(
+                    now_ms(),
+                    process,
+                    fresh_fps(last_fps, Instant::now(), fps_max_age),
+                ));
             }
             None => {
                 if target_seen {
@@ -316,24 +382,31 @@ pub async fn poll(
         }
     };
 
-    // Best-effort tap teardown; the connection closes when rs drops.
-    let _ = rs
-        .call_method(
+    // Best-effort tap teardown; the connection closes when rs drops. Bounded:
+    // a dead connection must not keep the process (and the caller's stop())
+    // hanging on a write that will never complete.
+    let teardown_timeout = Duration::from_secs(2);
+    let _ = tokio::time::timeout(
+        teardown_timeout,
+        rs.call_method(
             channels.sysmontap,
             Some(Value::String("stop".into())),
             None,
             false,
-        )
-        .await;
+        ),
+    )
+    .await;
     if let Some(code) = channels.graphics {
-        let _ = rs
-            .call_method(
+        let _ = tokio::time::timeout(
+            teardown_timeout,
+            rs.call_method(
                 code,
                 Some(Value::String("stopSampling".into())),
                 None,
                 false,
-            )
-            .await;
+            ),
+        )
+        .await;
     }
 
     emit(&StatusLine::event("stopped"));
@@ -393,6 +466,49 @@ mod tests {
     fn extracts_processes_from_bare_dictionary() {
         let msg = message_with_data(Some(sample_row()));
         assert!(processes_from_message(&msg).is_some());
+    }
+
+    #[test]
+    fn stalls_once_then_fails_after_enough_timeouts() {
+        assert_eq!(timeout_verdict(1), TimeoutVerdict::Wait);
+        assert_eq!(
+            timeout_verdict(STALL_AFTER_TIMEOUTS),
+            TimeoutVerdict::Stalled
+        );
+        // Only one stalled notice, then quiet until the failure threshold.
+        assert_eq!(
+            timeout_verdict(STALL_AFTER_TIMEOUTS + 1),
+            TimeoutVerdict::Wait
+        );
+        assert_eq!(timeout_verdict(FAIL_AFTER_TIMEOUTS), TimeoutVerdict::Fail);
+        assert_eq!(
+            timeout_verdict(FAIL_AFTER_TIMEOUTS + 5),
+            TimeoutVerdict::Fail
+        );
+    }
+
+    #[test]
+    fn drops_stale_fps() {
+        let now = Instant::now();
+        let max_age = Duration::from_millis(1500);
+        assert_eq!(fresh_fps(None, now, max_age), None);
+        assert_eq!(fresh_fps(Some((59.5, now)), now, max_age), Some(59.5));
+        assert_eq!(
+            fresh_fps(
+                Some((59.5, now)),
+                now + Duration::from_millis(1500),
+                max_age
+            ),
+            Some(59.5)
+        );
+        assert_eq!(
+            fresh_fps(
+                Some((59.5, now)),
+                now + Duration::from_millis(1501),
+                max_age
+            ),
+            None
+        );
     }
 
     #[test]

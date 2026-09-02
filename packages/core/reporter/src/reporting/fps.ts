@@ -1,40 +1,20 @@
-import { Measure, TestCaseIterationResult } from "@lantern/types";
-import { getMinMax } from "../utils/getMinMax";
+import { Measure } from "@lantern/types";
 import { getStandardDeviation } from "../utils/getStandardDeviation";
+import { getValuesStats } from "../utils/getValuesStats";
 import { average } from "./averageIterations";
-import { variationCoefficient } from "../utils/variationCoefficient";
+import type { IterationSummary } from "./iterationSummary";
 
 export const getAverageFPSUsage = (measures: Measure[]) =>
   average(measures.map((measure) => measure.fps));
 
-export const getStandardDeviationFPS = (
-  iterations: TestCaseIterationResult[],
-  averageFps: number
-) => {
-  const averageFpsUsages: number[] = [];
-  iterations.forEach((iteration) => {
-    const value = getAverageFPSUsage(iteration.measures);
-    if (value) averageFpsUsages.push(value);
-  });
-  return getStandardDeviation({ values: averageFpsUsages, average: averageFps });
-};
+const getFpsValues = (iterations: IterationSummary[]) =>
+  iterations.flatMap((iteration) => (iteration.fps !== undefined ? [iteration.fps] : []));
 
-const getMinMaxFPS = (iterations: TestCaseIterationResult[]): [number, number] => {
-  const averageFpsUsages: number[] = [];
-  iterations.forEach((iteration) => {
-    const value = getAverageFPSUsage(iteration.measures);
-    if (value) averageFpsUsages.push(value);
-  });
-  return getMinMax(averageFpsUsages);
-};
+export const getStandardDeviationFPS = (iterations: IterationSummary[]) =>
+  getStandardDeviation({ values: getFpsValues(iterations) });
 
-export const getFpsStats = (iterations: TestCaseIterationResult[], averageFps?: number) => {
-  if (!averageFps) return undefined;
+export const getFpsStats = (iterations: IterationSummary[], averageFps?: number) => {
+  if (averageFps === undefined) return undefined;
 
-  const standardDeviation = getStandardDeviationFPS(iterations, averageFps);
-  return {
-    minMaxRange: getMinMaxFPS(iterations),
-    deviationRange: standardDeviation.deviationRange,
-    variationCoefficient: variationCoefficient(averageFps, standardDeviation.deviation),
-  };
+  return getValuesStats(getFpsValues(iterations), averageFps);
 };

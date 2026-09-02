@@ -1,18 +1,8 @@
-import { TestCaseIterationResult } from "@lantern/types";
-import { getMinMax } from "../utils/getMinMax";
-import { getStandardDeviation } from "../utils/getStandardDeviation";
-import { variationCoefficient } from "../utils/variationCoefficient";
+import { getValuesStats } from "../utils/getValuesStats";
+import type { IterationSummary } from "./iterationSummary";
 
-export const getRuntimeStats = (iterations: TestCaseIterationResult[], averageRuntime: number) => {
-  const values = iterations.map((iteration) => iteration.time);
-  const standardDeviation = getStandardDeviation({
-    values,
-    average: averageRuntime,
-  });
-
-  return {
-    minMaxRange: getMinMax(values),
-    deviationRange: standardDeviation.deviationRange,
-    variationCoefficient: variationCoefficient(averageRuntime, standardDeviation.deviation),
-  };
-};
+export const getRuntimeStats = (iterations: IterationSummary[], averageRuntime: number) =>
+  getValuesStats(
+    iterations.map((iteration) => iteration.time),
+    averageRuntime
+  );

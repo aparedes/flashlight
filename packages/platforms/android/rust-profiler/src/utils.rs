@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{self, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Write `msg` followed by a newline, like the C++ `log()` helper did.
@@ -29,6 +29,20 @@ pub fn print_file(out: &mut impl Write, path: &str) {
         }
         Err(_) => {
             eprintln!("CPP_ERROR_CANNOT_OPEN_FILE {path}");
+        }
+    }
+}
+
+/// Flush `out`, exiting quietly when the reader is gone.
+///
+/// Rust ignores SIGPIPE, so once `adb shell` (and the TypeScript side behind
+/// it) has gone away every write fails with `BrokenPipe` instead of killing
+/// us — and the poll loop would keep scanning /proc on the device forever.
+/// Any other flush error is ignored, as before.
+pub fn flush_or_exit(out: &mut impl Write) {
+    if let Err(error) = out.flush() {
+        if error.kind() == io::ErrorKind::BrokenPipe {
+            std::process::exit(0);
         }
     }
 }

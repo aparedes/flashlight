@@ -1,97 +1,76 @@
-import {
-  Measure,
-  POLLING_INTERVAL,
-  TestCaseIterationResult,
-  AveragedTestCaseResult,
-} from "@lantern/types";
-import { groupBy } from "es-toolkit";
-import { getMinMax } from "../utils/getMinMax";
-import { getStandardDeviation } from "../utils/getStandardDeviation";
-import { variationCoefficient } from "../utils/variationCoefficient";
+import { Measure, POLLING_INTERVAL, AveragedTestCaseResult } from "@lantern/types";
+import { getStatsByThread, getValuesStats } from "../utils/getValuesStats";
+import type { IterationSummary } from "./iterationSummary";
 
+/** A thread polled above this CPU percentage is considered to be locking its process. */
+export const HIGH_CPU_USAGE_THRESHOLD = 90;
+
+/** Time (in ms) each process spent above `cpuUsageThreshold`, in first-seen order. */
 export const getHighCpuUsage = (
   measures: Measure[],
-  cpuUsageThreshold: number | undefined = 90
+  cpuUsageThreshold: number | undefined = HIGH_CPU_USAGE_THRESHOLD
 ) => {
-  const highCpuUsageMeasures = measures
-    .map((measure) => measure.cpu)
-    .flatMap(({ perName }) =>
-      Object.keys(perName).map((processName) => ({
-        processName,
-        cpuUsage: perName[processName],
-      }))
-    )
-    .filter((measure) => measure.cpuUsage > cpuUsageThreshold);
+  const highCpuUsageByProcess: { [processName: string]: number } = {};
 
-  const groupedByProcessName = groupBy(highCpuUsageMeasures, (measure) => measure.processName);
+  for (const measure of measures) {
+    for (const [processName, cpuUsage] of Object.entries(measure.cpu.perName)) {
+      if (cpuUsage > cpuUsageThreshold) {
+        highCpuUsageByProcess[processName] =
+          (highCpuUsageByProcess[processName] ?? 0) + POLLING_INTERVAL;
+      }
+    }
+  }
 
-  return Object.fromEntries(
-    Object.entries(groupedByProcessName).map(([processName, measuresForProcess]) => [
-      processName,
-      measuresForProcess.length * POLLING_INTERVAL,
-    ])
-  );
+  return highCpuUsageByProcess;
+};
+
+/**
+ * Fraction of polls (in [0, 1]) during which at least one thread was above the threshold.
+ * Unlike summing per-thread high-CPU time, two threads busy in the same poll count once.
+ */
+export const getThreadLockedRatio = (
+  measures: Measure[],
+  cpuUsageThreshold: number | undefined = HIGH_CPU_USAGE_THRESHOLD
+) => {
+  if (measures.length === 0) return 0;
+
+  const lockedPollCount = measures.filter((measure) =>
+    Object.values(measure.cpu.perName).some((cpuUsage) => cpuUsage > cpuUsageThreshold)
+  ).length;
+
+  return lockedPollCount / measures.length;
 };
 
 export const getAverageTotalHighCPUUsage = (highCpuProcesses: { [processName: string]: number }) =>
   Object.keys(highCpuProcesses).reduce((sum, name) => sum + highCpuProcesses[name], 0);
 
-const getStatsByThread = (iterations: TestCaseIterationResult[]) => {
+const getHighCpuStatsByThread = (iterations: IterationSummary[]) => {
   const threads: { [threadName: string]: number[] } = {};
+
   iterations.forEach((iteration) => {
-    const measure = getHighCpuUsage(iteration.measures);
-    Object.keys(measure).forEach((threadName) => {
+    Object.entries(iteration.highCpuUsagePerProcess).forEach(([threadName, highCpuUsage]) => {
       if (!threads[threadName]) {
         threads[threadName] = [];
       }
-      threads[threadName].push(measure[threadName]);
+      threads[threadName].push(highCpuUsage);
     });
   });
 
-  const statsByThread: {
-    [threadName: string]: {
-      minMaxRange: [number, number];
-      deviationRange: [number, number];
-      variationCoefficient: number;
-    };
-  } = {};
-
-  Object.keys(threads).forEach((threadName) => {
-    const threadValues = threads[threadName];
-    const threadAverage = threadValues.reduce((sum, value) => sum + value, 0) / threadValues.length;
-    const threadStandardDeviation = getStandardDeviation({
-      values: threadValues,
-      average: threadAverage,
-    });
-    statsByThread[threadName] = {
-      minMaxRange: getMinMax(threadValues),
-      deviationRange: threadStandardDeviation.deviationRange,
-      variationCoefficient: variationCoefficient(threadAverage, threadStandardDeviation.deviation),
-    };
-  });
-  return statsByThread;
+  return getStatsByThread(threads);
 };
 
 export const getHighCpuStats = (
-  iterations: TestCaseIterationResult[],
+  iterations: IterationSummary[],
   averageResultHighCpuUsage: AveragedTestCaseResult["averageHighCpuUsage"]
 ) => {
   const averageTotalHighCpu = getAverageTotalHighCPUUsage(averageResultHighCpuUsage);
 
-  const averageTotalHighCPuUsage = iterations.map((iteration) =>
-    getAverageTotalHighCPUUsage(getHighCpuUsage(iteration.measures))
-  );
-
-  const standardDeviation = getStandardDeviation({
-    values: averageTotalHighCPuUsage,
-    average: averageTotalHighCpu,
-  });
-
   return {
-    threads: getStatsByThread(iterations),
-    minMaxRange: getMinMax(averageTotalHighCPuUsage),
-    deviationRange: standardDeviation.deviationRange,
-    variationCoefficient: variationCoefficient(averageTotalHighCpu, standardDeviation.deviation),
+    threads: getHighCpuStatsByThread(iterations),
+    ...getValuesStats(
+      iterations.map((iteration) => iteration.totalHighCpuUsage),
+      averageTotalHighCpu
+    ),
   };
 };
 

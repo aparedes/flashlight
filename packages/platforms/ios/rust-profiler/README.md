@@ -91,9 +91,15 @@ One JSON object per stdout line (NDJSON):
   component, every sample — so an app relaunch (new pid) re-attaches
   automatically and emits `targetLost`/`target` transitions.
 - Errors are marked on stderr as `IOS_PROFILER_ERROR_<CODE>: message`
-  (`NO_DEVICE`, `TUNNEL_FAILED`, `SERVICE_FAILED`, `APP_NOT_FOUND`,
-  `STREAM_ENDED`, `USAGE`), mirroring the Android profiler's `CPP_ERROR_*`
-  convention.
+  (`NO_DEVICE`, `SERVICE_FAILED`, `APP_NOT_FOUND`, `STREAM_ENDED`, `USAGE`),
+  mirroring the Android profiler's `CPP_ERROR_*` convention. Non-fatal
+  notices use `IOS_PROFILER_WARN_<CODE>: message` — currently
+  `TUNNEL_FAILED`, emitted when the CoreDevice tunnel is unavailable and the
+  lockdown fallback is attempted (normal on iOS < 17).
+- When no sysmontap sample arrives for a while, a
+  `{"type":"status","event":"stalled"}` line is emitted (after ~12 s at the
+  default interval); after ~40 s of silence the process exits with
+  `STREAM_ENDED`. `--interval-ms` below 100 is rejected.
 - SIGINT/SIGTERM stop both taps cleanly and end with a `stopped` status.
 
 ## Building

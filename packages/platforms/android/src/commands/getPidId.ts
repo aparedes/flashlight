@@ -15,7 +15,7 @@ export const getPidId = (bundleId: string) => {
   const pids = commandOutput.split(/\r\n|\n|\r/).filter(Boolean);
 
   if (pids.length > 1) {
-    console.error("Multiple pids found, selecting the first one", pids);
+    Logger.warn(`Multiple pids found (${pids.join(", ")}), selecting the first one`);
   }
 
   const pid = pids[0];

@@ -1,5 +1,6 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, afterAll, spyOn, mock } from "bun:test";
 import { FrameTimeParser, parseLine } from "../pollFpsUsage";
+import { refreshRateManager } from "../../detectCurrentDeviceRefreshRate";
 
 describe("parseLine", () => {
   it("parses atrace line", () => {
@@ -76,4 +77,24 @@ describe("getFrameTimes", () => {
       interval: 180.70199996232986,
     });
   });
+});
+
+describe("getFps", () => {
+  spyOn(refreshRateManager, "getRefreshRate").mockImplementation(() => 60);
+
+  it("computes fps from frame times over the interval", () => {
+    // 10 frames of 16.67ms over 500ms with an idle UI thread: 10 frames + 20 idle frames
+    expect(FrameTimeParser.getFps(Array(10).fill(1000 / 60), 500, 0)).toBeCloseTo(60);
+    // 10 frames of 50ms (500ms total) over 500ms: 20fps
+    expect(FrameTimeParser.getFps(Array(10).fill(50), 500, 0)).toBeCloseTo(20);
+  });
+
+  it("does not return NaN when the interval is 0", () => {
+    expect(FrameTimeParser.getFps([], 0, 0)).toBe(60);
+    expect(FrameTimeParser.getFps([], 0, 50)).toBe(30);
+    expect(FrameTimeParser.getFps([], 0, 100)).toBe(0);
+    expect(FrameTimeParser.getFps([], -1, 0)).toBe(60);
+  });
+
+  afterAll(() => mock.restore());
 });

@@ -5,26 +5,30 @@ import {
   TestCaseIterationResult,
   TestCaseResult,
 } from "@lantern/types";
-import { getHighCpuUsage } from "./highCpu";
+import { getHighCpuUsage, HIGH_CPU_USAGE_THRESHOLD } from "./highCpu";
 
 const range = (n: number) =>
   Array(n)
     .fill(null)
     .map((_, i) => i);
 
+/**
+ * Mean of the defined samples. Undefined samples are skipped rather than poisoning the whole
+ * average; the result is undefined only when no sample is defined.
+ */
 export function average(arr: number[]): number;
 export function average(arr: (number | undefined)[]): number | undefined;
 export function average(arr: (number | undefined)[] | number[]): number | undefined {
-  if (arr.length === 0) return undefined;
-
   let sum = 0;
+  let count = 0;
 
   for (const elt of arr) {
-    if (elt === undefined) return undefined;
+    if (elt === undefined) continue;
     sum += elt;
+    count++;
   }
 
-  return sum / arr.length;
+  return count === 0 ? undefined : sum / count;
 }
 
 const averageMaps = (maps: { [key: string]: number }[]): { [key: string]: number } => {
@@ -66,7 +70,10 @@ export const averageIterations = (results: TestCaseIterationResult[]): TestCaseI
   };
 };
 
-export const averageHighCpuUsage = (results: TestCaseIterationResult[], cpuUsageThreshold = 90) => {
+export const averageHighCpuUsage = (
+  results: TestCaseIterationResult[],
+  cpuUsageThreshold = HIGH_CPU_USAGE_THRESHOLD
+) => {
   return averageMaps(results.map((result) => getHighCpuUsage(result.measures, cpuUsageThreshold)));
 };
 

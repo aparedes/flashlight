@@ -1,4 +1,4 @@
-import { TestCaseResult, AveragedTestCaseResult } from "@lantern/types";
+import { TestCaseResult, AveragedTestCaseResult, TestCaseIterationResult } from "@lantern/types";
 import { roundToDecimal } from "../utils/round";
 import { averageTestCaseResult } from "./averageIterations";
 import { getScore } from "./getScore";
@@ -10,6 +10,7 @@ import {
 } from "./cpu";
 import { getAverageFPSUsage, getFpsStats } from "./fps";
 import { getAverageTotalHighCPUUsage, getHighCpuStats } from "./highCpu";
+import { IterationSummary, summarizeIteration } from "./iterationSummary";
 import { getAverageRAMUsage, getRamStats } from "./ram";
 import { getRuntimeStats } from "./runtime";
 
@@ -25,14 +26,40 @@ interface ReportMetrics {
   }[];
 }
 
+export interface ReportStats {
+  cpu: ReturnType<typeof getCpuStats>;
+  fps: ReturnType<typeof getFpsStats>;
+  highCpu: ReturnType<typeof getHighCpuStats>;
+  ram: ReturnType<typeof getRamStats>;
+  runtime: ReturnType<typeof getRuntimeStats>;
+  threads: ReturnType<typeof getThreadsStats>;
+}
+
 export class Report {
+  /** The raw result, including failed iterations. */
   private result: TestCaseResult;
+  /**
+   * Only successful iterations feed the averages, the stats and the iteration selector.
+   * Legacy result files carry no status, so an iteration is dropped only when it is
+   * explicitly marked as failed.
+   */
+  private successfulIterations: TestCaseIterationResult[];
+  private iterationSummaries: IterationSummary[];
   private averagedResult: AveragedTestCaseResult;
   private averageMetrics: ReportMetrics;
+  private cachedScore: number | undefined;
+  private cachedStats: ReportStats | undefined;
 
   constructor(result: TestCaseResult) {
-    this.result = Report.filterSuccessfulIterations(result);
-    this.averagedResult = averageTestCaseResult(this.result);
+    this.result = result;
+    this.successfulIterations = result.iterations.filter(
+      (iteration) => iteration.status !== "FAILURE"
+    );
+    this.iterationSummaries = this.successfulIterations.map(summarizeIteration);
+    this.averagedResult = averageTestCaseResult({
+      ...result,
+      iterations: this.successfulIterations,
+    });
     this.averageMetrics = Report.getAverageMetrics(this.averagedResult);
   }
 
@@ -48,21 +75,11 @@ export class Report {
 
     return {
       runtime: averageTestRuntime,
-      fps: averageFPS ? roundToDecimal(averageFPS, 1) : undefined,
+      fps: averageFPS !== undefined ? roundToDecimal(averageFPS, 1) : undefined,
       cpu: averageCPU,
       totalHighCpuTime: averageTotalHighCPU,
-      ram: averageRAM ? roundToDecimal(averageRAM, 1) : undefined,
+      ram: averageRAM !== undefined ? roundToDecimal(averageRAM, 1) : undefined,
       averageCpuUsagePerProcess: getAverageCpuUsagePerProcess(averagedResult.average.measures),
-    };
-  }
-
-  private static filterSuccessfulIterations(result: TestCaseResult) {
-    return {
-      ...result,
-      iterations:
-        result.status === "SUCCESS"
-          ? result.iterations.filter((iteration) => iteration.status === "SUCCESS")
-          : result.iterations,
     };
   }
 
@@ -75,25 +92,29 @@ export class Report {
   }
 
   public get score() {
-    return this.averagedResult.score ?? getScore(this.averagedResult);
+    this.cachedScore ??= this.averagedResult.score ?? getScore(this.averagedResult);
+    return this.cachedScore;
   }
 
   public getIterationCount() {
-    return this.result.iterations.length;
+    return this.successfulIterations.length;
   }
 
   public hasMeasures() {
-    return this.result.iterations[0]?.measures.length > 0;
+    return this.successfulIterations[0]?.measures.length > 0;
   }
 
   public hasVideos() {
-    return !!this.result.iterations[0]?.videoInfos;
+    return !!this.successfulIterations[0]?.videoInfos;
   }
 
+  /** A report over the single successful iteration at `iterationIndex`, or over none if out of bounds. */
   public selectIteration(iterationIndex: number): Report {
+    const isInBounds = iterationIndex >= 0 && iterationIndex < this.successfulIterations.length;
+
     return new Report({
       ...this.result,
-      iterations: [this.result.iterations[iterationIndex]],
+      iterations: isInBounds ? [this.successfulIterations[iterationIndex]] : [],
     });
   }
 
@@ -105,17 +126,16 @@ export class Report {
     return this.averageMetrics;
   }
 
-  public getStats() {
-    const iterations = this.result.iterations;
-
-    return {
-      cpu: getCpuStats(iterations, this.averageMetrics.cpu),
-      fps: getFpsStats(iterations, this.averageMetrics.fps),
-      highCpu: getHighCpuStats(iterations, this.averagedResult.averageHighCpuUsage),
-      ram: getRamStats(iterations, this.averageMetrics.ram),
-      runtime: getRuntimeStats(iterations, this.averageMetrics.runtime),
-      threads: getThreadsStats(iterations),
+  public getStats(): ReportStats {
+    this.cachedStats ??= {
+      cpu: getCpuStats(this.iterationSummaries, this.averageMetrics.cpu),
+      fps: getFpsStats(this.iterationSummaries, this.averageMetrics.fps),
+      highCpu: getHighCpuStats(this.iterationSummaries, this.averagedResult.averageHighCpuUsage),
+      ram: getRamStats(this.iterationSummaries, this.averageMetrics.ram),
+      runtime: getRuntimeStats(this.iterationSummaries, this.averageMetrics.runtime),
+      threads: getThreadsStats(this.iterationSummaries),
     };
+    return this.cachedStats;
   }
 
   public getRefreshRate() {

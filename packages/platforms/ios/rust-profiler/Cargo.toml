@@ -41,4 +41,8 @@ tokio = { version = "1", features = [
 opt-level = "s"
 lto = true
 codegen-units = 1
+# Parity with the Android profiler: a panic must end the process, never leave
+# a half-alive poller behind. The stdout write path handles EPIPE explicitly
+# (see measure::emit) so a vanished reader is not a panic.
+panic = "abort"
 strip = true

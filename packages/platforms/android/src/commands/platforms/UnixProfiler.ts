@@ -29,9 +29,6 @@ const defaultBinaryFolder = `${__dirname}/../../..${__dirname.includes("dist") ?
 const getBinaryFolder = () => process.env.LANTERN_BINARY_PATH || defaultBinaryFolder;
 
 export abstract class UnixProfiler implements Profiler {
-  stop(): void {
-    throw new Error("Method not implemented.");
-  }
   private hasInstalledProfiler = false;
   private cpuClockTick: number | undefined;
   private RAMPageSize: number | undefined;
@@ -130,7 +127,7 @@ export abstract class UnixProfiler implements Profiler {
       frameTimeParser = new FrameTimeParser();
     };
 
-    return this.pollPerformanceMeasuresWeirdSubfunction(
+    return this.pollRawPerformanceMeasures(
       bundleId,
       ({ pid, cpu, ram: ramStr, atrace, timestamp }) => {
         if (!atrace) {
@@ -199,11 +196,15 @@ export abstract class UnixProfiler implements Profiler {
     );
   }
 
-  pollPerformanceMeasuresWeirdSubfunction = (
+  /**
+   * Starts the native profiler on the device and forwards each raw measure it prints
+   * (before any CPU / RAM / FPS processing) to `onData`
+   */
+  private pollRawPerformanceMeasures(
     pid: string,
     onData: (measure: CppPerformanceMeasure) => void,
     onPidChanged?: (pid: string) => void
-  ) => {
+  ) {
     this.installProfilerOnDevice();
 
     const DELIMITER = "=STOP MEASURE=";
@@ -214,7 +215,16 @@ export abstract class UnixProfiler implements Profiler {
       ),
       DELIMITER,
       (data: string) => {
-        onData(parseCppMeasure(data));
+        let measure: CppPerformanceMeasure;
+        try {
+          measure = parseCppMeasure(data);
+        } catch (error) {
+          Logger.warn(
+            `Skipping unparsable measure from the profiler: ${error instanceof Error ? error.message : error}`
+          );
+          return;
+        }
+        onData(measure);
       }
     );
 
@@ -237,7 +247,7 @@ export abstract class UnixProfiler implements Profiler {
         this.stop();
       },
     };
-  };
+  }
 
   // Disabling the warning because the method isn't implemented
   // oxlint-disable-next-line no-unused-vars
@@ -255,6 +265,8 @@ export abstract class UnixProfiler implements Profiler {
     cleanup();
   }
 
+  /** Stops what `installProfilerOnDevice` started (e.g. the atrace process on Android) */
+  public abstract stop(): void;
   public abstract getDeviceCommand(command: string): string;
   protected abstract getAbi(): string;
   protected abstract pushExecutable(binaryTmpPath: string): void;

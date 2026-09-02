@@ -102,6 +102,11 @@ export interface ScreenRecorder {
 export interface ProfilerPollingOptions {
   onMeasure: (measure: Measure) => void;
   onStartMeasuring?: () => void;
+  /**
+   * The profiler process ended, expectedly (after `stop()`) or not; `reason` is a short
+   * human-readable description. No more measures follow.
+   */
+  onEnd?: (reason: string) => void;
 }
 
 export interface Profiler {
