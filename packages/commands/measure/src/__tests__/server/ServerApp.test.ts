@@ -3,7 +3,7 @@ import os from "os";
 import path from "path";
 import { describe, it, test, expect, beforeAll, afterAll, afterEach } from "bun:test";
 
-import { createWebAppServer, WebAppServer } from "../../server/webAppServer";
+import { createWebAppServer, isAllowedOrigin, WebAppServer } from "../../server/webAppServer";
 import { SocketEvents, SocketData } from "../../socket/socketInterface";
 import { decodeFrame, encodeFrame, WEBSOCKET_PATH } from "../../socket/protocol";
 
@@ -23,9 +23,19 @@ const startServer = (onConnection: () => void = () => undefined) => {
   return server;
 };
 
-const openWebSocket = (server: WebAppServer) =>
+// Bun's WebSocket accepts extra handshake headers (a browser sets `Origin` itself), which the
+// DOM typings in scope here do not know about.
+type WebSocketWithHeaders = new (
+  url: string,
+  options?: { headers?: Record<string, string> }
+) => WebSocket;
+
+const openWebSocket = (server: WebAppServer, headers?: Record<string, string>) =>
   new Promise<WebSocket>((resolve, reject) => {
-    const socket = new WebSocket(`ws://localhost:${server.port}${WEBSOCKET_PATH}`);
+    const socket = new (WebSocket as unknown as WebSocketWithHeaders)(
+      `ws://localhost:${server.port}${WEBSOCKET_PATH}`,
+      { headers }
+    );
     socket.addEventListener("open", () => resolve(socket));
     socket.addEventListener("error", () => reject(new Error("Could not open the WebSocket")));
   });
@@ -96,6 +106,20 @@ describe("ServerApp", () => {
       );
     });
 
+    it("is never cached, since the port is baked into it", async () => {
+      const server = startServer();
+
+      const response = await fetch(`http://localhost:${server.port}/`);
+
+      expect(response.headers.get("cache-control")).toBe("no-store");
+    });
+
+    it("only listens on the loopback interface", () => {
+      const server = startServer();
+
+      expect(server.hostname).toBe("127.0.0.1");
+    });
+
     it("returns a 500 when the web app has not been built", async () => {
       process.env.LANTERN_WEBAPP_PATH = path.join(tempRoot, "does-not-exist");
       const server = startServer();
@@ -118,6 +142,14 @@ describe("ServerApp", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("javascript");
       expect(await response.text()).toBe("console.log('webapp');");
+    });
+
+    it("lets the hashed assets be cached forever", async () => {
+      const server = startServer();
+
+      const response = await fetch(`http://localhost:${server.port}/assets/index-abcd1234.js`);
+
+      expect(response.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
     });
 
     it("404s on unknown paths", async () => {
@@ -228,6 +260,66 @@ describe("ServerApp", () => {
       const server = startServer();
 
       expect((await fetch(`http://localhost:${server.port}${WEBSOCKET_PATH}`)).status).toBe(426);
+    });
+
+    it("refuses an upgrade from a page served by another origin", async () => {
+      const connections: string[] = [];
+      const server = createWebAppServer({
+        port: 0,
+        onConnection: () => connections.push("connected"),
+      });
+      servers.push(server);
+
+      // Cross-site WebSocket hijacking: a page on another site, in a browser that happily talks
+      // to localhost, must not get to drive the profiler.
+      const response = await fetch(`http://localhost:${server.port}${WEBSOCKET_PATH}`, {
+        headers: { origin: "http://evil.example" },
+      });
+      expect(response.status).toBe(403);
+
+      await expect(
+        openWebSocket(server, { origin: `http://localhost:${Number(server.port) + 1}` })
+      ).rejects.toThrow("Could not open the WebSocket");
+      expect(connections).toEqual([]);
+
+      // The page's own origin, on either loopback name, still gets through.
+      const fromLocalhost = await openWebSocket(server, {
+        origin: `http://localhost:${server.port}`,
+      });
+      const fromLoopbackIp = await openWebSocket(server, {
+        origin: `http://127.0.0.1:${server.port}`,
+      });
+      expect(connections).toEqual(["connected", "connected"]);
+
+      fromLocalhost.close();
+      fromLoopbackIp.close();
+    });
+  });
+
+  describe("isAllowedOrigin", () => {
+    it("accepts the served page's origin and non-browser clients", () => {
+      expect(isAllowedOrigin("http://localhost:3000", 3000)).toBe(true);
+      expect(isAllowedOrigin("http://127.0.0.1:3000", 3000)).toBe(true);
+      // No header: curl, tests… a browser always sends one on a WebSocket handshake.
+      expect(isAllowedOrigin(null, 3000)).toBe(true);
+    });
+
+    it("rejects every other origin, including other ports and schemes", () => {
+      expect(isAllowedOrigin("http://evil.example", 3000)).toBe(false);
+      expect(isAllowedOrigin("http://localhost:3001", 3000)).toBe(false);
+      expect(isAllowedOrigin("https://localhost:3000", 3000)).toBe(false);
+      expect(isAllowedOrigin("null", 3000)).toBe(false);
+    });
+
+    it("also accepts the Vite dev server in development mode", () => {
+      const originalDevelopmentMode = process.env.DEVELOPMENT_MODE;
+
+      expect(isAllowedOrigin("http://localhost:1234", 3000)).toBe(false);
+      process.env.DEVELOPMENT_MODE = "true";
+      expect(isAllowedOrigin("http://localhost:1234", 3000)).toBe(true);
+
+      if (originalDevelopmentMode === undefined) delete process.env.DEVELOPMENT_MODE;
+      else process.env.DEVELOPMENT_MODE = originalDevelopmentMode;
     });
   });
 

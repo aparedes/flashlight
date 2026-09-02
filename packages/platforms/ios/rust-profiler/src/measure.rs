@@ -5,6 +5,7 @@
 //! time in epoch ms). `{"type":"status",...}` lines carry lifecycle events.
 
 use std::collections::BTreeMap;
+use std::io::{self, Write};
 
 use serde::Serialize;
 
@@ -76,10 +77,16 @@ impl<'a> StatusLine<'a> {
 
 pub fn emit(line: &impl Serialize) {
     // stdout is the wire; a serialization failure here is a programming error.
-    println!(
-        "{}",
-        serde_json::to_string(line).expect("serialize NDJSON line")
-    );
+    let json = serde_json::to_string(line).expect("serialize NDJSON line");
+    // Not println!: that panics on a closed pipe, which with panic = "abort"
+    // would turn the TypeScript side going away into a SIGABRT. Exit quietly.
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    if let Err(error) = writeln!(out, "{json}").and_then(|()| out.flush()) {
+        if error.kind() == io::ErrorKind::BrokenPipe {
+            std::process::exit(0);
+        }
+    }
 }
 
 #[cfg(test)]

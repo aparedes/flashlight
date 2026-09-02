@@ -2,17 +2,11 @@ import { Logger } from "@lantern/logger";
 import { executeAsync, executeCommand } from "./shell";
 import { ChildProcess } from "child_process";
 import { waitFor } from "../utils/waitFor";
+import { isDeviceProcessRunning } from "./isDeviceProcessRunning";
 
 const RECORDING_FOLDER = "/data/local/tmp/";
-
-async function isProcessRunning(pid: number): Promise<boolean> {
-  try {
-    const result = executeCommand(`adb shell ps -p ${pid}`).toString();
-    return result.includes(pid.toString());
-  } catch {
-    return false;
-  }
-}
+const START_RECORDING_TIMEOUT = 10000;
+const STOP_RECORDING_TIMEOUT = 10000;
 
 export class ScreenRecorder {
   private fileName;
@@ -32,17 +26,47 @@ export class ScreenRecorder {
   } = {}): Promise<void> {
     const filePath = `${RECORDING_FOLDER}${this.fileName}`;
 
-    this.process = executeAsync(
-      `adb shell screenrecord ${filePath} --bit-rate ${bitRate} ${
-        size ? `--size ${size}` : ""
-      } --verbose`
-    );
+    const process = executeAsync([
+      "adb",
+      "shell",
+      "screenrecord",
+      filePath,
+      "--bit-rate",
+      `${bitRate}`,
+      ...(size ? ["--size", size] : []),
+      "--verbose",
+    ]);
+    this.process = process;
 
-    await new Promise<void>((resolve) => {
-      this.process?.stdout?.on("data", (data) => {
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const settle = (callback: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        callback();
+      };
+
+      const timeoutId = setTimeout(
+        () =>
+          settle(() =>
+            reject(new Error(`Screen recording did not start within ${START_RECORDING_TIMEOUT}ms`))
+          ),
+        START_RECORDING_TIMEOUT
+      );
+
+      process.stdout?.on("data", (data: Buffer) => {
         if (data.toString().includes("Content area is")) {
-          resolve();
+          settle(resolve);
         }
+      });
+      process.on("error", (error) => {
+        settle(() => reject(new Error(`Screen recording failed to start: ${error.message}`)));
+      });
+      process.on("close", (code) => {
+        settle(() =>
+          reject(new Error(`Screen recording process exited with code ${code} before starting`))
+        );
       });
     });
 
@@ -57,16 +81,27 @@ export class ScreenRecorder {
     // Otherwise, sometimes we miss the end of the video
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    const pid = this.process.pid;
-    this.process.kill("SIGINT");
+    const process = this.process;
     this.process = undefined;
 
-    // Wait for the process to stop running
-    await waitFor(async () => pid && (await isProcessRunning(pid)), {
-      timeout: 10000,
+    // Killing the host `adb` process does not reliably stop `screenrecord` on the device, and
+    // screenrecord needs SIGINT to finalize the video file: signal the device-side process directly
+    try {
+      executeCommand("adb shell pkill -INT screenrecord");
+    } catch {
+      Logger.warn("Could not send SIGINT to screenrecord on the device, killing adb instead");
+      process.kill("SIGINT");
+    }
+
+    // Wait for the device-side process to stop running before pulling the file
+    await waitFor(() => !isDeviceProcessRunning("screenrecord"), {
+      timeout: STOP_RECORDING_TIMEOUT,
       checkInterval: 100,
-      errorMessage: "ERROR: PID still running after timeout, it should have been killed before",
+      errorMessage: "ERROR: screenrecord still running after timeout, it should have been stopped",
     });
+
+    // The adb process normally exits with screenrecord, make sure it does not linger around
+    process.kill();
 
     // Wait an arbitrary time to ensure we don't end up with a corrupted video
     await new Promise((resolve) => setTimeout(resolve, 500));

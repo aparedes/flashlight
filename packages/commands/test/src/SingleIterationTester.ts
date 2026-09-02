@@ -1,3 +1,4 @@
+import { Logger } from "@lantern/logger";
 import {
   AveragedTestCaseResult,
   TestCaseIterationResult,
@@ -38,7 +39,7 @@ export class SingleIterationTester {
     private options: Options,
     private iterationIndex: number
   ) {
-    this.videoPath = `${this.options.resultsFileOptions.path.replace(".json", "")}_iteration_${
+    this.videoPath = `${this.options.resultsFileOptions.path.replace(/\.json$/, "")}_iteration_${
       this.iterationIndex
     }_${new Date().getTime()}.mp4`;
     this.performanceMeasurer = new PerformanceMeasurer(this.bundleId, {
@@ -60,16 +61,40 @@ export class SingleIterationTester {
       if (beforeTest) await beforeTest();
 
       await this.performanceMeasurer.start();
-      await run();
+      // The test itself may launch the app the profiler is waiting for: do not gate it on the
+      // first sample, but do fail it as soon as the profiler gives up
+      await this.performanceMeasurer.runWhileMeasuring(run);
       const measures = await this.performanceMeasurer.stop(duration);
 
       if (afterTest) await afterTest();
 
       this.setCurrentTestCaseIterationResult(measures, "SUCCESS");
     } catch (error) {
-      const measures = await this.performanceMeasurer.stop();
-      this.setCurrentTestCaseIterationResult(measures, "FAILURE");
+      // Stop polling right away so that a failing `stop()` below cannot leak the profiler
       this.performanceMeasurer.forceStop();
+
+      let measures: TestCaseIterationResult | undefined;
+      try {
+        measures = await this.performanceMeasurer.stop();
+      } catch (stopError) {
+        // e.g. no measures were ever received, or the recording could not be pulled: the original
+        // error is the one worth reporting, keep whatever measures we have
+        Logger.debug(
+          `Could not stop the performance measurer cleanly: ${
+            stopError instanceof Error ? stopError.message : "unknown error"
+          }`
+        );
+      }
+
+      this.setCurrentTestCaseIterationResult(
+        measures ?? {
+          time: 0,
+          startTime: this.performanceMeasurer.timingTrace?.startTime ?? 0,
+          measures: this.performanceMeasurer.measures,
+          status: "FAILURE",
+        },
+        "FAILURE"
+      );
       throw error;
     }
   }

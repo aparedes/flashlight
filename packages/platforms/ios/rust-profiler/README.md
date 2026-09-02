@@ -81,7 +81,10 @@ One JSON object per stdout line (NDJSON):
 - `measure` matches the `Measure` type in `@lantern/types`: `time` is
   epoch ms, `cpu.perName.Total` is percent of one core (can exceed 100 on
   multiple cores), `ram` is MB (phys footprint), `fps` is CoreAnimation FPS
-  and is omitted until the first graphics sample arrives.
+  and is omitted until the first graphics sample arrives, and again whenever
+  the last graphics sample is older than `max(3 × interval, 2 s)` — graphics
+  pushes come about once a second on the device's own cadence and stop while
+  the app is idle or backgrounded.
 - CPU comes from the DVT `sysmontap` service (whole-process only — per-thread
   CPU is not available from sysmontap), FPS from the DVT `graphics.opengl`
   service. Both are channels multiplexed over one instruments connection
@@ -91,9 +94,15 @@ One JSON object per stdout line (NDJSON):
   component, every sample — so an app relaunch (new pid) re-attaches
   automatically and emits `targetLost`/`target` transitions.
 - Errors are marked on stderr as `IOS_PROFILER_ERROR_<CODE>: message`
-  (`NO_DEVICE`, `TUNNEL_FAILED`, `SERVICE_FAILED`, `APP_NOT_FOUND`,
-  `STREAM_ENDED`, `USAGE`), mirroring the Android profiler's `CPP_ERROR_*`
-  convention.
+  (`NO_DEVICE`, `SERVICE_FAILED`, `APP_NOT_FOUND`, `STREAM_ENDED`, `USAGE`),
+  mirroring the Android profiler's `CPP_ERROR_*` convention. Non-fatal
+  notices use `IOS_PROFILER_WARN_<CODE>: message` — currently
+  `TUNNEL_FAILED`, emitted when the CoreDevice tunnel is unavailable and the
+  lockdown fallback is attempted (normal on iOS < 17).
+- When no sysmontap sample arrives for a while, a
+  `{"type":"status","event":"stalled"}` line is emitted (after ~12 s at the
+  default interval); after ~40 s of silence the process exits with
+  `STREAM_ENDED`. `--interval-ms` below 100 is rejected.
 - SIGINT/SIGTERM stop both taps cleanly and end with a `stopped` status.
 
 ## Building
@@ -102,15 +111,15 @@ On macOS (the only platform that can reach a device over usbmuxd out of the
 box):
 
 ```
-./build_macos.sh   # builds aarch64 + x86_64 release binaries into bin/
+./build_macos.sh   # builds the arm64 release binary into bin/
 ```
 
-The per-arch binaries in `bin/` (`lantern-ios-profiler-aarch64-apple-darwin`,
-`lantern-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
-Android profiler: `@lantern/ios` resolves `bin/lantern-ios-profiler`
-(the universal `lipo` output, gitignored) from a source checkout, and
-`bun run build:standalone` embeds the binary matching its `--target`. Commit
-the rebuilt binaries together with the crate change that motivated them.
+Only Apple Silicon is built: Apple has retired Intel Macs from macOS support and
+the project has no Intel machine to build or test on. The binary in `bin/`
+(`lantern-ios-profiler`) is committed, mirroring the Android profiler:
+`@lantern/ios` resolves it from a source checkout and `bun run build:standalone`
+embeds it. Commit the rebuilt binary together with the crate change that
+motivated it.
 
 CI runs `cargo fmt/clippy/test` and `build_macos.sh` on a macOS runner; the
 crate also compiles and unit-tests on Linux.

@@ -103,9 +103,10 @@ impl Connection {
             Err(e) => {
                 // Pre-iOS 17 devices don't expose CoreDeviceProxy; fall back
                 // to the lockdown instruments service lazily in remote_server.
-                // On iOS 17+ this is a real failure the fallback won't fix, so
-                // leave a marker the TypeScript side can surface.
-                crate::error::report(
+                // This is only a warning: when the fallback works (iOS < 17)
+                // nothing is wrong, and when it doesn't (iOS 17+) the service
+                // call reports the real failure as an error marker.
+                crate::error::warn(
                     crate::error::TUNNEL_FAILED,
                     format!("CoreDevice tunnel unavailable, trying lockdown fallback: {e:?}"),
                 );

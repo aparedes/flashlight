@@ -42,6 +42,10 @@ const getVideoCurrentTimeAnnotation = () => {
   ];
 };
 
+/**
+ * The y-axis bands (danger/safe zones) do not depend on the video: they must show up whether or
+ * not there is a video cursor to draw on the x-axis.
+ */
 export const getAnnotations = (
   videoEnabled: boolean,
   annotationIntervalList: AnnotationInterval[] | undefined
@@ -50,7 +54,10 @@ export const getAnnotations = (
 
   const xaxis = videoEnabled ? getVideoCurrentTimeAnnotation() : [];
   const yaxis = getAnnotationInterval(annotationIntervalList);
-  if (!xaxis.length || !yaxis.length) return undefined;
+  if (!xaxis.length && !yaxis.length) return undefined;
 
-  return { xaxis, yaxis };
+  return {
+    ...(yaxis.length ? { yaxis } : {}),
+    ...(xaxis.length ? { xaxis } : {}),
+  };
 };

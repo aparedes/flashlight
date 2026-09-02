@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use atrace::{clear_atrace_lines, print_atrace_lines, read_atrace_thread};
 use pidof::pid_of;
-use utils::{log, log_timestamp, print_file};
+use utils::{flush_or_exit, log, log_timestamp, print_file};
 
 /// The app's /proc/<pid>/task directory disappeared: the process is gone.
 struct PidClosedError(String);
@@ -67,14 +67,14 @@ fn print_performance_measure(
     // Flush partial output before bailing out, like the C++ version's
     // exception path did: the parser recovers via the last =START MEASURE=
     if let Err(error) = cpu_result {
-        let _ = out.flush();
+        flush_or_exit(out);
         return Err(error);
     }
     log(out, separator);
     print_memory_stats(out, pids);
     let memory_end = start.elapsed();
     log(out, separator);
-    // TODO handle ATrace not available on OS
+    // Empty when atrace is unavailable (see atrace::read_atrace_thread)
     print_atrace_lines(out);
     let atrace_end = start.elapsed();
     log(out, separator);
@@ -106,7 +106,8 @@ fn print_performance_measure(
 
     log(out, "=STOP MEASURE=");
 
-    let _ = out.flush();
+    // Also detects a vanished adb reader: exits instead of polling forever
+    flush_or_exit(out);
 
     Ok(total_duration_ms)
 }
@@ -116,9 +117,9 @@ fn poll_performance_measures(out: &mut impl Write, bundle_id: &str, interval_ms:
 
     // We read atrace lines before the app is started
     // since it can take a bit of time to start and clear the traceOutputPath
-    // but we'll clear them out periodically while the app isn't started
-    // TODO handle ATrace not available on OS
-    // The thread is never joined: polling loops forever until killed
+    // but we'll clear them out periodically while the app isn't started.
+    // The thread is never joined: polling loops forever until killed. If
+    // atrace is unavailable the thread reports it and exits; polling goes on.
     std::thread::Builder::new()
         .name("FL-Atrace".into())
         .spawn(read_atrace_thread)
@@ -128,13 +129,15 @@ fn poll_performance_measures(out: &mut impl Write, bundle_id: &str, interval_ms:
     // thread on every pid change, restart via a loop over the same thread.
     loop {
         log(out, "Waiting for process to start...");
-        let _ = out.flush();
+        flush_or_exit(out);
 
+        // The full /proc scan runs on the device under test: 200 ms keeps it
+        // cheap while still catching the app well within one measure interval
         let mut pids: Vec<String> = Vec::new();
         while pids.is_empty() {
             clear_atrace_lines();
             pids = pid_of(bundle_id);
-            std::thread::sleep(Duration::from_millis(50));
+            std::thread::sleep(Duration::from_millis(200));
         }
 
         let mut stats = MeasureStats::default();

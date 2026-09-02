@@ -17,19 +17,18 @@ export class CpuMeasureAggregator {
 
     const toPercentage = (value: number) => Math.min((value * 100) / TICKS_FOR_TIME_INTERVAL, 100);
 
-    const totalCpuTimeByGroup = stats.reduce<{ [by: string]: number }>((aggr, stat) => {
+    const totalCpuTimeByGroup: { [by: string]: number } = {};
+    for (const stat of stats) {
       const cpuTimeDiff =
         stat.totalCpuTime - (this.previousTotalCpuTimePerProcessId[stat.processId] || 0);
+      const group = groupByIteratee(stat);
 
-      return {
-        ...aggr,
-        [groupByIteratee(stat)]:
-          (aggr[groupByIteratee(stat)] || 0) +
-          // if the diff is < 0, likely the process was restarted
-          // so we count the new cpu time
-          (cpuTimeDiff >= 0 ? cpuTimeDiff : stat.totalCpuTime),
-      };
-    }, {});
+      totalCpuTimeByGroup[group] =
+        (totalCpuTimeByGroup[group] || 0) +
+        // if the diff is < 0, likely the process was restarted
+        // so we count the new cpu time
+        (cpuTimeDiff >= 0 ? cpuTimeDiff : stat.totalCpuTime);
+    }
 
     return Object.fromEntries(
       Object.entries(totalCpuTimeByGroup).map(([by, value]) => [by, toPercentage(value)])
@@ -37,13 +36,11 @@ export class CpuMeasureAggregator {
   }
 
   initStats(stats: ProcessStat[]): void {
-    this.previousTotalCpuTimePerProcessId = stats.reduce(
-      (aggr, curr) => ({
-        ...aggr,
-        [curr.processId]: curr.totalCpuTime,
-      }),
-      {}
-    );
+    const previousTotalCpuTimePerProcessId: { [processId: string]: number } = {};
+    for (const stat of stats) {
+      previousTotalCpuTimePerProcessId[stat.processId] = stat.totalCpuTime;
+    }
+    this.previousTotalCpuTimePerProcessId = previousTotalCpuTimePerProcessId;
   }
 
   process(stats: ProcessStat[], interval: number): Measure {

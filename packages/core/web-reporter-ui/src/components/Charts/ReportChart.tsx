@@ -25,8 +25,6 @@ export const ReportChart = ({
   showLegendForSingleSeries?: boolean;
   colors?: string[];
   annotationIntervalList?: AnnotationInterval[];
-  formatter?: (label: string) => string;
-  onPointClick?: (seriesIndex: number, dataPointIndex: number) => void;
 }) => {
   const setVideoCurrentTimeOnMouseHover = useSetVideoTimeOnMouseHover({
     lastX: getLastX(series),

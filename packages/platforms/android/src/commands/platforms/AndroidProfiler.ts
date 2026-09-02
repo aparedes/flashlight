@@ -6,9 +6,21 @@ import { detectCurrentAppBundleId } from "../detectCurrentAppBundleId";
 import { CppProfilerName, UnixProfiler } from "./UnixProfiler";
 import { ScreenRecorder } from "../ScreenRecorder";
 import { refreshRateManager } from "../detectCurrentDeviceRefreshRate";
-import { enableFpsDebug } from "../gfxInfo/pollFpsUsage";
 import { listAndroidDevices } from "../listDevices";
 import { listInstalledApps } from "../listInstalledApps";
+import { isDeviceProcessRunning } from "../isDeviceProcessRunning";
+import { waitFor } from "../../utils/waitFor";
+
+/**
+ * atrace only traces for the duration given with `-t` (default 5 s, and there is no "forever"),
+ * after which it disables tracing and exits: the profiler then gets no more frame data and
+ * FPS silently degrades. We use the longest practical duration and restart atrace when it
+ * exits on its own (see `startATrace`).
+ */
+const ATRACE_COMMAND = "adb shell atrace -c view -t 999";
+const STOP_APP_TIMEOUT = 5000;
+
+const enableFpsDebug = () => executeCommand("adb shell setprop debug.hwui.profile true");
 
 export class AndroidProfiler extends UnixProfiler {
   private aTraceProcess: ChildProcess | null = null;
@@ -64,7 +76,38 @@ export class AndroidProfiler extends UnixProfiler {
      */
     execSync("adb shell atrace --async_stop", { stdio: "ignore" });
     Logger.debug("Starting atrace...");
-    this.aTraceProcess = executeAsync("adb shell atrace -c view -t 999");
+    const aTraceProcess = executeAsync(ATRACE_COMMAND);
+    this.aTraceProcess = aTraceProcess;
+
+    // atrace dumps its buffer on stdout when it stops, drain it so it never blocks on a full pipe
+    aTraceProcess.stdout?.on("data", () => {});
+
+    aTraceProcess.on("close", (code) => {
+      // Stopped by us (`stopATrace` clears the reference first): nothing to restart
+      if (this.aTraceProcess !== aTraceProcess) return;
+      this.aTraceProcess = null;
+
+      if (code !== 0) {
+        // e.g. the device got disconnected or tracing is unavailable: respawning right away would
+        // loop tightly, and the adb commands below would throw from inside this event handler
+        Logger.error(
+          `atrace exited with code ${code}, FPS will no longer be measured until the next test run`
+        );
+        return;
+      }
+
+      // Its `-t` budget expired (see ATRACE_COMMAND), so trace again
+      Logger.debug("atrace exited on its own, restarting it...");
+      try {
+        this.startATrace();
+      } catch (error) {
+        Logger.error(
+          `Could not restart atrace, FPS will no longer be measured: ${
+            error instanceof Error ? error.message : error
+          }`
+        );
+      }
+    });
   }
 
   public getDeviceCommand(command: string): string {
@@ -89,7 +132,14 @@ export class AndroidProfiler extends UnixProfiler {
 
   async stopApp(bundleId: string) {
     execSync(`adb shell am force-stop ${bundleId}`);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      await waitFor(() => !isDeviceProcessRunning(bundleId), {
+        timeout: STOP_APP_TIMEOUT,
+        checkInterval: 100,
+      });
+    } catch {
+      Logger.warn(`${bundleId} is still running ${STOP_APP_TIMEOUT}ms after force-stop`);
+    }
   }
 
   public detectDeviceRefreshRate(): number {

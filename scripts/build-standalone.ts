@@ -3,9 +3,11 @@
 /**
  * Builds a standalone macOS executable of the lantern CLI.
  *
+ * Only Apple Silicon (arm64) is built: Apple has retired Intel Macs from macOS support and the
+ * project has no Intel machine to build or test on.
+ *
  * Usage:
  *   bun run build:standalone
- *   bun run build:standalone --target bun-darwin-x64
  *   bun run build:standalone --sign "Developer ID Application: ..."
  *   bun run build:standalone --skip-build
  */
@@ -17,8 +19,7 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..");
 const CLI_SRC = path.join(REPO_ROOT, "packages/commands/lantern/src");
 const GENERATED_FILE = path.join(CLI_SRC, "embedded.generated.ts");
 
-const VALID_TARGETS = ["bun-darwin-arm64", "bun-darwin-x64"] as const;
-type Target = (typeof VALID_TARGETS)[number];
+const TARGET = "bun-darwin-arm64";
 
 const fail = (message: string): never => {
   console.error(`\n❌ ${message}\n`);
@@ -29,7 +30,6 @@ const fail = (message: string): never => {
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
-  let target: Target = "bun-darwin-arm64";
   let sign: string | undefined;
   let outfile: string | undefined;
   let skipBuild = false;
@@ -43,14 +43,6 @@ const parseArgs = () => {
     };
 
     switch (arg) {
-      case "--target": {
-        const value = nextArg();
-        if (!(VALID_TARGETS as readonly string[]).includes(value)) {
-          fail(`Invalid --target "${value}". Expected one of: ${VALID_TARGETS.join(", ")}`);
-        }
-        target = value as Target;
-        break;
-      }
       case "--sign":
         sign = nextArg();
         break;
@@ -65,12 +57,10 @@ const parseArgs = () => {
     }
   }
 
-  const arch = target === "bun-darwin-x64" ? "x64" : "arm64";
   return {
-    target,
     skipBuild,
     signIdentity: sign ?? process.env.LANTERN_CODESIGN_IDENTITY ?? "-",
-    outfile: outfile ?? path.join(REPO_ROOT, `build/standalone/lantern-macos-${arch}`),
+    outfile: outfile ?? path.join(REPO_ROOT, "build/standalone/lantern-macos-arm64"),
   };
 };
 
@@ -158,13 +148,10 @@ const iosProfilerBinDir = path.join(REPO_ROOT, "packages/platforms/ios/rust-prof
 const reportDistDir = path.join(REPO_ROOT, "packages/commands/report/dist");
 const webappDistDir = path.join(REPO_ROOT, "packages/commands/measure/dist");
 
-// The iOS profiler runs on the Mac itself, so only the binary matching the compile target is
-// embedded, under the un-suffixed name the `@lantern/ios` package resolves at runtime.
+// The iOS profiler runs on the Mac itself: the committed arm64 binary is embedded under the
+// same name the `@lantern/ios` package resolves at runtime.
 const IOS_PROFILER_BINARY = "lantern-ios-profiler";
-const iosProfilerSource = path.join(
-  iosProfilerBinDir,
-  `${IOS_PROFILER_BINARY}-${options.target === "bun-darwin-x64" ? "x86_64" : "aarch64"}-apple-darwin`
-);
+const iosProfilerSource = path.join(iosProfilerBinDir, IOS_PROFILER_BINARY);
 if (!fs.existsSync(iosProfilerSource)) {
   fail(
     `Missing ${path.relative(REPO_ROOT, iosProfilerSource)}. Build it with packages/platforms/ios/rust-profiler/build_macos.sh (macOS only).`
@@ -249,7 +236,7 @@ run(
     // ESM output (the default) is required: ink >= 4 uses top-level await, which cannot be
     // lowered to CJS. The old `--format=cjs` workaround for ink 3's yoga-layout-prebuilt
     // asm.js is obsolete — ink 7 ships WASM yoga.
-    `--target=${options.target}`,
+    `--target=${TARGET}`,
     // Without [dir], the two index.html files (report + webapp) collide into one asset
     "--asset-naming=[dir]/[name].[ext]",
     // ink 7.1 lazily `import()`s its devtools module, which statically imports the optional

@@ -3,6 +3,7 @@ import React, {
   PropsWithChildren,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -30,7 +31,8 @@ const useCollapsible = (unmountOnExit: boolean) => {
   }, [collapseState]);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    // This runs in the browser: `NodeJS.Timeout` would be the wrong type here.
+    let timeout: ReturnType<typeof setTimeout> | undefined;
 
     if (collapseState === "EXPANDING") {
       setCollapseState("EXPANDED");
@@ -62,9 +64,14 @@ export const Collapsible: FunctionComponent<Props> = ({
 
   const { isExpanded, showChildren, toggleIsExpanded } = useCollapsible(unmountOnExit);
 
-  const childrenContainerStyle = {
-    height: isExpanded ? childrenContainerRef.current?.scrollHeight : 0,
-  };
+  // The height to animate to is measured from the DOM once the children are committed — reading
+  // `scrollHeight` during render is a ref access the React Compiler refuses to optimise around.
+  // A layout effect keeps the measurement in the same frame, so the transition still starts
+  // from 0 and the page never paints an unmeasured expanded state.
+  const [contentHeight, setContentHeight] = useState(0);
+  useLayoutEffect(() => {
+    setContentHeight(isExpanded ? (childrenContainerRef.current?.scrollHeight ?? 0) : 0);
+  }, [isExpanded, children]);
 
   return (
     <div className={`${className} cursor-pointer`} onClick={toggleIsExpanded}>
@@ -78,7 +85,7 @@ export const Collapsible: FunctionComponent<Props> = ({
       <div
         ref={childrenContainerRef}
         className={`cursor-default overflow-hidden transition-[height] duration-300`}
-        style={childrenContainerStyle}
+        style={{ height: contentHeight }}
         onClick={(event) => event.stopPropagation()}
       >
         {showChildren ? children : null}

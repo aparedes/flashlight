@@ -1,24 +1,46 @@
 import { spawn } from "child_process";
-import { downloadFile } from "./downloadFile";
 import fs from "fs";
+import os from "os";
+import path from "path";
+import { downloadFile } from "./downloadFile";
 
-const FFMPEG_BINARY_FOLDER_PATH = "/tmp/ffmpeg-binary";
-const FFMPEG_BINARY_PATH = `${FFMPEG_BINARY_FOLDER_PATH}/ffmpeg`;
+const FFMPEG_BINARY_FOLDER_PATH = path.join(os.tmpdir(), "ffmpeg-binary");
+const FFMPEG_BINARY_PATH = path.join(FFMPEG_BINARY_FOLDER_PATH, "ffmpeg");
 
-const execAsync = (command: string) =>
+const execAsync = (command: string, args: string[]) =>
   new Promise<void>((resolve, reject) => {
-    const parts = command.split(" ");
-    const proc = spawn(parts[0], parts.slice(1));
+    const proc = spawn(command, args, { stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    let settled = false;
+    const settle = (callback: () => void) => {
+      if (settled) return;
+      settled = true;
+      callback();
+    };
+
+    proc.stderr.on("data", (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    proc.on("error", (error) => {
+      settle(() => reject(new Error(`Could not run ${command}: ${error.message}`)));
+    });
 
     proc.on("close", (code) => {
       if (code !== 0) {
-        reject(new Error(`Command ${command} failed with code ${code}`));
+        settle(() =>
+          reject(
+            new Error(
+              `Command "${[command, ...args].join(" ")}" failed with code ${code}${
+                stderr.trim() ? `:\n${stderr.trim()}` : ""
+              }`
+            )
+          )
+        );
       } else {
-        resolve();
+        settle(resolve);
       }
     });
-
-    proc.on("error", reject);
   });
 
 // Static builds from https://github.com/eugeneware/ffmpeg-static (raw executables, no archive).
@@ -42,16 +64,45 @@ const getFFMpegDownloadUrl = () => {
 
 export const installFFMpeg = async () => {
   fs.mkdirSync(FFMPEG_BINARY_FOLDER_PATH, { recursive: true });
-  await downloadFile(getFFMpegDownloadUrl(), FFMPEG_BINARY_PATH);
-  fs.chmodSync(FFMPEG_BINARY_PATH, 0o755);
+
+  // Download next to the final path and rename once complete, so that an interrupted download can
+  // never be mistaken for a working binary
+  const temporaryPath = `${FFMPEG_BINARY_PATH}.${process.pid}.download`;
+  try {
+    await downloadFile(getFFMpegDownloadUrl(), temporaryPath);
+    fs.chmodSync(temporaryPath, 0o755);
+    fs.renameSync(temporaryPath, FFMPEG_BINARY_PATH);
+  } catch (error) {
+    fs.rmSync(temporaryPath, { force: true });
+    throw error;
+  }
 };
+
+/**
+ * When coming from AWS Device Farm or certain devices, it seems the video is not encoded properly.
+ * `-vsync 0` is important since we have variable frame rate from adb shell screenrecord.
+ */
+export const getFFMpegArgs = (filePath: string, destinationPath: string): string[] => [
+  "-loglevel",
+  "error",
+  "-y",
+  "-vsync",
+  "0",
+  "-i",
+  filePath,
+  "-c:v",
+  "libx264",
+  "-crf",
+  "23",
+  "-c:a",
+  "aac",
+  "-b:a",
+  "128k",
+  destinationPath,
+];
 
 export const processVideoFile = async (filePath: string, destinationPath: string) => {
   const ffmpegExecutable = fs.existsSync(FFMPEG_BINARY_PATH) ? FFMPEG_BINARY_PATH : "ffmpeg";
 
-  // When coming from AWS Device Farm or certain devices, it seems the video is not encoded properly
-  // VSync 0 is important since we have variable frame rate from adb shell screenrecord
-  await execAsync(
-    `${ffmpegExecutable} -y -vsync 0 -i ${filePath} -c:v libx264 -crf 23 -c:a aac -b:a 128k ${destinationPath} -loglevel error`
-  );
+  await execAsync(ffmpegExecutable, getFFMpegArgs(filePath, destinationPath));
 };

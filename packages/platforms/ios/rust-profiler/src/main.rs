@@ -36,6 +36,9 @@ Set LANTERN_IOS_DEBUG=1 for verbose protocol logs on stderr (and a dump
 of the first raw sysmontap sample during poll).
 ";
 
+/// Below this the sysmontap flood outpaces the DTX reader on real devices.
+const MIN_INTERVAL_MS: u32 = 100;
+
 #[derive(Default)]
 struct Args {
     command: String,
@@ -79,6 +82,12 @@ fn parse_args() -> Args {
             "--raw" => args.raw = true,
             other => error::fail(error::USAGE, format!("unknown flag {other}\n{USAGE}")),
         }
+    }
+    if args.interval_ms < MIN_INTERVAL_MS {
+        error::fail(
+            error::USAGE,
+            format!("--interval-ms must be at least {MIN_INTERVAL_MS}"),
+        );
     }
     args
 }

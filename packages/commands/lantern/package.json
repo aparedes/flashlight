@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@lantern/e2e": "^0.11.4",
+    "@lantern/logger": "^0.3.3",
     "@lantern/measure": "^0.5.0",
     "@lantern/tools": "^0.2.4",
     "@lantern/web-reporter": "^0.11.3",

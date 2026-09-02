@@ -5,7 +5,7 @@ import { Collapsible } from "../components/Collapsible";
 import { getColorPalette } from "../theme/colors";
 import { getAverageCpuUsage, roundToDecimal } from "@lantern/reporter";
 import { ReportChart } from "../components/Charts/ReportChart";
-import { THREAD_ICON_MAPPING, getAutoSelectedThreads } from "./threads";
+import { THREAD_ICON_MAPPING, getAutoSelectedThreads, getNumberOfThreads } from "./threads";
 
 const buildSeriesData = (measures: Measure[], calculate: (measure: Measure) => number) =>
   measures
@@ -25,16 +25,9 @@ const totalCpuAnnotationInterval = [{ y: 300, y2: 1000, color: "#E62E2E", label:
 
 const perThreadCpuAnnotationInterval = [{ y: 90, y2: 100, color: "#E62E2E", label: "Danger Zone" }];
 
-export const getNumberOfThreads = (results: AveragedTestCaseResult[]) => {
-  if (results.length === 0 || results[0].average.measures.length === 0) {
-    return 0;
-  }
-  const lastMeasure = results[0].average.measures[results[0].average.measures.length - 1];
-  return Object.keys(lastMeasure.cpu.perName).length;
-};
-
 export const CPUReport = ({ results }: { results: AveragedTestCaseResult[] }) => {
-  const [selectedThreads, setSelectedThreads] = React.useState<string[]>(
+  // Lazy initialiser: the auto-selection walks every result, and only the first render needs it.
+  const [selectedThreads, setSelectedThreads] = React.useState<string[]>(() =>
     getAutoSelectedThreads(results)
   );
 

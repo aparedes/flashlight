@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Measure, TestCaseIterationResult, TestCaseResult } from "@lantern/types";
-import { getMeasuresForTimeInterval, injectResults } from "../writeReport";
+import { getMeasuresForTimeInterval, getReportFileName, injectResults } from "../writeReport";
 
 const mockMeasure = (name: string) => {
   // We're just mocking measure to make tests more readable here
@@ -175,5 +175,35 @@ describe("injectResults", () => {
     expect(() => injectResults("<html></html>", [])).toThrowErrorMatchingInlineSnapshot(
       `"Could not find the results placeholder in the report HTML"`
     );
+  });
+
+  it("throws when the placeholder appears more than once", () => {
+    const html = `<html><script>let r="${PLACEHOLDER}";let s=\`${PLACEHOLDER}\`;</script></html>`;
+
+    expect(() => injectResults(html, [])).toThrowErrorMatchingInlineSnapshot(
+      `"Found the results placeholder 2 times in the report HTML, expected exactly one"`
+    );
+  });
+});
+
+describe("getReportFileName", () => {
+  it("derives the name from the first results file", () => {
+    expect(
+      getReportFileName({ firstJsonPath: "/tmp/results/my_test.json", exists: () => false })
+    ).toBe("report-my_test.html");
+  });
+
+  it("keeps folder names as is", () => {
+    expect(getReportFileName({ firstJsonPath: "/tmp/results", exists: () => false })).toBe(
+      "report-results.html"
+    );
+  });
+
+  it("never returns the name of an existing report", () => {
+    const existing = new Set(["report-my_test.html", "report-my_test-2.html"]);
+
+    expect(
+      getReportFileName({ firstJsonPath: "my_test.json", exists: (name) => existing.has(name) })
+    ).toBe("report-my_test-3.html");
   });
 });

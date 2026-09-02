@@ -96,6 +96,14 @@ ${error instanceof Error ? error.message : error}`);
     const TARGET_FRAME_RATE = refreshRateManager.getRefreshRate();
     const TARGET_FRAME_TIME = 1000 / TARGET_FRAME_RATE;
 
+    /**
+     * No time elapsed (e.g. a single atrace line): the formula below would divide by zero.
+     * Return its limit when the interval tends to 0: the idle frame rate weighted by UI CPU usage
+     */
+    if (timeInterval <= 0) {
+      return Math.max(0, Math.min(TARGET_FRAME_RATE, TARGET_FRAME_RATE * (1 - uiCpuUsage / 100)));
+    }
+
     const totalFrameTime = frameTimes.reduce(
       (sum, time) => sum + Math.max(TARGET_FRAME_TIME, time),
       0

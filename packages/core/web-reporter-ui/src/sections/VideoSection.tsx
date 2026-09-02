@@ -80,7 +80,9 @@ const Video = forwardRef<
 });
 
 export const VideoSection = ({ results }: { results: AveragedTestCaseResult[] }) => {
-  const videoRefs = results.map(() => React.createRef<VideoHandle>());
+  // One handle per result, filled in by callback refs: creating a fresh `createRef` per result on
+  // every render would both discard the handles and make the React Compiler bail out.
+  const videoHandlesRef = useRef<(VideoHandle | null)[]>([]);
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
   const togglePanel = () => setIsPanelExpanded((prevIsPanelExpanded) => !prevIsPanelExpanded);
 
@@ -90,11 +92,7 @@ export const VideoSection = ({ results }: { results: AveragedTestCaseResult[] })
   };
 
   const playVideos = () => {
-    videoRefs.forEach((videoRef) => {
-      if (videoRef.current) {
-        videoRef.current.play();
-      }
-    });
+    videoHandlesRef.current.forEach((videoHandle) => videoHandle?.play());
   };
 
   useEffect(() => {
@@ -162,7 +160,9 @@ export const VideoSection = ({ results }: { results: AveragedTestCaseResult[] })
                         video.startOffset + iteration.measures[0].time / 2,
                     }}
                     key={video.path}
-                    ref={videoRefs[index]}
+                    ref={(handle) => {
+                      videoHandlesRef.current[index] = handle;
+                    }}
                   />
                 ) : null}
               </div>

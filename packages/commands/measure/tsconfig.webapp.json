@@ -1,0 +1,15 @@
+{
+  // Type-check only (no emit) for what `tsconfig.json` leaves out of `dist`: the Vite-bundled web
+  // app and the tests. Run with `bun run typecheck` in this package, which the root `typecheck`
+  // script (used by CI) chains after `tsc --build`.
+  "extends": "../../../tsconfig.module.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "rootDir": "src",
+    "types": ["bun", "@testing-library/dom"]
+  },
+  "include": ["src"],
+  // The Vite entry only wires up the DOM and imports a stylesheet, which tsc cannot resolve.
+  "exclude": ["src/webapp/index.tsx"]
+}

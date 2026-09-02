@@ -40,6 +40,37 @@ describe("<ReporterView />", () => {
      */
   });
 
+  it("keeps the failed iterations of a test whose retries were exhausted browsable", () => {
+    const successful: TestCaseResult = require("../../../commands/report/src/example-reports/results1.json");
+    const failed: TestCaseResult = {
+      ...successful,
+      name: "Failed test",
+      status: "FAILURE",
+      iterations: successful.iterations
+        .slice(0, 2)
+        .map((iteration) => ({ ...iteration, status: "FAILURE" as const })),
+    };
+
+    // The failed report first: the charts are shown based on the first report's measures
+    render(<IterationsReporterView results={[failed, successful]} />);
+
+    expect(
+      screen.getByText("The maximum number of retries has been exceeded for this test.")
+    ).toBeTruthy();
+    // The charts are still there for both reports...
+    expect(screen.getByText("Other threads")).toBeTruthy();
+    // ...and so is the iteration selector, over the 2 failed iterations
+    expect(screen.getByText("Showing average of 2 test iterations")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Show each iteration individually"));
+    fireEvent.click(screen.getByLabelText("See next iteration"));
+    // The counter is split over nested spans
+    expect(
+      screen.getByText(
+        (_, element) => element?.tagName === "SPAN" && element.textContent === "Iteration 2/2"
+      )
+    ).toBeTruthy();
+  });
+
   it("renders the comparison view with videos", () => {
     const testCaseResults: TestCaseResult[] = [
       require("../../../commands/report/src/example-reports/video/results_417dd25e-d901-4b1e-9d43-3b78305a48e2.json"),

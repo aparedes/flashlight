@@ -1,7 +1,28 @@
 import { Logger } from "@lantern/logger";
 import { averageTestCaseResult } from "@lantern/reporter";
-import { AveragedTestCaseResult, TestCaseIterationResult, TestCaseResult } from "@lantern/types";
+import {
+  AveragedTestCaseResult,
+  TestCaseIterationResult,
+  TestCaseResult,
+  TestCaseResultStatus,
+} from "@lantern/types";
 import fs from "fs";
+import path from "path";
+
+/**
+ * A test case fails as soon as any of its iterations failed, wherever it sits in the list.
+ * Retried iterations are ignored: their measures are discarded by design and the iteration was run
+ * again (see `PerformanceTester`).
+ */
+export const getTestCaseStatus = (iterations: TestCaseIterationResult[]): TestCaseResultStatus => {
+  if (iterations.length === 0) return "FAILURE";
+
+  return iterations.some(
+    (iteration) => iteration.status === "FAILURE" && !iteration.isRetriedIteration
+  )
+    ? "FAILURE"
+    : "SUCCESS";
+};
 
 export const writeReport = (
   measures: TestCaseIterationResult[],
@@ -18,10 +39,7 @@ export const writeReport = (
   const testCase: TestCaseResult = {
     name: title,
     iterations: measures,
-    status:
-      measures.length === 0 || measures[measures.length - 1].status === "FAILURE"
-        ? "FAILURE"
-        : "SUCCESS",
+    status: getTestCaseStatus(measures),
   };
 
   /**
@@ -33,6 +51,7 @@ export const writeReport = (
     testCase.score = Math.max(0, Math.min(overrideScore(averagedResult), 100));
   }
 
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(testCase));
 
   Logger.success(

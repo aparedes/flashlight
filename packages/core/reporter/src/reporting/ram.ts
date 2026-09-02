@@ -1,29 +1,17 @@
-import { Measure, TestCaseIterationResult } from "@lantern/types";
-import { getMinMax } from "../utils/getMinMax";
-import { getStandardDeviation } from "../utils/getStandardDeviation";
+import { Measure } from "@lantern/types";
+import { getValuesStats } from "../utils/getValuesStats";
 import { average } from "./averageIterations";
-import { variationCoefficient } from "../utils/variationCoefficient";
+import type { IterationSummary } from "./iterationSummary";
 
 export const getAverageRAMUsage = (measures: Measure[]) =>
   average(measures.map((measure) => measure.ram));
 
-export const getRamStats = (iterations: TestCaseIterationResult[], averageRam?: number) => {
-  if (!averageRam) return undefined;
+export const getRamStats = (iterations: IterationSummary[], averageRam?: number) => {
+  if (averageRam === undefined) return undefined;
 
-  const values: number[] = [];
-  iterations.forEach((iteration) => {
-    const averageRamUsage = getAverageRAMUsage(iteration.measures);
-    if (averageRamUsage) values.push(averageRamUsage);
-  });
+  const values = iterations.flatMap((iteration) =>
+    iteration.ram !== undefined ? [iteration.ram] : []
+  );
 
-  const standardDeviation = getStandardDeviation({
-    values,
-    average: averageRam,
-  });
-
-  return {
-    minMaxRange: getMinMax(values),
-    deviationRange: standardDeviation.deviationRange,
-    variationCoefficient: variationCoefficient(averageRam, standardDeviation.deviation),
-  };
+  return getValuesStats(values, averageRam);
 };

@@ -13,6 +13,13 @@ pub fn report(code: &str, msg: impl Display) {
     eprintln!("IOS_PROFILER_ERROR_{code}: {msg}");
 }
 
+/// Non-fatal notice (e.g. a fallback path was taken). Distinct prefix so the
+/// TypeScript side can log it at warn level and never mistake it for the
+/// failure that ends a command.
+pub fn warn(code: &str, msg: impl Display) {
+    eprintln!("IOS_PROFILER_WARN_{code}: {msg}");
+}
+
 pub fn fail(code: &str, msg: impl Display) -> ! {
     report(code, msg);
     std::process::exit(1);

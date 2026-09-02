@@ -1,8 +1,11 @@
+import fs from "fs";
 import os from "os";
-import { Command } from "commander";
+import path from "path";
+import { Command, Option } from "commander";
 import { Logger } from "@lantern/logger";
 import { open } from "@lantern/shell";
-import { writeReport } from "./writeReport";
+import { parseDuration, parseSkip } from "./optionParsers";
+import { getReportFileName, writeReport } from "./writeReport";
 
 export const registerReportCommand = (program: Command) => {
   program
@@ -19,25 +22,37 @@ lantern report results1.json --skip 1500 --duration 10000
 `
     )
     .option("-o, --output-dir <outputDir>", "Output directory for the web report")
-    .option(
-      "-d, --duration <duration>",
-      `Duration in ms of measures to analyze in report. If measures are longer than that, they'll be "cut".`
+    .addOption(
+      new Option(
+        "-d, --duration <duration>",
+        `Duration in ms of measures to analyze in report. If measures are longer than that, they'll be "cut".`
+      ).argParser(parseDuration)
     )
-    .option("-s, --skip <skip>", "Skip first ms of measures in report")
-    .action((args, options) => {
-      const outputDir = options.outputDir || os.tmpdir();
-      const duration = options.duration ? parseInt(options.duration, 10) : null;
-      const skip = options.skip ? parseInt(options.skip, 10) : 0;
+    .addOption(
+      new Option("-s, --skip <skip>", "Skip first ms of measures in report").argParser(parseSkip)
+    )
+    .action(
+      (jsonPaths: string[], options: { outputDir?: string; duration?: number; skip?: number }) => {
+        const outputDir = options.outputDir || os.tmpdir();
+        // With `-o` the user owns the folder and `report.html` is overwritten as before. Otherwise
+        // reports share the temp dir, so give each a name that does not clobber a previous one.
+        const fileName = options.outputDir
+          ? "report.html"
+          : getReportFileName({
+              firstJsonPath: jsonPaths[0],
+              exists: (name) => fs.existsSync(path.join(outputDir, name)),
+            });
 
-      const jsonPaths = args;
-      const htmlFilePath = writeReport({
-        outputDir,
-        jsonPaths,
-        duration,
-        skip,
-      });
+        const htmlFilePath = writeReport({
+          outputDir,
+          jsonPaths,
+          duration: options.duration ?? null,
+          skip: options.skip ?? 0,
+          fileName,
+        });
 
-      Logger.success(`Opening report: ${htmlFilePath}`);
-      open(htmlFilePath);
-    });
+        Logger.success(`Opening report: ${htmlFilePath}`);
+        open(htmlFilePath);
+      }
+    );
 };

@@ -53,9 +53,17 @@ export const ServerSocketConnectionApp = ({ socket, url }: { socket: SocketType;
       });
 
       addNewResult(state.bundleId);
-      performanceMeasureRef.current?.start(() =>
-        updateMeasures(performanceMeasureRef.current?.measures || [])
-      );
+      const measurer = performanceMeasureRef.current;
+      measurer
+        .start(() => updateMeasures(measurer.measures || []))
+        // Rejects when the profiler never reports a first measure or exits early
+        .then(() => measurer.waitUntilMeasuring())
+        .catch((error) => {
+          Logger.error(error instanceof Error ? error.message : String(error));
+          if (performanceMeasureRef.current === measurer) {
+            setState({ isMeasuring: false });
+          }
+        });
     });
 
     socket.on(SocketEvents.STOP, stop);

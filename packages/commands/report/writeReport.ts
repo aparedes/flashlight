@@ -51,7 +51,8 @@ export const getResultsFromPaths = (jsonPaths: string[]): TestCaseResult[] => {
   const getJsonPaths = () => {
     return jsonPaths
       .map((path) => {
-        const isDirectory = fs.lstatSync(path).isDirectory();
+        // statSync follows symlinks, so a symlinked results folder works too
+        const isDirectory = fs.statSync(path).isDirectory();
 
         if (isDirectory) {
           return fs
@@ -79,8 +80,14 @@ const RESULTS_PLACEHOLDER =
   /(["'`])THIS_IS_A_VERY_LONG_STRING_THAT_IS_UNLIKELY_TO_BE_FOUND_IN_A_TEST_CASE_RESULT\1/;
 
 export const injectResults = (html: string, results: TestCaseResult[]): string => {
-  if (!RESULTS_PLACEHOLDER.test(html)) {
+  const occurrences = html.match(new RegExp(RESULTS_PLACEHOLDER.source, "g"))?.length ?? 0;
+  if (occurrences === 0) {
     throw new Error("Could not find the results placeholder in the report HTML");
+  }
+  if (occurrences > 1) {
+    throw new Error(
+      `Found the results placeholder ${occurrences} times in the report HTML, expected exactly one`
+    );
   }
 
   // `<` is escaped so that a `</script>` sequence inside the data cannot end the inline script.
@@ -90,16 +97,39 @@ export const injectResults = (html: string, results: TestCaseResult[]): string =
   return html.replace(RESULTS_PLACEHOLDER, () => payload);
 };
 
+/**
+ * A report name derived from the first results file, so that successive reports written to a shared
+ * folder (the OS temp dir by default) do not overwrite each other. `exists` is checked for the
+ * candidate names so that an existing report is never clobbered.
+ */
+export const getReportFileName = ({
+  firstJsonPath,
+  exists,
+}: {
+  firstJsonPath: string;
+  exists: (fileName: string) => boolean;
+}): string => {
+  const base = `report-${path.basename(firstJsonPath).replace(/\.json$/, "")}`;
+
+  let candidate = `${base}.html`;
+  for (let index = 2; exists(candidate); index++) {
+    candidate = `${base}-${index}.html`;
+  }
+  return candidate;
+};
+
 export const writeReport = ({
   jsonPaths,
   outputDir,
   duration,
   skip = 0,
+  fileName = "report.html",
 }: {
   jsonPaths: string[];
   outputDir: string;
   duration: number | null;
   skip: number;
+  fileName?: string;
 }) => {
   const html = fs.readFileSync(`${getAssetsDir()}/index.html`, "utf8");
 
@@ -107,7 +137,8 @@ export const writeReport = ({
 
   const reportHtml = injectResults(html, getMeasuresForTimeInterval({ results, skip, duration }));
 
-  const htmlFilePath = `${outputDir}/report.html`;
+  fs.mkdirSync(outputDir, { recursive: true });
+  const htmlFilePath = `${outputDir}/${fileName}`;
   // Videos stay next to the report as separate files, by design.
   copyVideoFiles(results, outputDir);
   fs.writeFileSync(htmlFilePath, reportHtml);

@@ -4,7 +4,6 @@ import { CPUReport } from "./src/sections/CPUReport";
 import { ReportSummary } from "./src/sections/ReportSummary/ReportSummary.component";
 import { RAMReport } from "./src/sections/RAMReport";
 import { Report as ReportModel } from "@lantern/reporter";
-import styled from "@emotion/styled";
 import { FPSReport } from "./src/sections/FPSReport";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
@@ -13,12 +12,8 @@ import { exportRawDataToZIP } from "./utils/reportRawDataExport";
 import { IterationSelector, useIterationSelector } from "./src/components/IterationSelector";
 import { VideoSection } from "./src/sections/VideoSection";
 import { VideoEnabledContext } from "./videoCurrentTimeContext";
-import { HideSectionIfUndefinedValueFound } from "./src/sections/hideSectionForEmptyValue";
+import { hasValueForEveryMeasure } from "./src/sections/hideSectionForEmptyValue";
 import { mapThreadNames } from "./src/sections/threads";
-
-const Padding = styled.div`
-  height: 10px;
-`;
 
 const theme = createTheme({
   typography: {
@@ -34,7 +29,9 @@ const Report = ({
   results: TestCaseResult[];
   additionalMenuOptions?: MenuOption[];
 }) => {
-  const results = mapThreadNames(rawResults);
+  // Memoised on the raw input: `mapThreadNames` rebuilds every measure, so a fresh array each
+  // render would defeat the `useMemo`s downstream of it.
+  const results = useMemo(() => mapThreadNames(rawResults), [rawResults]);
   const reports = useMemo(() => results.map((result) => new ReportModel(result)), [results]);
   const minIterationCount = Math.min(...reports.map((report) => report.getIterationCount()));
   const iterationSelector = useIterationSelector(minIterationCount);
@@ -47,6 +44,7 @@ const Report = ({
 
   const hasVideos = !!selectedReports.some((report) => report.hasVideos());
   const hasMeasures = selectedReports[0].hasMeasures();
+  const hasFps = hasValueForEveryMeasure(averagedResults, "fps");
 
   return (
     <>
@@ -65,18 +63,20 @@ const Report = ({
                 ...(additionalMenuOptions ? additionalMenuOptions : []),
               ]}
             />
-            <Padding />
+            <div className="h-[10px]" />
             <ReportSummary reports={selectedReports} />
             <div className="h-16" />
 
             {hasMeasures ? (
               <>
-                <HideSectionIfUndefinedValueFound>
-                  <div className="mx-8 p-6 bg-dark-charcoal border border-gray-800 rounded-lg">
-                    <FPSReport results={averagedResults} />
-                  </div>
-                  <div className="h-10" />
-                </HideSectionIfUndefinedValueFound>
+                {hasFps ? (
+                  <>
+                    <div className="mx-8 p-6 bg-dark-charcoal border border-gray-800 rounded-lg">
+                      <FPSReport results={averagedResults} />
+                    </div>
+                    <div className="h-10" />
+                  </>
+                ) : null}
 
                 <div className="mx-8 p-6 bg-dark-charcoal border border-gray-800 rounded-lg">
                   <CPUReport results={averagedResults} />

@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 // apexcharts 7 no longer declares its option types as ambient globals — they are exported
 // from the package (merged into the `ApexCharts` class namespace) and must be imported.
 import type { ApexChart } from "apexcharts";
@@ -30,10 +30,13 @@ export const useSetVideoTimeOnMouseHover = ({
 }: {
   lastX: number | string | undefined;
 }): ApexChart["events"] => {
+  // The handlers read the latest `lastX` through a ref so that the memoised events object does
+  // not depend on the series — apexcharts would otherwise be re-configured on every new point.
+  // Written from an effect rather than during render, which the React Compiler bails out on.
   const lastXRef = useRef(lastX);
-
-  // Just making sure the useMemo doesn't depend on series since it doesn't need to
-  lastXRef.current = lastX;
+  useEffect(() => {
+    lastXRef.current = lastX;
+  }, [lastX]);
 
   return useMemo(
     () => ({

@@ -13,5 +13,8 @@
     { "path": "../../core/web-reporter-ui" }
   ],
   "include": ["src"],
-  "exclude": ["src/webapp/index.tsx"]
+  // Only the CLI/server side is emitted to `dist`: Vite bundles `src/webapp` itself (see
+  // `vite.config.mts`) and the tests run from source. Both are type-checked by
+  // `tsconfig.webapp.json` instead, chained into the root `typecheck` script.
+  "exclude": ["src/__tests__", "src/webapp"]
 }

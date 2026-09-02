@@ -7,10 +7,10 @@ export const executeCommand = (command: string): string => {
   } catch (error: unknown) {
     // The Error object will contain the entire result from child_process.spawnSync()
     // (source: https://nodejs.org/api/child_process.html#child_processexecsynccommand-options)
+    // stderr can be missing (e.g. when the command could not be spawned at all)
+    const stderr = (error as Partial<SpawnSyncReturns<Buffer>>).stderr;
     Logger.debug(
-      `Error while executing command "${command}": ${(
-        error as SpawnSyncReturns<{ toString(): string }>
-      ).stderr.toString()}`
+      `Error while executing command "${command}": ${stderr ? stderr.toString() : String(error)}`
     );
     throw error;
   }
@@ -39,52 +39,67 @@ if (!global.Flipper) {
   process.on("SIGTERM", exit); // `kill` command
 }
 
-class AsyncExecutionError extends Error {}
-
 /**
  * In AWS when we properly kill the process termination gets logged in stderr with a weird log
  */
 export const canIgnoreAwsTerminationError = (log: string) =>
   log.includes("Terminated              LD_LIBRARY_PATH");
 
+/**
+ * A command is either a single string split on spaces, or an already split argv array.
+ * Use the array form when arguments (e.g. file paths) may contain spaces.
+ */
+export type Command = string | string[];
+
+const toArgv = (command: Command): string[] =>
+  Array.isArray(command) ? command : command.split(" ");
+
+const toCommandLabel = (command: Command): string =>
+  Array.isArray(command) ? command.join(" ") : command;
+
 export const executeAsync = (
-  command: string,
+  command: Command,
   { logStderr } = {
     logStderr: true,
   }
 ): ChildProcess => {
-  const parts = command.split(" ");
+  const [executable, ...args] = toArgv(command);
+  const commandLabel = toCommandLabel(command);
 
-  const childProcess = spawn(parts[0], parts.slice(1));
+  const childProcess = spawn(executable, args);
 
   childProcess.stdout?.on("end", () => {
-    Logger.debug(`Process for ${command} ended`);
+    Logger.debug(`Process for ${commandLabel} ended`);
   });
 
   childProcess.stderr?.on("data", (data) => {
     if (logStderr && !canIgnoreAwsTerminationError(data.toString()))
-      Logger.error(`Process for ${command} errored with ${data.toString()}`);
+      Logger.error(`Process for ${commandLabel} errored with ${data.toString()}`);
   });
 
   childProcess.on("close", (code) => {
     Logger.debug(`child process exited with code ${code}`);
 
+    const index = childProcesses.indexOf(childProcess);
+    if (index !== -1) childProcesses.splice(index, 1);
+
     const AUTHORIZED_CODES = [
       0, // Success
       130, // SIGINT
-      140, // SIGKILL
+      137, // SIGKILL
       143, // SIGTERM
       255, // SSH EXECUTION STOPPED
     ];
 
     // SIGKILL or SIGTERM are likely to be normal, since we request termination from JS side
+    // Never throw here: an exception thrown from an event handler is uncaught and kills the CLI
     if (code && !AUTHORIZED_CODES.includes(code)) {
-      throw new AsyncExecutionError(`Process for ${command} exited with code ${code}`);
+      Logger.error(`Process for ${commandLabel} exited with code ${code}`);
     }
   });
 
   childProcess.on("error", (err) => {
-    Logger.error(`Process for ${command} errored with ${err}`);
+    Logger.error(`Process for ${commandLabel} errored with ${err}`);
   });
 
   childProcesses.push(childProcess);
@@ -93,7 +108,7 @@ export const executeAsync = (
 };
 
 export const executeLongRunningProcess = (
-  command: string,
+  command: Command,
   delimiter: string,
   onData: (data: string) => void
 ) => {
@@ -102,7 +117,7 @@ export const executeLongRunningProcess = (
   });
   let currentChunk = "";
 
-  process.stdout?.on("data", (data: ReadableStream<string>) => {
+  process.stdout?.on("data", (data: Buffer) => {
     currentChunk += data.toString();
 
     const dataSplits = currentChunk.split(delimiter);

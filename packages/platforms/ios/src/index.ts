@@ -1,5 +1,6 @@
 import { ChildProcess, execFile, execFileSync, spawn } from "child_process";
 import fs from "fs";
+import path from "path";
 import { createInterface } from "readline";
 import { Logger } from "@lantern/logger";
 import {
@@ -14,10 +15,17 @@ import {
 
 const BINARY_NAME = "lantern-ios-profiler";
 
-// Resolves to <package root>/rust-profiler/bin, from either src/ or dist/src/
-const defaultBinaryPath = `${__dirname}/..${
-  __dirname.includes("dist") ? "/.." : ""
-}/rust-profiler/bin/${BINARY_NAME}`;
+// Resolves to <package root>/rust-profiler/bin, from either src/ or dist/src/. Checks the
+// actual parent directory name: a checkout path containing "dist" must not change the result.
+const isCompiled = path.basename(path.dirname(__dirname)) === "dist";
+const defaultBinaryPath = path.join(
+  __dirname,
+  "..",
+  ...(isCompiled ? [".."] : []),
+  "rust-profiler",
+  "bin",
+  BINARY_NAME
+);
 
 // Allow overriding the binary path with an environment variable, mirroring
 // LANTERN_BINARY_PATH on Android
@@ -42,12 +50,21 @@ interface BinaryApp {
   pid?: number;
 }
 
-/** `IOS_PROFILER_ERROR_<CODE>: message` → human message (first such line), else undefined. */
-const iosErrorMessage = (stderr: string) =>
-  stderr
-    .split("\n")
-    .find((line) => line.startsWith("IOS_PROFILER_ERROR_"))
-    ?.replace(/^IOS_PROFILER_ERROR_\w+:\s*/, "");
+const ERROR_MARKER = "IOS_PROFILER_ERROR_";
+/** Non-fatal notices (e.g. the lockdown fallback was taken); never a command's failure cause. */
+const WARN_MARKER = "IOS_PROFILER_WARN_";
+
+/**
+ * `IOS_PROFILER_ERROR_<CODE>: message` → human message of the LAST such line, else undefined.
+ * The last marker is the one that ended the command; earlier ones (and `IOS_PROFILER_WARN_*`
+ * notices, which are ignored here) are context that must not mask it.
+ */
+export const iosErrorMessage = (stderr: string): string | undefined => {
+  const errors = stderr.split("\n").filter((line) => line.startsWith(ERROR_MARKER));
+  const last = errors.at(-1);
+
+  return last?.replace(/^IOS_PROFILER_ERROR_\w+:\s*/, "");
+};
 
 /**
  * The binary reports failures as `IOS_PROFILER_ERROR_*` on stderr and exits non-zero, which
@@ -155,6 +172,26 @@ interface StatusLine {
 
 type ProfilerLine = MeasureLine | StatusLine;
 
+/**
+ * One stdout line → ProfilerLine, or undefined when it is not NDJSON with a string `type`
+ * (stray output, or a JSON value that is not one of the binary's line objects).
+ */
+export const parseProfilerLine = (rawLine: string): ProfilerLine | undefined => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawLine);
+  } catch {
+    return undefined;
+  }
+
+  const type = (parsed as { type?: unknown } | null)?.type;
+
+  return typeof type === "string" ? (parsed as ProfilerLine) : undefined;
+};
+
+/** Delay between the SIGINT asking the poller to tear down and the SIGKILL that forces it. */
+const STOP_KILL_TIMEOUT_MS = 3000;
+
 export class IOSProfiler implements Profiler {
   private polling: ChildProcess | undefined;
   private refreshRate: number | undefined;
@@ -168,12 +205,12 @@ export class IOSProfiler implements Profiler {
       `${POLLING_INTERVAL}`,
     ]);
     this.polling = child;
+    let stopRequested = false;
+    let killTimer: NodeJS.Timeout | undefined;
 
     createInterface({ input: child.stdout }).on("line", (rawLine) => {
-      let line: ProfilerLine;
-      try {
-        line = JSON.parse(rawLine);
-      } catch {
+      const line = parseProfilerLine(rawLine);
+      if (!line) {
         Logger.debug(`Unparseable profiler output: ${rawLine}`);
         return;
       }
@@ -189,18 +226,26 @@ export class IOSProfiler implements Profiler {
           options.onMeasure(measure);
           break;
         }
-        case "status":
+        case "status": {
           if (line.event === "started") {
             options.onStartMeasuring?.();
           }
-          Logger.debug(`iOS profiler: ${line.event}${line.detail ? ` (${line.detail})` : ""}`);
+          const message = `iOS profiler: ${line.event}${line.detail ? ` (${line.detail})` : ""}`;
+          if (line.event === "stalled") {
+            Logger.warn(message);
+          } else {
+            Logger.debug(message);
+          }
           break;
+        }
       }
     });
 
     createInterface({ input: child.stderr }).on("line", (line) => {
-      if (line.startsWith("IOS_PROFILER_ERROR_")) {
+      if (line.startsWith(ERROR_MARKER)) {
         Logger.error(line);
+      } else if (line.startsWith(WARN_MARKER)) {
+        Logger.warn(line);
       } else {
         Logger.debug(line);
       }
@@ -212,10 +257,36 @@ export class IOSProfiler implements Profiler {
       );
     });
 
+    child.on("close", (code, signal) => {
+      if (killTimer) clearTimeout(killTimer);
+      if (this.polling === child) this.polling = undefined;
+
+      const exit = signal ? `signal ${signal}` : `code ${code}`;
+      const reason = stopRequested
+        ? `stopped (${exit})`
+        : `${BINARY_NAME} exited unexpectedly (${exit})`;
+      if (!stopRequested) {
+        Logger.error(
+          `${reason}: no more measures will be collected. Check the IOS_PROFILER_ERROR_* lines above.`
+        );
+      }
+      options.onEnd?.(reason);
+    });
+
     return {
       stop: () => {
-        // SIGINT lets the binary tear down its instruments taps cleanly
+        if (stopRequested) return;
+        stopRequested = true;
+        // SIGINT lets the binary tear down its instruments taps cleanly; a poller stuck on a
+        // dead connection gets SIGKILLed so stop() never leaves a process behind.
         child.kill("SIGINT");
+        killTimer = setTimeout(() => {
+          if (child.exitCode === null && child.signalCode === null) {
+            Logger.warn(`${BINARY_NAME} did not exit after SIGINT, sending SIGKILL`);
+            child.kill("SIGKILL");
+          }
+        }, STOP_KILL_TIMEOUT_MS);
+        killTimer.unref();
         this.polling = undefined;
       },
     };
@@ -240,10 +311,18 @@ export class IOSProfiler implements Profiler {
   }
 
   async listApps(): Promise<AppInfo[]> {
-    const [apps, running] = await Promise.all([
-      runBinary<BinaryApp[]>(["apps"]),
-      runBinary<BinaryApp[]>(["running-apps"]).catch(() => [] as BinaryApp[]),
-    ]);
+    // Sequential on purpose: each subcommand opens its own instruments connection, and iOS 26
+    // closes concurrent dtservicehub connections.
+    const apps = await runBinary<BinaryApp[]>(["apps"]);
+    const running = await runBinary<BinaryApp[]>(["running-apps"]).catch((error: unknown) => {
+      Logger.warn(
+        `Could not list running apps, none will be flagged as running: ${
+          error instanceof Error ? error.message : error
+        }`
+      );
+
+      return [] as BinaryApp[];
+    });
     const runningIds = new Set(running.map((app) => app.bundleId));
 
     return apps

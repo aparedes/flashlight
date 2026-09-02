@@ -30,6 +30,7 @@
       },
       "dependencies": {
         "@lantern/e2e": "^0.11.4",
+        "@lantern/logger": "^0.3.3",
         "@lantern/measure": "^0.5.0",
         "@lantern/tools": "^0.2.4",
         "@lantern/web-reporter": "^0.11.3",
@@ -65,7 +66,6 @@
         "@vitejs/plugin-react": "^6.1.1",
         "ink-testing-library": "^4.0.0",
         "oxc-transform-react": "^0.147.0",
-        "react": "19.2.8",
         "react-dom": "19.2.8",
         "tailwindcss": "^4.3.3",
         "vite": "^8.2.2",
@@ -118,6 +118,7 @@
         "lantern-tools": "dist/bin.js",
       },
       "dependencies": {
+        "@lantern/logger": "^0.3.3",
         "@lantern/profiler": "^0.10.12",
         "@lantern/shell": "^0.2.1",
         "commander": "^15.0.0",
@@ -150,11 +151,7 @@
       "version": "0.2.1",
       "dependencies": {
         "@lantern/logger": "^0.3.3",
-        "adm-zip": "^0.5.18",
         "axios": "^1.20.0",
-      },
-      "devDependencies": {
-        "@types/adm-zip": "^0.5.7",
       },
     },
     "packages/core/types": {
@@ -197,7 +194,6 @@
       },
       "dependencies": {
         "@lantern/logger": "^0.3.3",
-        "@lantern/profiler": "^0.10.12",
         "@lantern/types": "^0.9.0",
         "commander": "^15.0.0",
       },
@@ -509,8 +505,6 @@
 
     "@testing-library/react": ["@testing-library/react@16.3.3", "", { "dependencies": { "@babel/runtime": "^7.12.5" }, "peerDependencies": { "@testing-library/dom": "^10.0.0", "@types/react": "^18.0.0 || ^19.0.0", "@types/react-dom": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-Uo193NgQbPMz6lrrhtRQQFcMC6Re/ELLFbbuVL30WDlZxlpZf9/lMHTAVxPRLw1q1iu9OJmR1c2BLiENRstdBg=="],
 
-    "@types/adm-zip": ["@types/adm-zip@0.5.8", "", { "dependencies": { "@types/node": "*" } }, "sha512-RVVH7QvZYbN+ihqZ4kX/dMiowf6o+Jk1fNwiSdx0NahBJLU787zkULhGhJM8mf/obmLGmgdMM0bXsQTmyfbR7Q=="],
-
     "@types/aria-query": ["@types/aria-query@5.0.4", "", {}, "sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw=="],
 
     "@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
@@ -576,8 +570,6 @@
     "@typescript/typescript-win32-x64": ["@typescript/typescript-win32-x64@7.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g=="],
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.1.1", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "oxc-transform-react": "^0.145.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler", "oxc-transform-react"] }, "sha512-yxLaQV9gkhS8ezJqCM6+ndU7mDY6gqAg75NQ+0IjwEI8IYOmQCgkRwHKVSfWXW076DsqMo0Dk+0FK1U+M5RgFw=="],
-
-    "adm-zip": ["adm-zip@0.5.18", "", {}, "sha512-ufJnssQGbxzLNS1Ho9bCtX4rQKCCvoVuDLHoJyc3F9dOGDB4BkWs2Ci0kv53lqocAEQ/Cbi+I2XCsNYGqVYqng=="],
 
     "agent-base": ["agent-base@6.0.2", "", { "dependencies": { "debug": "4" } }, "sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ=="],
 

@@ -1,25 +1,27 @@
+const DEFAULT_TIMEOUT = 10000;
+const DEFAULT_CHECK_INTERVAL = 50;
+
+/**
+ * Polls `evaluateResult` (sync or async) every `checkInterval` ms until it returns a truthy
+ * value, which is then returned. Rejects with `errorMessage` once `timeout` ms have elapsed.
+ */
 export const waitFor = async <T>(
-  evaluateResult: () => T | undefined | null,
+  evaluateResult: () => T | undefined | null | Promise<T | undefined | null>,
   {
-    timeout,
-    checkInterval,
+    timeout = DEFAULT_TIMEOUT,
+    checkInterval = DEFAULT_CHECK_INTERVAL,
     errorMessage,
-  }: { timeout: number; checkInterval: number; errorMessage?: string } = {
-    timeout: 10000,
-    checkInterval: 50,
-  }
+  }: { timeout?: number; checkInterval?: number; errorMessage?: string } = {}
 ): Promise<T> => {
-  if (timeout < 0) {
-    throw new Error(errorMessage ?? "Waited for condition which never happened");
+  let remainingTime = timeout;
+
+  while (remainingTime >= 0) {
+    const result = await evaluateResult();
+    if (result) return result;
+
+    await new Promise((resolve) => setTimeout(resolve, checkInterval));
+    remainingTime -= checkInterval;
   }
-  const result = evaluateResult();
-  if (result) return result;
 
-  await new Promise((resolve) => setTimeout(resolve, checkInterval));
-
-  return waitFor(evaluateResult, {
-    timeout: timeout - checkInterval,
-    checkInterval,
-    errorMessage,
-  });
+  throw new Error(errorMessage ?? "Waited for condition which never happened");
 };

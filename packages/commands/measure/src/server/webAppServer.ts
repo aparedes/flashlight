@@ -11,10 +11,35 @@ import type { SocketType } from "../socket/socketInterface";
  * express/socket.io bought nothing here.
  *
  * No CORS handling: the web app is served from this very origin, and WebSocket handshakes are
- * not preflighted.
+ * not preflighted — which is exactly why the upgrade checks the `Origin` header itself (see
+ * {@link isAllowedOrigin}): a WebSocket client drives the profiler on the connected device.
  */
 
+/** Loopback only: nothing on the network should reach the profiler controls. */
+const HOSTNAME = "127.0.0.1";
+
+/** Vite's `assets/*` files carry a content hash in their name, so they can be cached forever. */
+const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 const getPathToDist = () => process.env.LANTERN_WEBAPP_PATH || path.join(__dirname, "../../dist");
+
+/**
+ * Origins the served page can have. Browsers always send an `Origin` on a WebSocket handshake,
+ * so a page from any other site (cross-site WebSocket hijacking) is turned away. A missing
+ * header means a non-browser client — tests, curl — which the check cannot protect against
+ * anyway, so it is let through.
+ */
+export const isAllowedOrigin = (origin: string | null, port: number): boolean => {
+  if (origin === null) return true;
+
+  const allowedOrigins = [`http://localhost:${port}`, `http://${HOSTNAME}:${port}`];
+  if (process.env.DEVELOPMENT_MODE === "true") {
+    // The page comes from the Vite dev server (see `getWebAppUrl` / `vite.config.mts`).
+    allowedOrigins.push("http://localhost:1234");
+  }
+
+  return allowedOrigins.includes(origin);
+};
 
 /** `index.html` ships the placeholder port; rewrite it to the port we actually listen on. */
 const serveIndexHtml = async (port: number): Promise<Response> => {
@@ -22,7 +47,8 @@ const serveIndexHtml = async (port: number): Promise<Response> => {
     const html = await Bun.file(path.join(getPathToDist(), "index.html")).text();
 
     return new Response(html.replace("localhost:3000", `localhost:${port}`), {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+      // The port is baked into the page, so a stale copy would point at the wrong server.
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
     });
   } catch (error) {
     Logger.debug(`Could not read the web app index.html: ${error}`);
@@ -50,7 +76,14 @@ const serveStaticFile = async (pathname: string): Promise<Response> => {
   }
 
   const file = Bun.file(filePath);
-  return (await file.exists()) ? new Response(file) : notFound();
+  if (!(await file.exists())) return notFound();
+
+  return new Response(
+    file,
+    decodedPathname.startsWith("/assets/")
+      ? { headers: { "Cache-Control": IMMUTABLE_CACHE_CONTROL } }
+      : undefined
+  );
 };
 
 interface WebSocketData {
@@ -71,11 +104,16 @@ export const createWebAppServer = ({
   let currentClient: Bun.ServerWebSocket<WebSocketData> | null = null;
 
   return Bun.serve<WebSocketData>({
+    hostname: HOSTNAME,
     port,
     fetch: (request, server) => {
       const { pathname } = new URL(request.url);
 
       if (pathname === WEBSOCKET_PATH) {
+        if (!isAllowedOrigin(request.headers.get("origin"), server.port ?? port)) {
+          return new Response("Forbidden origin", { status: 403 });
+        }
+
         return server.upgrade(request, { data: { socket: null } })
           ? undefined
           : new Response("Expected a WebSocket upgrade request", { status: 426 });
