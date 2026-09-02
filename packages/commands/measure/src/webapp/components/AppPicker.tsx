@@ -1,9 +1,16 @@
 import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import { styled, alpha } from "@mui/material/styles";
 import InputBase from "@mui/material/InputBase";
 import Autocomplete from "@mui/material/Autocomplete";
 import { AppInfo, Platform } from "@lantern/types";
 import { PlatformIcon } from "./PlatformBadge";
+
+/**
+ * Every bundle id change is sent to the CLI, which answers with the whole measure state. Emitting
+ * on each keystroke would broadcast that state — results included — as fast as the user types.
+ */
+const BUNDLE_ID_EMIT_DEBOUNCE_MS = 150;
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -38,6 +45,51 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
+/**
+ * Keeps the typed text local and emits it debounced. The `value` prop is adopted when it changes
+ * for another reason than our own emits (auto-detect, a reset…): the CLI echoes every emitted id
+ * back through the state, and an echo can lag behind what has been typed — and emitted — since,
+ * so every emit not echoed back yet is remembered and its echo ignored, whichever order they
+ * come back in.
+ */
+const useDebouncedBundleId = (value: string, onChange: (bundleId: string) => void) => {
+  const [inputValue, setInputValue] = useState(value);
+  const outstandingEmitsRef = useRef(new Set<string>());
+  const pendingEmitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelPendingEmit = () => {
+    if (pendingEmitRef.current !== null) {
+      clearTimeout(pendingEmitRef.current);
+      pendingEmitRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    // The echo of one of our own emits: the input is already at or past it
+    if (outstandingEmitsRef.current.delete(value)) return;
+
+    // Changed for another reason: the CLI state has moved past whatever we emitted
+    outstandingEmitsRef.current.clear();
+    cancelPendingEmit();
+    setInputValue(value);
+  }, [value]);
+
+  useEffect(() => cancelPendingEmit, []);
+
+  const handleInputChange = (newValue: string) => {
+    setInputValue(newValue);
+
+    cancelPendingEmit();
+    pendingEmitRef.current = setTimeout(() => {
+      pendingEmitRef.current = null;
+      outstandingEmitsRef.current.add(newValue);
+      onChange(newValue);
+    }, BUNDLE_ID_EMIT_DEBOUNCE_MS);
+  };
+
+  return { inputValue, handleInputChange };
+};
+
 export const AppPicker = ({
   apps,
   platform,
@@ -50,38 +102,42 @@ export const AppPicker = ({
   value: string;
   onChange: (bundleId: string) => void;
   onOpen: () => void;
-}) => (
-  <Search>
-    <SearchIconWrapper>
-      <PlatformIcon platform={platform} />
-    </SearchIconWrapper>
-    <Autocomplete
-      // Explicit id: MUI falls back to React's `useId`, whose counter depends on how many
-      // components rendered before it in the process — which makes the DOM snapshot test
-      // order-dependent.
-      id="bundle-id-picker"
-      freeSolo
-      options={apps}
-      getOptionLabel={(option) => (typeof option === "string" ? option : option.bundleId)}
-      inputValue={value}
-      onInputChange={(_, newValue) => onChange(newValue)}
-      onOpen={onOpen}
-      renderOption={(props, option) => (
-        <li {...props} key={option.bundleId}>
-          <span>{option.name}</span>
-          <span className="text-neutral-500 ml-2">{option.bundleId}</span>
-          {option.isRunning ? <span className="ml-2 text-success">● running</span> : null}
-        </li>
-      )}
-      renderInput={(params) => (
-        <StyledInputBase
-          ref={params.slotProps.input.ref}
-          className={params.slotProps.input.className}
-          endAdornment={params.slotProps.input.endAdornment}
-          inputProps={params.slotProps.htmlInput}
-          placeholder="Bundle id — type or pick an installed app"
-        />
-      )}
-    />
-  </Search>
-);
+}) => {
+  const { inputValue, handleInputChange } = useDebouncedBundleId(value, onChange);
+
+  return (
+    <Search>
+      <SearchIconWrapper>
+        <PlatformIcon platform={platform} />
+      </SearchIconWrapper>
+      <Autocomplete
+        // Explicit id: MUI falls back to React's `useId`, whose counter depends on how many
+        // components rendered before it in the process — which makes the DOM snapshot test
+        // order-dependent.
+        id="bundle-id-picker"
+        freeSolo
+        options={apps}
+        getOptionLabel={(option) => (typeof option === "string" ? option : option.bundleId)}
+        inputValue={inputValue}
+        onInputChange={(_, newValue) => handleInputChange(newValue)}
+        onOpen={onOpen}
+        renderOption={(props, option) => (
+          <li {...props} key={option.bundleId}>
+            <span>{option.name}</span>
+            <span className="text-neutral-500 ml-2">{option.bundleId}</span>
+            {option.isRunning ? <span className="ml-2 text-success">● running</span> : null}
+          </li>
+        )}
+        renderInput={(params) => (
+          <StyledInputBase
+            ref={params.slotProps.input.ref}
+            className={params.slotProps.input.className}
+            endAdornment={params.slotProps.input.endAdornment}
+            inputProps={params.slotProps.htmlInput}
+            placeholder="Bundle id — type or pick an installed app"
+          />
+        )}
+      />
+    </Search>
+  );
+};

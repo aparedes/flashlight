@@ -54,10 +54,18 @@ fn processes_from_message(msg: &Message) -> Option<&Dictionary> {
 const STALL_AFTER_TIMEOUTS: u32 = 3;
 const FAIL_AFTER_TIMEOUTS: u32 = 10;
 
-/// An FPS sample older than this many intervals is dropped rather than
-/// reported as if it were fresh (graphics pushes stop while the app is idle
-/// or backgrounded).
-const FPS_MAX_AGE_INTERVALS: u32 = 3;
+/// The graphics tap pushes on the device's own cadence (about one sample per
+/// second, see `start_sampling(0.0)`), regardless of `interval_ms`.
+const GRAPHICS_PERIOD_MS: u32 = 1000;
+
+/// An FPS sample older than this is dropped rather than reported as if it
+/// were fresh (graphics pushes stop while the app is idle or backgrounded).
+/// It tolerates one late graphics push at any `interval_ms`, so a short
+/// polling interval does not drop FPS from most measures just because the
+/// graphics tap is slower than sysmontap.
+fn fps_max_age(interval_ms: u32) -> Duration {
+    Duration::from_millis(u64::from((interval_ms * 3).max(GRAPHICS_PERIOD_MS * 2)))
+}
 
 #[derive(Debug, PartialEq, Eq)]
 enum TimeoutVerdict {
@@ -261,7 +269,7 @@ pub async fn poll(
     let debug_raw = std::env::var("LANTERN_IOS_DEBUG").is_ok();
     let mut first_sample_dumped = false;
     let mut last_fps: Option<(f64, Instant)> = None;
-    let fps_max_age = Duration::from_millis(u64::from(interval_ms * FPS_MAX_AGE_INTERVALS));
+    let fps_max_age = fps_max_age(interval_ms);
     let mut graphics_alive = channels.graphics;
     let mut target_seen = false;
     let read_timeout = Duration::from_millis(u64::from(interval_ms) * 4 + 2000);
@@ -485,6 +493,16 @@ mod tests {
             timeout_verdict(FAIL_AFTER_TIMEOUTS + 5),
             TimeoutVerdict::Fail
         );
+    }
+
+    #[test]
+    fn fps_max_age_covers_the_graphics_cadence_at_short_intervals() {
+        // The graphics tap is not paced by interval_ms: at the minimum interval the window
+        // must still span a couple of its ~1 s pushes
+        assert_eq!(fps_max_age(100), Duration::from_millis(2000));
+        assert_eq!(fps_max_age(500), Duration::from_millis(2000));
+        // ...while long intervals keep a few intervals worth of tolerance
+        assert_eq!(fps_max_age(1000), Duration::from_millis(3000));
     }
 
     #[test]

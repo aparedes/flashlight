@@ -81,7 +81,10 @@ One JSON object per stdout line (NDJSON):
 - `measure` matches the `Measure` type in `@lantern/types`: `time` is
   epoch ms, `cpu.perName.Total` is percent of one core (can exceed 100 on
   multiple cores), `ram` is MB (phys footprint), `fps` is CoreAnimation FPS
-  and is omitted until the first graphics sample arrives.
+  and is omitted until the first graphics sample arrives, and again whenever
+  the last graphics sample is older than `max(3 × interval, 2 s)` — graphics
+  pushes come about once a second on the device's own cadence and stop while
+  the app is idle or backgrounded.
 - CPU comes from the DVT `sysmontap` service (whole-process only — per-thread
   CPU is not available from sysmontap), FPS from the DVT `graphics.opengl`
   service. Both are channels multiplexed over one instruments connection

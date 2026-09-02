@@ -39,11 +39,12 @@ export class Report {
   /** The raw result, including failed iterations. */
   private result: TestCaseResult;
   /**
-   * Only successful iterations feed the averages, the stats and the iteration selector.
-   * Legacy result files carry no status, so an iteration is dropped only when it is
-   * explicitly marked as failed.
+   * The iterations the averages, the stats and the iteration selector are computed over: the
+   * ones not explicitly marked as failed (legacy result files carry no status). When every
+   * iteration failed (retries exhausted) they are all kept instead, so that the failed run's
+   * measures and videos can still be inspected next to the other reports.
    */
-  private successfulIterations: TestCaseIterationResult[];
+  private reportedIterations: TestCaseIterationResult[];
   private iterationSummaries: IterationSummary[];
   private averagedResult: AveragedTestCaseResult;
   private averageMetrics: ReportMetrics;
@@ -52,13 +53,15 @@ export class Report {
 
   constructor(result: TestCaseResult) {
     this.result = result;
-    this.successfulIterations = result.iterations.filter(
+    const successfulIterations = result.iterations.filter(
       (iteration) => iteration.status !== "FAILURE"
     );
-    this.iterationSummaries = this.successfulIterations.map(summarizeIteration);
+    this.reportedIterations =
+      successfulIterations.length > 0 ? successfulIterations : result.iterations;
+    this.iterationSummaries = this.reportedIterations.map(summarizeIteration);
     this.averagedResult = averageTestCaseResult({
       ...result,
-      iterations: this.successfulIterations,
+      iterations: this.reportedIterations,
     });
     this.averageMetrics = Report.getAverageMetrics(this.averagedResult);
   }
@@ -97,24 +100,24 @@ export class Report {
   }
 
   public getIterationCount() {
-    return this.successfulIterations.length;
+    return this.reportedIterations.length;
   }
 
   public hasMeasures() {
-    return this.successfulIterations[0]?.measures.length > 0;
+    return this.reportedIterations[0]?.measures.length > 0;
   }
 
   public hasVideos() {
-    return !!this.successfulIterations[0]?.videoInfos;
+    return !!this.reportedIterations[0]?.videoInfos;
   }
 
-  /** A report over the single successful iteration at `iterationIndex`, or over none if out of bounds. */
+  /** A report over the single reported iteration at `iterationIndex`, or over none if out of bounds. */
   public selectIteration(iterationIndex: number): Report {
-    const isInBounds = iterationIndex >= 0 && iterationIndex < this.successfulIterations.length;
+    const isInBounds = iterationIndex >= 0 && iterationIndex < this.reportedIterations.length;
 
     return new Report({
       ...this.result,
-      iterations: isInBounds ? [this.successfulIterations[iterationIndex]] : [],
+      iterations: isInBounds ? [this.reportedIterations[iterationIndex]] : [],
     });
   }
 

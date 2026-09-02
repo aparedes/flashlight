@@ -77,13 +77,50 @@ describe("Report", () => {
     expect(report.getAverageMetrics().cpu).toBe(85);
   });
 
-  it("reports no measures when every iteration failed", () => {
-    const report = new Report(buildResult([FAILED_ITERATION], "FAILURE"));
+  it("falls back to the failed iterations when every iteration failed", () => {
+    const otherFailedIteration = iteration(
+      [measure({ UI: 200, JS: 200 }, { fps: 10, ram: 7000 })],
+      30000,
+      "FAILURE"
+    );
+    const report = new Report(buildResult([FAILED_ITERATION, otherFailedIteration], "FAILURE"));
 
-    expect(report.getIterationCount()).toBe(0);
-    expect(report.hasMeasures()).toBe(false);
-    expect(report.score).toBe(0);
-    expect(report.getAverageMetrics().averageCpuUsagePerProcess).toEqual([]);
+    // The failed run (retries exhausted) stays browsable next to the healthy reports
+    expect(report.status).toBe("FAILURE");
+    expect(report.getIterationCount()).toBe(2);
+    expect(report.hasMeasures()).toBe(true);
+    expect(report.getAveragedResult().iterations).toEqual([FAILED_ITERATION, otherFailedIteration]);
+    expect(report.getAverageMetrics()).toMatchObject({
+      runtime: 40000,
+      cpu: 600,
+      fps: 5,
+      ram: 8000,
+    });
+    expect(report.selectIteration(1).getAverageMetrics().runtime).toBe(30000);
+  });
+
+  it("reports no measures and a 0 runtime without any iteration", () => {
+    for (const report of [
+      new Report(buildResult([], "FAILURE")),
+      new Report(buildResult([SUCCESSFUL_ITERATION_1])).selectIteration(1),
+    ]) {
+      expect(report.getIterationCount()).toBe(0);
+      expect(report.hasMeasures()).toBe(false);
+      expect(report.score).toBe(0);
+      expect(report.getAverageMetrics()).toEqual({
+        runtime: 0,
+        fps: undefined,
+        cpu: 0,
+        totalHighCpuTime: 0,
+        ram: undefined,
+        averageCpuUsagePerProcess: [],
+      });
+      expect(report.getStats().runtime).toEqual({
+        minMaxRange: [0, 0],
+        deviationRange: [0, 0],
+        variationCoefficient: 0,
+      });
+    }
   });
 
   it("keeps a 0 FPS / 0 RAM average instead of treating it as missing", () => {

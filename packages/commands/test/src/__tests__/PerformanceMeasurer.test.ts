@@ -1,6 +1,7 @@
 import "../utils/test/mockChildProcess";
 import { describe, it, expect, spyOn } from "bun:test";
 import { LogLevel, Logger } from "@lantern/logger";
+import { waitFor } from "@lantern/profiler";
 import { PerformanceMeasurer } from "../PerformanceMeasurer";
 import { emitMeasure, perfProfilerMock } from "../utils/test/mockEmitMeasures";
 
@@ -17,7 +18,10 @@ describe("PerformanceMeasurer", () => {
       },
     });
     await measurer.start();
+    // The profiler reports it has started measuring once it took its first (baseline) sample
+    await waitFor(() => measurer.polling);
     emitMeasure(0);
+    await measurer.waitUntilMeasuring();
     emitMeasure(1);
     perfProfilerMock.stderr?.emit("data", "CPP_ERROR_CANNOT_OPEN_FILE /proc/1234/tasks/578/stat");
     emitMeasure(2);

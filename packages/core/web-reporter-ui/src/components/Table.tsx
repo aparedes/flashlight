@@ -39,20 +39,6 @@ function getComparator<Key extends string>(
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-// This method is created for cross-browser compatibility, if you don't
-// need to support IE11, you can use Array.prototype.sort() directly
-function stableSort<T>(array: readonly T[], comparator: (a: T, b: T) => number) {
-  const stabilizedThis = array.map((el, index) => [el, index] as [T, number]);
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) {
-      return order;
-    }
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
-}
-
 export interface HeadCell {
   disablePadding: boolean;
   id: keyof Data;
@@ -177,7 +163,8 @@ export default function EnhancedTable({
           rowCount={rows.length}
         />
         <TableBody>
-          {stableSort(rows, getComparator(order, orderBy)).map((row, index) => {
+          {/* `Array.prototype.sort` is stable; the copy keeps the `rows` prop untouched. */}
+          {[...rows].sort(getComparator(order, orderBy)).map((row, index) => {
             const isItemSelected = isSelected(row.name);
             const labelId = `enhanced-table-checkbox-${index}`;
 

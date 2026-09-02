@@ -16,9 +16,7 @@ const range = (n: number) =>
  * Mean of the defined samples. Undefined samples are skipped rather than poisoning the whole
  * average; the result is undefined only when no sample is defined.
  */
-export function average(arr: number[]): number;
-export function average(arr: (number | undefined)[]): number | undefined;
-export function average(arr: (number | undefined)[] | number[]): number | undefined {
+export const average = (arr: (number | undefined)[]): number | undefined => {
   let sum = 0;
   let count = 0;
 
@@ -29,7 +27,7 @@ export function average(arr: (number | undefined)[] | number[]): number | undefi
   }
 
   return count === 0 ? undefined : sum / count;
-}
+};
 
 const averageMaps = (maps: { [key: string]: number }[]): { [key: string]: number } => {
   const totalByThread = maps.reduce((aggr, map) => {
@@ -65,7 +63,8 @@ export const averageIterations = (results: TestCaseIterationResult[]): TestCaseI
     measures: range(minLength).map((i) =>
       averageMeasures(results.map((result) => result.measures[i]))
     ),
-    time: average(results.map((result) => result.time)),
+    // No iteration at all (e.g. an out of bounds selection): report a 0 runtime rather than NaN
+    time: average(results.map((result) => result.time)) ?? 0,
     status: "SUCCESS",
   };
 };

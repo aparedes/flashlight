@@ -1,8 +1,18 @@
 import os from "os";
 import fs from "fs";
 import * as perfHooks from "perf_hooks";
-import { describe, it, expect, jest, spyOn, mock, afterAll, setDefaultTimeout } from "bun:test";
-import { measurePerformance } from "..";
+import {
+  describe,
+  it,
+  expect,
+  jest,
+  spyOn,
+  mock,
+  afterAll,
+  afterEach,
+  setDefaultTimeout,
+} from "bun:test";
+import { measurePerformance, PerformanceMeasurer } from "..";
 import { PerformancePollingMock } from "../utils/test/PerformancePollingMock";
 import { Logger, LogLevel } from "@lantern/logger";
 import { profiler } from "@lantern/profiler";
@@ -10,16 +20,12 @@ import { profiler } from "@lantern/profiler";
 const mockPerformancePolling = new PerformancePollingMock();
 
 spyOn(profiler, "installProfilerOnDevice").mockImplementation(() => undefined);
-spyOn(profiler, "pollPerformanceMeasures").mockImplementation(
-  (pid, { onMeasure, onStartMeasuring }) => {
-    mockPerformancePolling.setCallback(onMeasure);
-    onStartMeasuring?.();
-    return { stop: () => undefined };
-  }
+spyOn(profiler, "pollPerformanceMeasures").mockImplementation((pid, options) =>
+  mockPerformancePolling.start(options)
 );
 
 Logger.setLogLevel(LogLevel.SILENT);
-setDefaultTimeout(10000);
+setDefaultTimeout(20000);
 
 // Mock test time to be always 1000ms
 let isStart = false;
@@ -28,6 +34,7 @@ spyOn(perfHooks.performance, "now").mockImplementation(() => {
   return isStart ? 0 : 1000;
 });
 
+afterEach(() => mockPerformancePolling.reset());
 afterAll(() => mock.restore());
 
 const runTest = jest.fn();
@@ -62,19 +69,49 @@ describe("measurePerformance", () => {
       {
         "iterations": [
           {
-            "measures": [],
+            "measures": [
+              {
+                "cpu": {
+                  "perCore": {},
+                  "perName": {},
+                },
+                "fps": 60,
+                "ram": 0,
+                "time": 0,
+              },
+            ],
             "startTime": 0,
             "status": "SUCCESS",
             "time": 1000,
           },
           {
-            "measures": [],
+            "measures": [
+              {
+                "cpu": {
+                  "perCore": {},
+                  "perName": {},
+                },
+                "fps": 60,
+                "ram": 0,
+                "time": 0,
+              },
+            ],
             "startTime": 0,
             "status": "SUCCESS",
             "time": 1000,
           },
           {
-            "measures": [],
+            "measures": [
+              {
+                "cpu": {
+                  "perCore": {},
+                  "perName": {},
+                },
+                "fps": 60,
+                "ram": 0,
+                "time": 0,
+              },
+            ],
             "startTime": 0,
             "status": "SUCCESS",
             "time": 1000,
@@ -85,6 +122,28 @@ describe("measurePerformance", () => {
         "status": "SUCCESS",
       }
     `);
+  });
+
+  it("runs the test right away, the profiler starting to measure once the test launched the app", async () => {
+    // On Android the profiler only samples once the app runs, and `lantern test` force-stops the
+    // app before each iteration: the test command is what launches it
+    mockPerformancePolling.startsMeasuring = false;
+    runTest.mockImplementationOnce(async () => {
+      expect(mockPerformancePolling.isStarted()).toBe(false);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      mockPerformancePolling.reportStarted();
+    });
+
+    const { measures } = await measurePerformance(
+      "com.example",
+      { run: runTest },
+      { iterationCount: 1 }
+    );
+
+    expect(runTest).toHaveBeenCalled();
+    expect(measures).toHaveLength(1);
+    expect(measures[0].status).toBe("SUCCESS");
+    expect(measures[0].measures).toHaveLength(1);
   });
 
   it("waits for a certain duration", async () => {
@@ -147,5 +206,90 @@ describe("measurePerformance", () => {
         }
       )
     ).rejects.toThrowError("No measure returned");
+  });
+});
+
+describe("PerformanceMeasurer", () => {
+  const neverEndingTask = () => new Promise<void>(() => {});
+
+  it("rejects waitUntilMeasuring() when the profiler never starts measuring", async () => {
+    mockPerformancePolling.startsMeasuring = false;
+    const measurer = new PerformanceMeasurer("com.example", {
+      recordOptions: { record: false },
+      startTimeout: 100,
+    });
+
+    await measurer.start();
+
+    await expect(measurer.waitUntilMeasuring()).rejects.toThrowError(
+      'The profiler did not start measuring within 100ms, is "com.example" running on the device?'
+    );
+  });
+
+  it("resolves a pending waitUntilMeasuring() when force stopped", async () => {
+    mockPerformancePolling.startsMeasuring = false;
+    const measurer = new PerformanceMeasurer("com.example", {
+      recordOptions: { record: false },
+      startTimeout: 100,
+    });
+
+    await measurer.start();
+    const measuring = measurer.waitUntilMeasuring();
+    measurer.forceStop();
+
+    await expect(measuring).resolves.toBeUndefined();
+  });
+
+  it("fails runWhileMeasuring() while the task still runs when the profiler never starts", async () => {
+    mockPerformancePolling.startsMeasuring = false;
+    const measurer = new PerformanceMeasurer("com.example", {
+      recordOptions: { record: false },
+      startTimeout: 100,
+    });
+    await measurer.start();
+
+    const task = jest.fn(neverEndingTask);
+    await expect(measurer.runWhileMeasuring(task)).rejects.toThrowError(
+      "The profiler did not start measuring within 100ms"
+    );
+    expect(task).toHaveBeenCalled();
+  });
+
+  it("fails runWhileMeasuring() as soon as the profiler exits", async () => {
+    mockPerformancePolling.startsMeasuring = false;
+    const measurer = new PerformanceMeasurer("com.example", {
+      recordOptions: { record: false },
+    });
+    await measurer.start();
+
+    const running = measurer.runWhileMeasuring(neverEndingTask);
+    mockPerformancePolling.end("lantern-android-profiler exited unexpectedly (code 1)");
+
+    await expect(running).rejects.toThrowError(
+      "The profiler stopped before it started measuring: lantern-android-profiler exited unexpectedly (code 1)"
+    );
+  });
+
+  it("runWhileMeasuring() returns what the task returns once the profiler measures", async () => {
+    const measurer = new PerformanceMeasurer("com.example", {
+      recordOptions: { record: false },
+    });
+    await measurer.start();
+
+    await expect(measurer.runWhileMeasuring(() => "done")).resolves.toBe("done");
+    await expect(measurer.waitUntilMeasuring()).resolves.toBeUndefined();
+  });
+
+  it("rejects stop() when no measures were received", async () => {
+    mockPerformancePolling.emitsMeasureOnStart = false;
+    const measurer = new PerformanceMeasurer("com.example", {
+      recordOptions: { record: false },
+    });
+
+    await measurer.start();
+
+    await expect(measurer.stop()).rejects.toThrowError(
+      'No measures were received from the profiler for "com.example"'
+    );
   });
 });

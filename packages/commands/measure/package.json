@@ -28,13 +28,13 @@
     "@vitejs/plugin-react": "^6.1.1",
     "ink-testing-library": "^4.0.0",
     "oxc-transform-react": "^0.147.0",
-    "react": "19.2.8",
     "react-dom": "19.2.8",
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.2"
   },
   "scripts": {
     "build": "vite build",
-    "start": "vite"
+    "start": "vite",
+    "typecheck": "tsc -p tsconfig.webapp.json"
   }
 }

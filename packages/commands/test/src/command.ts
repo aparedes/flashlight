@@ -2,6 +2,12 @@ import { Command, Option } from "commander";
 import type { TestCase } from "./measurePerformance";
 import { executeAsync } from "./executeAsync";
 import { applyLogLevelOption, logLevelOption } from "./commands/logLevelOption";
+import {
+  parseBitRate,
+  parseDuration,
+  parseNonNegativeInteger,
+  parsePositiveInteger,
+} from "./commands/optionParsers";
 import { PerformanceTester } from "./PerformanceTester";
 import { Logger } from "@lantern/logger";
 import { PlatformResolutionError, profiler, resolvePlatform, setPlatform } from "@lantern/profiler";
@@ -31,7 +37,7 @@ lantern test --bundleId com.example.app --testCommand "maestro test flow.yml"
         "Amount of iterations to be run. Results will be averaged."
       )
         .default(10)
-        .argParser((arg) => parseInt(arg, 10))
+        .argParser(parsePositiveInteger)
     )
     .addOption(
       new Option(
@@ -39,13 +45,13 @@ lantern test --bundleId com.example.app --testCommand "maestro test flow.yml"
         "Maximum number of retries allowed over all iterations."
       )
         .default(3)
-        .argParser((arg) => parseInt(arg, 10))
+        .argParser(parseNonNegativeInteger)
     )
     .addOption(
       new Option(
         "--duration <duration>",
         "Duration (in ms) is optional, but helps in getting consistent measures. Measures will be taken for this duration, regardless of test duration"
-      ).argParser((arg) => parseInt(arg, 10))
+      ).argParser(parseDuration)
     )
     .option(
       "--beforeEachCommand <beforeEachCommand>",
@@ -62,9 +68,11 @@ lantern test --bundleId com.example.app --testCommand "maestro test flow.yml"
       "--record",
       "Allows you to record a video of the test. This is useful for debugging purposes."
     )
-    .option(
-      "--recordBitRate <recordBitRate>",
-      "Set the video bit rate, in bits per second.  Value may be specified as bits or megabits, e.g. '4000000' is equivalent to '4M'."
+    .addOption(
+      new Option(
+        "--recordBitRate <recordBitRate>",
+        "Set the video bit rate, in bits per second.  Value may be specified as bits or megabits, e.g. '4000000' is equivalent to '4M'."
+      ).argParser(parseBitRate)
     )
     .option(
       "--recordSize <recordSize>",
@@ -123,8 +131,10 @@ const runTest = async ({
   skipRestart?: boolean;
   platform?: string;
 }) => {
+  let resolvedPlatform: ReturnType<typeof resolvePlatform>;
   try {
-    setPlatform(resolvePlatform(platform));
+    resolvedPlatform = resolvePlatform(platform);
+    setPlatform(resolvedPlatform);
   } catch (error) {
     if (error instanceof PlatformResolutionError) {
       Logger.error(error.message);
@@ -134,6 +144,12 @@ const runTest = async ({
   }
 
   applyLogLevelOption(logLevel);
+
+  if (record && !profiler.getScreenRecorder("lantern-record-probe.mp4")) {
+    Logger.warn(
+      `--record was passed but screen recording is not supported on ${resolvedPlatform}, no video will be recorded`
+    );
+  }
   if (beforeAllCommand) await executeAsync(beforeAllCommand);
 
   const testCase: TestCase = {
@@ -171,7 +187,16 @@ const runTest = async ({
     await performanceTester.iterate();
     performanceTester.writeResults();
   } catch (error) {
-    performanceTester.writeResults();
+    // Best effort: the report is a degraded view, its failure must not hide the test failure
+    try {
+      performanceTester.writeResults();
+    } catch (writeError) {
+      Logger.error(
+        `Could not write the results file: ${
+          writeError instanceof Error ? writeError.message : "unknown error"
+        }`
+      );
+    }
 
     if (error instanceof Error) {
       Logger.error(`Lantern test FAILED ❌: ${error.message}

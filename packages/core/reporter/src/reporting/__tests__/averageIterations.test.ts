@@ -153,6 +153,6 @@ describe("averageIterations", () => {
   it("returns no measures for no iterations", () => {
     const averaged = averageIterations([]);
     expect(averaged.measures).toEqual([]);
-    expect(averaged.time).toBeUndefined();
+    expect(averaged.time).toBe(0);
   });
 });

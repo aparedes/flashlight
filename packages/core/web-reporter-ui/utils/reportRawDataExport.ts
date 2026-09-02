@@ -1,5 +1,5 @@
 import { saveAs } from "file-saver";
-import JSZip = require("jszip");
+import JSZip from "jszip";
 import { TestCaseResult } from "@lantern/types";
 
 const DEFAULT_EXPORT_EXTENSION = ".json";

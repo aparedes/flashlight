@@ -5,6 +5,7 @@
     "outDir": "./dist"
   },
   "references": [
+    { "path": "../../core/logger" },
     { "path": "../test" },
     { "path": "../measure" },
     { "path": "../tools" },

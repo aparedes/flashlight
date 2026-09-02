@@ -15,61 +15,83 @@ export const LogLevel = {
   INFO: 3,
   DEBUG: 4,
   TRACE: 5,
-};
-
-let logLevel = LogLevel.INFO;
-
-const log = (message: string) => {
-  const timestamp = DateTime.now().toLocaleString(DateTime.TIME_24_WITH_SECONDS);
-  const timestampLog = timestampColor(`[${timestamp}]`);
-  console.log(`${timestampLog} ${message}`);
-};
+} as const;
 
 type ValueOf<T> = T[keyof T];
 
+export type LogLevelValue = ValueOf<typeof LogLevel>;
+
+let logLevel: number = LogLevel.INFO;
+
+const formatLine = (message: string) => {
+  const timestamp = DateTime.now().toLocaleString(DateTime.TIME_24_WITH_SECONDS);
+  const timestampLog = timestampColor(`[${timestamp}]`);
+  return `${timestampLog} ${message}`;
+};
+
+const log = (message: string) => {
+  console.log(formatLine(message));
+};
+
+/** Warnings and errors go to stderr so that a piped stdout (JSON results, reports…) stays clean. */
+const logError = (message: string) => {
+  console.error(formatLine(message));
+};
+
+/**
+ * A message, or a thunk producing it. Pass a thunk when building the message is costly (e.g. a
+ * `JSON.stringify` of a payload): it is only invoked when the level is enabled.
+ */
+type LogMessage = string | (() => string);
+
+const resolveMessage = (message: LogMessage) =>
+  typeof message === "function" ? message() : message;
+
 export const Logger = {
-  setLogLevel: (level: ValueOf<typeof LogLevel>) => {
+  setLogLevel: (level: LogLevelValue) => {
     logLevel = level;
   },
-  trace: (message: string) => {
+  /** Whether a message logged at `level` would currently be printed. */
+  isEnabled: (level: LogLevelValue): boolean => logLevel >= level,
+  trace: (message: LogMessage) => {
     if (logLevel < LogLevel.TRACE) return;
-    log(message);
+    log(resolveMessage(message));
   },
-  debug: (message: string) => {
+  debug: (message: LogMessage) => {
     if (logLevel < LogLevel.DEBUG) return;
 
     const time = performance.now();
-    log(`🚧  ${Math.floor(time)}: ${message}`);
+    log(`🚧  ${Math.floor(time)}: ${resolveMessage(message)}`);
   },
-  info: (message: string) => {
+  info: (message: LogMessage) => {
     if (logLevel < LogLevel.INFO) return;
 
-    log(info(`ℹ️  ${message}`));
+    log(info(`ℹ️  ${resolveMessage(message)}`));
   },
-  success: (message: string) => {
+  success: (message: LogMessage) => {
     if (logLevel < LogLevel.SUCCESS) return;
 
-    log(success(`✅  ${message}`));
+    log(success(`✅  ${resolveMessage(message)}`));
   },
-  warn: (message: string) => {
+  warn: (message: LogMessage) => {
     if (logLevel < LogLevel.WARN) return;
 
-    log(warn(`⚠️  ${message}`));
+    logError(warn(`⚠️  ${resolveMessage(message)}`));
   },
-  error: (message: string) => {
+  error: (message: LogMessage) => {
     if (logLevel < LogLevel.ERROR) return;
 
-    log(error(`🚨  ${message}`));
+    logError(error(`🚨  ${resolveMessage(message)}`));
   },
 };
 
-export const printExampleMessages = () => {
-  Logger.setLogLevel(Infinity);
-  Object.keys(Logger).forEach((key: string) => {
-    if (key === "setLogLevel") return;
+const NON_MESSAGE_METHODS: ReadonlySet<keyof typeof Logger> = new Set(["setLogLevel", "isEnabled"]);
 
-    (Logger[key as keyof typeof Logger] as typeof Logger.debug)(
-      `This is an awesome ${key} message`
-    );
+export const printExampleMessages = () => {
+  Logger.setLogLevel(LogLevel.TRACE);
+  (Object.keys(Logger) as (keyof typeof Logger)[]).forEach((key) => {
+    if (NON_MESSAGE_METHODS.has(key)) return;
+
+    (Logger[key] as typeof Logger.debug)(`This is an awesome ${key} message`);
   });
 };

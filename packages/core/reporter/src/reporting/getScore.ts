@@ -31,7 +31,7 @@ const getTimePercentageThreadlocked = (result: AveragedTestCaseResult) => {
       ? iterationsWithMeasures.map((iteration) => getThreadLockedRatio(iteration.measures))
       : [getThreadLockedRatio(result.average.measures)];
 
-  return Math.min(Math.max(0, average(ratios)), 1);
+  return Math.min(Math.max(0, average(ratios) ?? 0), 1);
 };
 
 export const getScore = (result: AveragedTestCaseResult) => {
@@ -49,5 +49,8 @@ export const getScore = (result: AveragedTestCaseResult) => {
 
   const timePercentageThreadlocked = getTimePercentageThreadlocked(result);
 
-  return roundToDecimal(clampToPercentage(average(scores) * (1 - timePercentageThreadlocked)), 0);
+  return roundToDecimal(
+    clampToPercentage((average(scores) ?? 0) * (1 - timePercentageThreadlocked)),
+    0
+  );
 };

@@ -82,12 +82,31 @@ export class AndroidProfiler extends UnixProfiler {
     // atrace dumps its buffer on stdout when it stops, drain it so it never blocks on a full pipe
     aTraceProcess.stdout?.on("data", () => {});
 
-    aTraceProcess.on("close", () => {
-      // Still the current process: it was not stopped by us (see ATRACE_COMMAND), so restart it
+    aTraceProcess.on("close", (code) => {
+      // Stopped by us (`stopATrace` clears the reference first): nothing to restart
       if (this.aTraceProcess !== aTraceProcess) return;
-      Logger.debug("atrace exited on its own, restarting it...");
       this.aTraceProcess = null;
-      this.startATrace();
+
+      if (code !== 0) {
+        // e.g. the device got disconnected or tracing is unavailable: respawning right away would
+        // loop tightly, and the adb commands below would throw from inside this event handler
+        Logger.error(
+          `atrace exited with code ${code}, FPS will no longer be measured until the next test run`
+        );
+        return;
+      }
+
+      // Its `-t` budget expired (see ATRACE_COMMAND), so trace again
+      Logger.debug("atrace exited on its own, restarting it...");
+      try {
+        this.startATrace();
+      } catch (error) {
+        Logger.error(
+          `Could not restart atrace, FPS will no longer be measured: ${
+            error instanceof Error ? error.message : error
+          }`
+        );
+      }
     });
   }
 

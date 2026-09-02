@@ -1,57 +1,32 @@
 import { POLLING_INTERVAL, AveragedTestCaseResult } from "@lantern/types";
 import { roundToDecimal } from "@lantern/reporter";
-import React from "react";
 
-type PropsType = {
-  children: React.ReactNode;
-};
+type OptionalStat = "ram" | "fps";
 
-export class HideSectionIfUndefinedValueFound extends React.Component<
-  PropsType,
-  {
-    hasError: boolean;
-  }
-> {
-  constructor(props: PropsType) {
-    super(props);
-    this.state = { hasError: false };
-  }
+/**
+ * Whether every measure of every result carries `stat`. A section is hidden while this is false
+ * — as a plain predicate re-evaluated on each render, unlike the former error boundary, which
+ * latched on the first missing value and kept the section hidden even once values arrived.
+ */
+export const hasValueForEveryMeasure = (results: AveragedTestCaseResult[], stat: OptionalStat) =>
+  results.every((result) =>
+    result.average.measures.every((measure) => measure[stat] !== undefined)
+  );
 
-  static getDerivedStateFromError() {
-    // Update state so the next render will show the fallback UI.
-    return { hasError: true };
-  }
-  componentDidCatch(error: Error) {
-    if (!(error instanceof NoValueFound)) {
-      throw error;
-    }
-  }
-  render() {
-    return this.state.hasError ? null : this.props.children;
-  }
-}
-
-export class NoValueFound extends Error {}
-
-export const buildValueGraph = <StatType extends "ram" | "fps">({
+/** Measures without the stat are left out, so a missing value shows as a gap, not a crash. */
+export const buildValueGraph = ({
   results,
   stat,
 }: {
   results: AveragedTestCaseResult[];
-  stat: StatType;
+  stat: OptionalStat;
 }) =>
   results.map((result) => ({
     name: result.name,
-    data: result.average.measures
-      .map((measure) => {
-        const value = measure[stat];
-        if (value === undefined) {
-          throw new NoValueFound();
-        }
-        return value;
-      })
-      .map((value, i) => ({
-        x: i * POLLING_INTERVAL,
-        y: roundToDecimal(value, 0),
-      })),
+    data: result.average.measures.flatMap((measure, i) => {
+      const value = measure[stat];
+      if (value === undefined) return [];
+
+      return [{ x: i * POLLING_INTERVAL, y: roundToDecimal(value, 0) }];
+    }),
   }));

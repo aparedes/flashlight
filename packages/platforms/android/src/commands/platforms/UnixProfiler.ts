@@ -10,9 +10,9 @@ import {
 import {
   AppInfo,
   DeviceInfo,
-  Measure,
   POLLING_INTERVAL,
   Profiler,
+  ProfilerPollingOptions,
   ScreenRecorder,
   ThreadNames,
 } from "@lantern/types";
@@ -109,10 +109,8 @@ export abstract class UnixProfiler implements Profiler {
       onStartMeasuring = () => {
         // noop by default
       },
-    }: {
-      onMeasure: (measure: Measure) => void;
-      onStartMeasuring?: () => void;
-    }
+      onEnd,
+    }: ProfilerPollingOptions
   ) {
     let initialTime: number | null = null;
     let previousTime: number | null = null;
@@ -192,18 +190,21 @@ export abstract class UnixProfiler implements Profiler {
       () => {
         Logger.warn("Process id has changed, ignoring measures until now");
         reset();
-      }
+      },
+      onEnd
     );
   }
 
   /**
    * Starts the native profiler on the device and forwards each raw measure it prints
-   * (before any CPU / RAM / FPS processing) to `onData`
+   * (before any CPU / RAM / FPS processing) to `onData`. `onEnd` is called once the profiler
+   * process has exited, whether through `stop()` or on its own.
    */
   private pollRawPerformanceMeasures(
     pid: string,
     onData: (measure: CppPerformanceMeasure) => void,
-    onPidChanged?: (pid: string) => void
+    onPidChanged?: (pid: string) => void,
+    onEnd?: (reason: string) => void
   ) {
     this.installProfilerOnDevice();
 
@@ -241,8 +242,21 @@ export abstract class UnixProfiler implements Profiler {
       }
     });
 
+    let stopRequested = false;
+    process.on("close", (code, signal) => {
+      const exit = signal ? `signal ${signal}` : `code ${code}`;
+      const reason = stopRequested
+        ? `stopped (${exit})`
+        : `${CppProfilerName} exited unexpectedly (${exit})`;
+      if (!stopRequested) {
+        Logger.error(`${reason}: no more measures will be collected`);
+      }
+      onEnd?.(reason);
+    });
+
     return {
       stop: () => {
+        stopRequested = true;
         process.kill("SIGINT");
         this.stop();
       },

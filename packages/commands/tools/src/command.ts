@@ -35,9 +35,10 @@ export const registerToolsCommand = (program: Command) => {
     .description(
       "On certain devices the video recorded by the test command is not encoded properly; this re-encodes it"
     )
-    .action((videoFilePath) => {
+    .action(async (videoFilePath: string) => {
       const backupFilePath = `${videoFilePath}.bak`;
       fs.cpSync(videoFilePath, backupFilePath);
-      processVideoFile(backupFilePath, videoFilePath);
+      await processVideoFile(backupFilePath, videoFilePath);
+      Logger.success(`Re-encoded ${videoFilePath} (original kept at ${backupFilePath})`);
     });
 };
