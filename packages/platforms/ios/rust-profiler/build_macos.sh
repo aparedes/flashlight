@@ -2,15 +2,16 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# Build universal macOS binaries into bin/. Run on macOS.
-mkdir -p bin
-for target in aarch64-apple-darwin x86_64-apple-darwin; do
-  rustup target add "$target" >/dev/null
-  echo "Building for $target"
-  cargo build --release --target "$target"
-  cp "target/$target/release/lantern-ios-profiler" "bin/lantern-ios-profiler-$target"
-done
+# Build the Apple Silicon release binary into bin/. Run on macOS.
+#
+# Only arm64 is shipped: Apple has retired Intel Macs from macOS support, and the project
+# has no Intel machine to build or test on. The committed binary is what `@lantern/ios`
+# spawns from a source checkout and what `bun run build:standalone` embeds.
+TARGET=aarch64-apple-darwin
 
-lipo -create -output bin/lantern-ios-profiler bin/lantern-ios-profiler-*-apple-darwin 2>/dev/null \
-  && echo "Created universal binary bin/lantern-ios-profiler" \
-  || cp bin/lantern-ios-profiler-aarch64-apple-darwin bin/lantern-ios-profiler
+mkdir -p bin
+rustup target add "$TARGET" >/dev/null
+echo "Building for $TARGET"
+cargo build --release --target "$TARGET"
+cp "target/$TARGET/release/lantern-ios-profiler" bin/lantern-ios-profiler
+echo "Wrote bin/lantern-ios-profiler"

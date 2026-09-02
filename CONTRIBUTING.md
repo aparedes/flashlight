@@ -181,21 +181,15 @@ To produce a distributable, properly signed binary, pass your signing identity (
 bun run build:standalone --sign "Developer ID Application: Your Name (TEAMID)"
 ```
 
-To cross-compile for Intel Macs:
-
-```
-bun run build:standalone --target bun-darwin-x64
-```
-
-The resulting `build/standalone/lantern-macos-x64` binary cannot be run on an arm64 Mac —
-that is expected.
+Only Apple Silicon (arm64) is built: Apple has retired Intel Macs from macOS support and the
+project has no Intel machine to build or test on.
 
 Other flags: `--skip-build` reuses the existing `dist/` output instead of re-running
 `bun run build`, and `--outfile <path>` overrides the output location.
 
 The executable embeds the Android `rust-profiler` binary (arm64-v8a — devices and the Apple
-Silicon emulator), the iOS profiler binary matching the `--target` architecture
-(`packages/platforms/ios/rust-profiler/bin/`, rebuilt with `build_macos.sh`) and both web apps
+Silicon emulator), the iOS profiler binary
+(`packages/platforms/ios/rust-profiler/bin/lantern-ios-profiler`, rebuilt with `build_macos.sh`) and both web apps
 (the `report` web reporter and the `measure` live webapp). On the first run of a given version,
 they are extracted to `$TMPDIR/lantern-<version>-assets` so that the regular folder-based
 lookups (and `adb push`) see real file paths.
@@ -203,18 +197,17 @@ lookups (and `adb push`) see real file paths.
 ### iOS profiler binary
 
 After changing the `packages/platforms/ios/rust-profiler` crate, rebuild the committed
-per-arch binaries with:
+binary with:
 
 ```
 packages/platforms/ios/rust-profiler/build_macos.sh
 ```
 
-This writes `lantern-ios-profiler-aarch64-apple-darwin` and
-`lantern-ios-profiler-x86_64-apple-darwin` into `rust-profiler/bin/`; commit them together
-with the crate change that motivated them. `LANTERN_IOS_BINARY_PATH` overrides the binary
+This writes `rust-profiler/bin/lantern-ios-profiler` (arm64 only); commit it together with
+the crate change that motivated it. `LANTERN_IOS_BINARY_PATH` overrides the binary
 `@lantern/ios` spawns, which is useful for testing a build from elsewhere. Set
 `LANTERN_IOS_DEBUG=1` for verbose protocol logs on stderr. A macOS CI job rebuilds the
-binaries from source on every push to catch a crate/binary mismatch.
+binary from source on every push to catch a crate/binary mismatch.
 
 ### Android profiler binary
 

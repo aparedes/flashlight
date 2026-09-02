@@ -89,9 +89,9 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: Test
         run: cargo test
-      # The per-arch bin/ binaries are committed and embedded by build:standalone — verify
-      # both macOS targets still build from the checked-in source.
-      - name: Build the macOS binaries
+      # The committed bin/ binary (arm64 only) is embedded by build:standalone — verify it
+      # still builds from the checked-in source.
+      - name: Build the macOS binary
         run: ./build_macos.sh
 
   audit:

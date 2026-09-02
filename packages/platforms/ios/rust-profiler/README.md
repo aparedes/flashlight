@@ -111,15 +111,15 @@ On macOS (the only platform that can reach a device over usbmuxd out of the
 box):
 
 ```
-./build_macos.sh   # builds aarch64 + x86_64 release binaries into bin/
+./build_macos.sh   # builds the arm64 release binary into bin/
 ```
 
-The per-arch binaries in `bin/` (`lantern-ios-profiler-aarch64-apple-darwin`,
-`lantern-ios-profiler-x86_64-apple-darwin`) are committed, mirroring the
-Android profiler: `@lantern/ios` resolves `bin/lantern-ios-profiler`
-(the universal `lipo` output, gitignored) from a source checkout, and
-`bun run build:standalone` embeds the binary matching its `--target`. Commit
-the rebuilt binaries together with the crate change that motivated them.
+Only Apple Silicon is built: Apple has retired Intel Macs from macOS support and
+the project has no Intel machine to build or test on. The binary in `bin/`
+(`lantern-ios-profiler`) is committed, mirroring the Android profiler:
+`@lantern/ios` resolves it from a source checkout and `bun run build:standalone`
+embeds it. Commit the rebuilt binary together with the crate change that
+motivated it.
 
 CI runs `cargo fmt/clippy/test` and `build_macos.sh` on a macOS runner; the
 crate also compiles and unit-tests on Linux.
