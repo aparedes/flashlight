@@ -55,7 +55,7 @@ describe("buildValueGraph", () => {
     ]);
   });
 
-  it("leaves a gap instead of throwing when a measure misses the stat", () => {
+  it("emits an explicit null point (a chart gap) when a measure misses the stat", () => {
     const results = [aResult("a", [aMeasure({ fps: 60 }), aMeasure({}), aMeasure({ fps: 30 })])];
 
     expect(buildValueGraph({ results, stat: "fps" })).toEqual([
@@ -63,6 +63,8 @@ describe("buildValueGraph", () => {
         name: "a",
         data: [
           { x: 0, y: 60 },
+          // Kept, not dropped: dropping it would make the line interpolate across the hole
+          { x: POLLING_INTERVAL, y: null },
           { x: 2 * POLLING_INTERVAL, y: 30 },
         ],
       },

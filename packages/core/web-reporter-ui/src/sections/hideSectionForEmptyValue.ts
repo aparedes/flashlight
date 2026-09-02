@@ -13,7 +13,10 @@ export const hasValueForEveryMeasure = (results: AveragedTestCaseResult[], stat:
     result.average.measures.every((measure) => measure[stat] !== undefined)
   );
 
-/** Measures without the stat are left out, so a missing value shows as a gap, not a crash. */
+/**
+ * A measure without the stat becomes a `null` point, which ApexCharts renders as a gap in the
+ * line. Dropping the point instead would make the chart interpolate straight across it.
+ */
 export const buildValueGraph = ({
   results,
   stat,
@@ -23,10 +26,9 @@ export const buildValueGraph = ({
 }) =>
   results.map((result) => ({
     name: result.name,
-    data: result.average.measures.flatMap((measure, i) => {
+    data: result.average.measures.map((measure, i) => {
       const value = measure[stat];
-      if (value === undefined) return [];
 
-      return [{ x: i * POLLING_INTERVAL, y: roundToDecimal(value, 0) }];
+      return { x: i * POLLING_INTERVAL, y: value === undefined ? null : roundToDecimal(value, 0) };
     }),
   }));

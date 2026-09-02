@@ -1,4 +1,5 @@
-export type LineDataPointType = { x: number | string; y: number };
+/** `y: null` is an explicit gap: ApexCharts breaks the line there instead of interpolating. */
+export type LineDataPointType = { x: number | string; y: number | null };
 
 export type LinePlotType = { name: string; data: LineDataPointType[] };
 
